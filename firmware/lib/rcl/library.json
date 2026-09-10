@@ -1,0 +1,7 @@
+{
+  "name": "rcl",
+  "version": "0.1.0",
+  "description": "Packing of .rcl log records. Mirrors packages/rct_core in Dart. Framework-free.",
+  "frameworks": "*",
+  "platforms": "*"
+}

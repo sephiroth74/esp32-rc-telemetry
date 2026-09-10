@@ -1,0 +1,21 @@
+# PlatformIO
+.pio/
+firmware/.pio/
+
+# PlatformIO-generated editor state
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/
+.vscode/.browse.c_cpp.db*
+
+# Dart / Flutter (arriving with packages/ and apps/)
+.dart_tool/
+.packages
+build/
+*.iml
+
+# Claude Code per-machine state (settings.json, if ever added, is shared)
+.claude/settings.local.json
+
+# macOS
+.DS_Store

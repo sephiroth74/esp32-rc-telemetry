@@ -1,0 +1,22 @@
+# RC Telemetry partition table — see PLAN-ESP32.md §6.3
+# No OTA: no WiFi, and OTA over BLE is out of scope, so the app partition is single.
+#
+# gen_esp32part.py only honours '#' at the start of a line, so the per-row notes
+# live here instead of trailing their row:
+#   nvs       20K   — RC calibration, session counter
+#   app0      4M    — single app, no OTA
+#   coredump  64K   — worth it the first on-track panic
+#   littlefs  3.9M  — config, crash logs, GNSS cfg cache
+#
+# Two offsets are dictated by the toolchain, not by us:
+#   0xE000..0x10000  pioarduino-build.py flashes boot_app0.bin here unconditionally,
+#                    otadata partition or not, so nothing of ours may live there.
+#   0x10000          the Arduino builder only reads the app offset off an `ota_0`
+#                    subtype; with `factory` it keeps the 0x10000 default and would
+#                    flash the image outside its own partition. Hence app0 == 0x10000.
+#
+# Name,     Type, SubType,  Offset,   Size
+nvs,        data, nvs,      0x9000,   0x5000
+app0,       app,  factory,  0x10000,  0x400000
+coredump,   data, coredump, 0x410000, 0x10000
+littlefs,   data, spiffs,   0x420000, 0x3E0000
