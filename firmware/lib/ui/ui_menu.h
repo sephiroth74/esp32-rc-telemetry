@@ -32,31 +32,81 @@ enum class ScreenId : uint8_t {
   DisplaySettings,
   Brightness,
   DimDelay,
+  TextSize,
   DeleteSessions,
   About,
   Dialog,
   Count
 };
 
-// What an entry asks the device to do. `arg` carries the choice of an editor.
+// What the menu, or a board state (ui_board.h), asks the device to do. `arg` carries the choice
+// of an editor, or the step of a calibration.
 enum class Command : uint8_t {
   None,
   StartSession,
+  StopSession,
+  Marker,
   RecordStartLine,
   EnterGeometry,
+  StopGeometry,
   RestartGnss,
   EnterTransfer,
+  LeaveTransfer,
   EnterCalibration,
+  CalibrationCapture,
+  SaveCalibration,
+  CancelCalibration,
   SelectProfile,
   SetBrightness,
   SetDimDelay,
+  SetTextSize,
   DeleteSessions,
 };
+
+const char* commandName(Command command);  // for logs
 
 // Why an entry was refused; the screen shows it as a toast (§3.4).
 enum class Refusal : uint8_t { None, NoCard, NoFix, LoggingRefused, NoRcSignal };
 
-enum class DialogKind : uint8_t { None, OverwriteStartLine, DeleteSessions };
+// The four confirmations of §3.1, plus leaving Transfer while a host has the card (§7.3).
+enum class DialogKind : uint8_t {
+  None,
+  OverwriteStartLine,
+  DeleteSessions,
+  StopSession,
+  OverwriteCalibration,
+  LeaveTransfer,
+};
+
+// A confirmation dialog (§3.1): hold OK is yes; any other key, or the timeout, is no. The press
+// that opens a gesture decides nothing — an OK press may still become the hold.
+class Confirm {
+ public:
+  enum class Answer : uint8_t { Pending, Yes, No };
+
+  void open(DialogKind kind, uint32_t nowMs) {
+    kind_ = kind;
+    openedMs_ = nowMs;
+  }
+  void close() { kind_ = DialogKind::None; }
+  bool isOpen() const { return kind_ != DialogKind::None; }
+  DialogKind kind() const { return kind_; }
+
+  // Closes the dialog on a yes or a no.
+  Answer handle(Event event) {
+    if (event == Event::Press) return Answer::Pending;
+    Answer answer = event == Event::Hold ? Answer::Yes : Answer::No;
+    close();
+    return answer;
+  }
+  bool expired(uint32_t nowMs, uint32_t timeoutMs) const {
+    return isOpen() && static_cast<int32_t>(nowMs - (openedMs_ + timeoutMs)) >= 0;
+  }
+
+ private:
+  DialogKind kind_ = DialogKind::None;
+  uint32_t openedMs_ = 0;
+};
 
 // The facts the menu reads. The caller keeps them current; the menu never changes them.
 struct MenuContext {
@@ -70,6 +120,7 @@ struct MenuContext {
   uint8_t activeProfile = 0;
   uint8_t brightness = 2;  // index into kBrightnessLabels
   uint8_t dimDelay = 1;    // index into kDimDelayLabels
+  uint8_t textSize = 1;    // index into kTextSizeLabels: small or large (§3.2)
 };
 
 struct MenuTiming {
@@ -86,6 +137,7 @@ struct Entry {
 
 extern const char* const kBrightnessLabels[3];  // low, medium, high
 extern const char* const kDimDelayLabels[4];    // 15 s, 30 s, 60 s, never
+extern const char* const kTextSizeLabels[2];    // small, large
 
 struct MenuResult {
   Command command = Command::None;
@@ -105,17 +157,19 @@ class Menu {
   ScreenId screen() const { return screen_; }
   // The highlighted entry of a list, or the highlighted choice of an editor.
   uint8_t cursor() const { return cursors_[static_cast<uint8_t>(screen_)]; }
-  DialogKind dialog() const { return dialog_; }
+  DialogKind dialog() const { return confirm_.kind(); }
 
   // The entries of a list screen, or nullptr and 0 for any other screen.
   static const Entry* entries(ScreenId screen, uint8_t& count);
   static ScreenId parent(ScreenId screen);
+  // Home and the screens that are neither a list nor an editor: UP/DOWN scroll their content,
+  // and the board keeps the position (ui_board.h).
+  static bool scrolls(ScreenId screen);
 
  private:
   MenuResult open(ScreenId current, const MenuContext& context);
   MenuResult hold(const MenuContext& context, uint32_t nowMs);
   void openDialog(DialogKind kind, uint32_t nowMs);
-  void closeDialog();
   uint8_t choiceCount(ScreenId screen, const MenuContext& context) const;
   void move(int8_t step, const MenuContext& context);
   uint8_t& cursorOf(ScreenId screen) { return cursors_[static_cast<uint8_t>(screen)]; }
@@ -123,9 +177,8 @@ class Menu {
   MenuTiming timing_;
   ScreenId screen_ = ScreenId::Home;
   uint8_t cursors_[static_cast<uint8_t>(ScreenId::Count)] = {};
-  DialogKind dialog_ = DialogKind::None;
+  Confirm confirm_;
   ScreenId dialogReturn_ = ScreenId::Home;
-  uint32_t dialogOpenedMs_ = 0;
   uint32_t lastKeyMs_ = 0;
 };
 

@@ -31,6 +31,7 @@ const Entry kSettings[] = {
 const Entry kDisplay[] = {
     {"Brightness", ScreenId::Brightness, Command::None},
     {"Dim after", ScreenId::DimDelay, Command::None},
+    {"Text size", ScreenId::TextSize, Command::None},
 };
 
 template <size_t N>
@@ -61,8 +62,19 @@ MenuResult startSession(const MenuContext& c) {
 
 }  // namespace
 
+const char* commandName(Command command) {
+  static const char* const kNames[] = {
+      "none",           "start session", "stop session",  "marker",          "record start line",
+      "enter geometry", "stop geometry", "restart gnss",  "enter transfer",  "leave transfer",
+      "enter calib",    "calib capture", "save calib",    "cancel calib",    "select profile",
+      "set brightness", "set dim delay", "set text size", "delete sessions",
+  };
+  return kNames[static_cast<uint8_t>(command)];
+}
+
 const char* const kBrightnessLabels[3] = {"low", "medium", "high"};
 const char* const kDimDelayLabels[4] = {"15 s", "30 s", "60 s", "never"};
+const char* const kTextSizeLabels[2] = {"small", "large"};
 
 const Entry* Menu::entries(ScreenId screen, uint8_t& count) {
   switch (screen) {
@@ -103,9 +115,25 @@ ScreenId Menu::parent(ScreenId screen) {
       return ScreenId::Settings;
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
+    case ScreenId::TextSize:
       return ScreenId::DisplaySettings;
     default:
       return ScreenId::Home;
+  }
+}
+
+bool Menu::scrolls(ScreenId screen) {
+  uint8_t count = 0;
+  if (entries(screen, count)) return false;
+  switch (screen) {
+    case ScreenId::CarProfile:
+    case ScreenId::Brightness:
+    case ScreenId::DimDelay:
+    case ScreenId::TextSize:
+    case ScreenId::Dialog:
+      return false;
+    default:
+      return true;
   }
 }
 
@@ -119,12 +147,15 @@ uint8_t Menu::choiceCount(ScreenId screen, const MenuContext& c) const {
       return 3;
     case ScreenId::DimDelay:
       return 4;
+    case ScreenId::TextSize:
+      return 2;
     default:
       return 0;
   }
 }
 
-// UP and DOWN wrap around: with the two buttons there is no UP, so DOWN alone must reach every entry.
+// UP and DOWN wrap around: with the two buttons there is no UP, so DOWN alone must reach every
+// entry.
 void Menu::move(int8_t step, const MenuContext& c) {
   uint8_t count = choiceCount(screen_, c);
   if (count == 0) return;
@@ -134,18 +165,17 @@ void Menu::move(int8_t step, const MenuContext& c) {
 
 MenuResult Menu::handle(Event event, const MenuContext& c, uint32_t nowMs) {
   lastKeyMs_ = nowMs;
-  if (event == Event::Press) return {};  // activity only: the gesture's own event follows
-
   if (screen_ == ScreenId::Dialog) {
-    if (event != Event::Hold) {  // any other key: no
-      closeDialog();
-      return {};
-    }
-    Command command =
-        dialog_ == DialogKind::OverwriteStartLine ? Command::RecordStartLine : Command::DeleteSessions;
-    closeDialog();
-    return issue(command);
+    DialogKind kind = confirm_.kind();
+    Confirm::Answer answer = confirm_.handle(event);
+    if (answer == Confirm::Answer::Pending) return {};
+    screen_ = dialogReturn_;
+    if (answer == Confirm::Answer::No) return {};
+    return issue(kind == DialogKind::OverwriteStartLine ? Command::RecordStartLine
+                                                        : Command::DeleteSessions);
   }
+
+  if (event == Event::Press) return {};  // activity only: the gesture's own event follows
 
   switch (event) {
     case Event::Up:
@@ -173,11 +203,13 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       return {};
     case ScreenId::CarProfile:
     case ScreenId::Brightness:
-    case ScreenId::DimDelay: {
+    case ScreenId::DimDelay:
+    case ScreenId::TextSize: {
       // An editor: the highlighted choice is saved, and the editor closes.
       Command command = current == ScreenId::CarProfile   ? Command::SelectProfile
                         : current == ScreenId::Brightness ? Command::SetBrightness
-                                                          : Command::SetDimDelay;
+                        : current == ScreenId::DimDelay   ? Command::SetDimDelay
+                                                          : Command::SetTextSize;
       uint8_t choice = cursor();
       screen_ = parent(current);
       return issue(command, choice);
@@ -205,6 +237,9 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       break;
     case ScreenId::DimDelay:
       cursorOf(entry.screen) = c.dimDelay;
+      break;
+    case ScreenId::TextSize:
+      cursorOf(entry.screen) = c.textSize;
       break;
     default:
       break;
@@ -243,26 +278,21 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
 
 void Menu::openDialog(DialogKind kind, uint32_t nowMs) {
   dialogReturn_ = screen_;
-  dialog_ = kind;
-  dialogOpenedMs_ = nowMs;
+  confirm_.open(kind, nowMs);
   screen_ = ScreenId::Dialog;
 }
 
-void Menu::closeDialog() {
-  screen_ = dialogReturn_;
-  dialog_ = DialogKind::None;
-}
-
 void Menu::tick(uint32_t nowMs) {
-  if (screen_ == ScreenId::Dialog && reached(nowMs, dialogOpenedMs_ + timing_.dialogTimeoutMs)) {
-    closeDialog();
+  if (confirm_.expired(nowMs, timing_.dialogTimeoutMs)) {
+    confirm_.close();
+    screen_ = dialogReturn_;
   }
   if (screen_ != ScreenId::Home && reached(nowMs, lastKeyMs_ + timing_.menuTimeoutMs)) goHome();
 }
 
 void Menu::goHome() {
   screen_ = ScreenId::Home;
-  dialog_ = DialogKind::None;
+  confirm_.close();
   for (uint8_t& cursor : cursors_) cursor = 0;
 }
 

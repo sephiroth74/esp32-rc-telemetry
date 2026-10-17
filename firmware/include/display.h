@@ -1,26 +1,27 @@
 // The display — PLAN-ESP32.md §2.4, §3.2.
 //
-// A text grid of 21 columns × 8 rows, each row one 8-pixel page of the SSD1306: rows 0–1 are the
-// status bar (the yellow band), rows 2–7 the six body lines. The functions only change a model;
-// displayRefresh() sends the pages that changed, at most every DISPLAY_REFRESH_MS, so the bus is
-// left to the IMU for most of the time (§2.4, rules 2 and 3).
+// Shows what lib/ui's render() produced, on either grid of §3.2 — small (the 5x8 font, a row per
+// 8-pixel page) or large (6x13B rows, with the hint in the 5x8) — plus the toast, the hold bar and
+// a scroll bar on the right edge. displayShow() only changes a model; displayRefresh() sends the
+// pages that changed, at most every DISPLAY_REFRESH_MS, so the bus is left to the IMU for most of
+// the time (§2.4, rules 2 and 3).
 //
 // Owned by the ui task, like the keys: no locking other than the I²C bus lock inside.
 #pragma once
 
 #include <stdint.h>
 
-constexpr uint8_t kDisplayCols = 21;
-constexpr uint8_t kStatusLines = 2;
-constexpr uint8_t kBodyLines = 6;
+#include "ui_screens.h"
 
 bool displayBegin();  // false if nothing answers at DISPLAY_I2C_ADDR; after i2cBusBegin()
 
-void displayStatus(uint8_t line, const char* text);  // line 0..1; cut to 21 columns
-void displayBody(uint8_t line, const char* text);    // line 0..5; the last one is the key hint
-void displayToast(const char* text, uint32_t nowMs);  // over the last body line, DISPLAY_TOAST_MS
-void displayHoldBar(uint8_t percent);                 // the bottom pixel row, 0 = hidden
-void displayAcknowledge(uint32_t nowMs);              // inverts the panel DISPLAY_ACK_INVERT_MS
+void displaySetTextSize(ui::TextSize size);  // a change redraws the whole panel
+void displayShow(const ui::ScreenText& text);
+// For DISPLAY_TOAST_MS: over the hint with small text, over the last body row with large text,
+// where it reads in the large font.
+void displayToast(const char* text, uint32_t nowMs);
+void displayHoldBar(uint8_t percent);     // the bottom pixel row, 0 = hidden
+void displayAcknowledge(uint32_t nowMs);  // inverts the panel DISPLAY_ACK_INVERT_MS
 
 void displayRefresh(uint32_t nowMs);  // call every tick; sends at most every DISPLAY_REFRESH_MS
 

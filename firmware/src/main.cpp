@@ -2,9 +2,10 @@
 //
 // What lands here, in the order ROADMAP.md sets out: the power-on self-test (§3.3) runs
 // synchronously in setup(), before any task exists, and only the tasks whose peripherals it left
-// standing are then created (§4.1). loop() stays empty apart from watchdog feeding and housekeeping.
+// standing are then created (§4.1). loop() stays empty apart from watchdog feeding and
+// housekeeping.
 //
-// So far: the keys, the display and the ui task that drives them (ROADMAP.md steps 2.3–2.4).
+// So far: the keys, the display, and the ui task with the menu on them (ROADMAP.md 2.3–2.6).
 #include <Arduino.h>
 
 #include "config.h"

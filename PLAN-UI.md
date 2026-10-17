@@ -11,7 +11,8 @@ disagree, §3 wins and this file is corrected. The steps that build it are Phase
 | --- | --- | --- |
 | Input | **E-Switch JS5208** five-way switch on one ADC pin (D0) through a resistor ladder; **two buttons** (OK, NAV) on the same ladder until it is fitted | §3.1 |
 | Structure | A **Home** screen and a **list menu** | §3.4 |
-| Settings | Only the **car profile** and the **display** are edited on the device; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
+| Settings | Only the **car profile** and the **display** (brightness, dim delay, text size) are edited on the device; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
+| Text | Two sizes, both 21 columns: **small** (5x8) and **large** (6x13B, the default, picked on the bench). Content longer than the body scrolls | §3.2 |
 | Sessions | **Automatic** start (moving, or throttle off neutral) and stop (car off, or 5 min standing still), plus **manual** start and stop | §3.6 |
 | Confirmations | Stopping a session by hand, overwriting a start line, overwriting a calibration, deleting sessions | §3.1 |
 | Errors | Stay on screen **until a key is pressed**; the warning mark stays while the condition lasts | §3.2 |
@@ -71,19 +72,18 @@ stateDiagram-v2
 
 ## Screens
 
-Every screen after the POST has a two-line **status bar** in the yellow band — car profile, fix and
-satellites, free space; then the state and the warning, USB, BLE and LiPo marks — and a six-line
-**body** whose last line is the key hint. Toasts take that last line for 1.5 s.
+With **large** text, the default, every screen after the POST has a one-line **status bar** in the
+yellow band — the state, the fix, and the warning, USB, BLE and LiPo marks — then **three body rows**
+in the large font and the **key hint** in the small one. Toasts take the last body row for 1.5 s, and
+a thin scroll bar on the right edge shows when there is more: NAV turns the page. **Small** text
+gives two status lines (adding the car profile and free space) and five body rows.
 
 ```text
-HOME (IDLE)              MENU                     SESSION, page 1
-Car 2    3D 14  58GB     Car 2    3D 14  58GB     Car 2    3D 14  58GB
-Ready             Li     Menu              Li     REC 12:34         Li
+HOME (IDLE), page 1      MENU                     SESSION, page 1
+Ready       3D14         Menu        3D14         REC 12:34   3D14
 Track N4512E00934        > Session                Lap 12
 Start line: set            Track                  Last   1:02.341
 Last  1:02.341  L12        GNSS                   Best   0:58.902
-Best  0:58.902             Transfer               Delta  +3.439
-Auto start: on             Settings               Markers 3
 OK menu  hold: start     < back   OK open         OK mark  hold: stop
 ```
 

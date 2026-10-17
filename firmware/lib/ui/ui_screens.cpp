@@ -1,0 +1,496 @@
+#include "ui_screens.h"
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+namespace ui {
+namespace {
+
+constexpr uint8_t kMaxContent = 16;
+
+// A screen before it is laid out on a grid: all its lines, the cursor of a list, its hint.
+struct Content {
+  char lines[kMaxContent][kScreenCols + 1];
+  uint8_t count = 0;
+  int8_t cursor = -1;  // a list or an editor: the highlighted line, which stays in view
+  char hint[kScreenCols + 1] = "";
+  uint8_t overflow = 0;
+
+  void add(const char* fmt, ...) {
+    if (count == kMaxContent) {
+      ++overflow;
+      return;
+    }
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(lines[count], sizeof lines[count], fmt, ap);
+    va_end(ap);
+    if (n > kScreenCols) ++overflow;
+    ++count;
+  }
+  void setHint(const char* text) {
+    if (snprintf(hint, sizeof hint, "%s", text) > kScreenCols) ++overflow;
+  }
+};
+
+void put(ScreenText& out, uint8_t row, const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  int n = vsnprintf(out.lines[row], sizeof out.lines[row], fmt, ap);
+  va_end(ap);
+  if (n > kScreenCols) ++out.overflow;
+}
+
+const char* trackText(const Facts& f) {
+  return f.trackId && *f.trackId ? f.trackId : "none, no fix";
+}
+
+const char* fixName(uint8_t fixType) { return fixType >= 3 ? "3D" : fixType == 2 ? "2D" : "--"; }
+
+// m:ss.mmm, or "--" before the first lap.
+void lapText(uint32_t ms, char (&out)[16]) {
+  if (!ms) {
+    snprintf(out, sizeof out, "--");
+    return;
+  }
+  snprintf(out, sizeof out, "%lu:%02lu.%03lu", (unsigned long)(ms / 60000),
+           (unsigned long)(ms / 1000 % 60), (unsigned long)(ms % 1000));
+}
+
+void deltaText(int32_t ms, char (&out)[16]) {
+  uint32_t magnitude = ms < 0 ? -ms : ms;
+  snprintf(out, sizeof out, "%c%lu.%03lu", ms < 0 ? '-' : '+', (unsigned long)(magnitude / 1000),
+           (unsigned long)(magnitude % 1000));
+}
+
+// Free space in at most five columns: MB below a GB, one decimal below 10 GB, whole GB above.
+void freeText(const Facts& f, char (&out)[16]) {
+  if (!f.menu.cardOk) {
+    snprintf(out, sizeof out, "--");
+  } else if (f.freeMb < 1000) {
+    snprintf(out, sizeof out, "%luMB", (unsigned long)f.freeMb);
+  } else if (f.freeMb < 10240) {
+    snprintf(out, sizeof out, "%lu.%luGB", (unsigned long)(f.freeMb / 1024),
+             (unsigned long)(f.freeMb % 1024 * 10 / 1024));
+  } else {
+    snprintf(out, sizeof out, "%luGB", (unsigned long)(f.freeMb / 1024));
+  }
+}
+
+const char* screenTitle(ScreenId s) {
+  switch (s) {
+    case ScreenId::Home:
+      return "Ready";
+    case ScreenId::Menu:
+      return "Menu";
+    case ScreenId::Session:
+      return "Session";
+    case ScreenId::Track:
+      return "Track";
+    case ScreenId::StartLine:
+      return "Start line";
+    case ScreenId::Geometry:
+      return "Geometry";
+    case ScreenId::TrackInfo:
+      return "Track info";
+    case ScreenId::Gnss:
+      return "GNSS";
+    case ScreenId::Settings:
+      return "Settings";
+    case ScreenId::CarProfile:
+      return "Car profile";
+    case ScreenId::Calibrate:
+      return "Calibrate";
+    case ScreenId::DisplaySettings:
+      return "Display";
+    case ScreenId::Brightness:
+      return "Brightness";
+    case ScreenId::DimDelay:
+      return "Dim after";
+    case ScreenId::TextSize:
+      return "Text size";
+    case ScreenId::DeleteSessions:
+      return "Delete";
+    case ScreenId::About:
+      return "About";
+    case ScreenId::Dialog:
+      return "Confirm";
+    default:
+      return "";
+  }
+}
+
+// --- The status bar -------------------------------------------------------------
+
+// The state word: 11 columns at most, which both grids leave for it.
+void stateText(const Board& b, uint32_t nowMs, char (&out)[24]) {
+  if (b.dialog() != DialogKind::None) {
+    snprintf(out, sizeof out, "Confirm");
+    return;
+  }
+  switch (b.mode()) {
+    case Mode::Session: {
+      uint32_t s = b.sessionElapsedMs(nowMs) / 1000;
+      if (s < 3600) {
+        snprintf(out, sizeof out, "REC %02lu:%02lu", (unsigned long)(s / 60),
+                 (unsigned long)(s % 60));
+      } else {
+        snprintf(out, sizeof out, "REC %lu:%02lu:%02lu", (unsigned long)(s / 3600),
+                 (unsigned long)(s / 60 % 60), (unsigned long)(s % 60));
+      }
+      return;
+    }
+    case Mode::Geometry:
+      snprintf(out, sizeof out, "Recording");
+      return;
+    case Mode::Calibration:
+      if (b.calibrationStep() < kCalibrationSteps) {
+        snprintf(out, sizeof out, "Calib %u/%u", b.calibrationStep() + 1, kCalibrationSteps);
+      } else {
+        snprintf(out, sizeof out, "Calibration");
+      }
+      return;
+    case Mode::Transfer:
+      snprintf(out, sizeof out, "Transfer");
+      return;
+    case Mode::Idle:
+      snprintf(out, sizeof out, "%s", screenTitle(b.menu().screen()));
+      return;
+  }
+}
+
+// Small: profile, fix and free space; then the state and the marks, spaced out.
+// Large: one line — the state, the fix, and the marks packed into four columns. The profile and the
+// free space move to the Home screen's content instead.
+void statusBar(const Board& b, const Facts& f, TextSize size, uint32_t nowMs, ScreenText& out) {
+  char state[24], free[16];
+  stateText(b, nowMs, state);
+  bool ble = b.mode() == Mode::Transfer;  // BLE exists only in Transfer (§7.4)
+
+  if (size == TextSize::Small) {
+    char fix[16], marks[16] = "";
+    snprintf(fix, sizeof fix, "%s %2u", fixName(f.fixType), f.sats);
+    freeText(f, free);
+    put(out, 0, "%-8s %-5s %5s", profileName(f, f.menu.activeProfile), fix, free);
+    if (f.warning) strcat(marks, " !");
+    if (f.usbHost) strcat(marks, " U");
+    if (ble) strcat(marks, " B");
+    if (f.lipoLow) strcat(marks, " Li");
+    put(out, 1, "%-12s%9s", state, marks);
+    return;
+  }
+  char fix[16], marks[8] = "";
+  snprintf(fix, sizeof fix, "%s%2u", fixName(f.fixType), f.sats);
+  if (f.warning) strcat(marks, "!");
+  if (f.usbHost) strcat(marks, "U");
+  if (ble) strcat(marks, "B");
+  if (f.lipoLow) strcat(marks, "L");
+  put(out, 0, "%-11s %4s %4s", state, fix, marks);
+}
+
+// --- Content, screen by screen ------------------------------------------------
+
+// The hints differ by layout only where a key does: with the two buttons, NAV moves and holding NAV
+// goes back (§3.1).
+const char* listHint(Layout l) {
+  return l == Layout::TwoButtons ? "NAV next  OK open" : "< back   OK open";
+}
+const char* editorHint(Layout l) {
+  return l == Layout::TwoButtons ? "NAV next  OK save" : "< cancel  OK save";
+}
+const char* backHint(Layout l) { return l == Layout::TwoButtons ? "hold NAV: back" : "< back"; }
+
+void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Content& c) {
+  uint8_t count = 0;
+  const Entry* entries = Menu::entries(screen, count);
+  uint8_t cursor = b.menu().cursor();
+  for (uint8_t i = 0; i < count; ++i) {
+    const char* mark = i == cursor ? ">" : " ";
+    if (screen == ScreenId::DisplaySettings) {
+      const char* value =
+          entries[i].screen == ScreenId::Brightness ? kBrightnessLabels[f.menu.brightness % 3]
+          : entries[i].screen == ScreenId::DimDelay ? kDimDelayLabels[f.menu.dimDelay % 4]
+                                                    : kTextSizeLabels[f.menu.textSize % 2];
+      c.add("%s %-11s %s", mark, entries[i].label, value);
+    } else {
+      c.add("%s %s", mark, entries[i].label);
+    }
+  }
+  c.cursor = cursor;
+  c.setHint(listHint(layout));
+}
+
+// An editor: its choices, the cursor, and a star on the value in force.
+void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Content& c) {
+  uint8_t count, active;
+  switch (screen) {
+    case ScreenId::CarProfile:
+      count = f.menu.profileCount;
+      active = f.menu.activeProfile;
+      break;
+    case ScreenId::Brightness:
+      count = 3;
+      active = f.menu.brightness;
+      break;
+    case ScreenId::DimDelay:
+      count = 4;
+      active = f.menu.dimDelay;
+      break;
+    default:
+      count = 2;
+      active = f.menu.textSize;
+      break;
+  }
+  uint8_t cursor = b.menu().cursor();
+  for (uint8_t i = 0; i < count; ++i) {
+    const char* label = screen == ScreenId::CarProfile   ? profileName(f, i)
+                        : screen == ScreenId::Brightness ? kBrightnessLabels[i]
+                        : screen == ScreenId::DimDelay   ? kDimDelayLabels[i]
+                                                         : kTextSizeLabels[i];
+    c.add("%s %s%s", i == cursor ? ">" : " ", label, i == active ? " *" : "");
+  }
+  c.cursor = cursor;
+  c.setHint(editorHint(layout));
+}
+
+// At most two lines of question, so that the answer still shows with three body rows.
+void dialog(DialogKind kind, const Facts& f, Content& c) {
+  switch (kind) {
+    case DialogKind::OverwriteStartLine:
+      c.add("Overwrite start");
+      c.add("line of %s?", trackText(f));
+      break;
+    case DialogKind::DeleteSessions:
+      c.add("Delete %u sessions?", f.cardSessions);
+      c.add("Tracks stay.");
+      break;
+    case DialogKind::StopSession:
+      c.add("Stop session %u?", f.nextSession);
+      break;
+    case DialogKind::OverwriteCalibration:
+      c.add("Overwrite calibration");
+      c.add("of %s?", profileName(f, f.menu.activeProfile));
+      break;
+    case DialogKind::LeaveTransfer:
+      c.add("Ejected on host?");
+      c.add("The card comes back.");
+      break;
+    default:
+      break;
+  }
+  c.add("hold OK: yes");
+  c.setHint("other key: no (10s)");
+}
+
+void home(const Facts& f, TextSize size, Content& c) {
+  char a[16];
+  c.add("Track %s", trackText(f));
+  c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
+  lapText(f.lastLapMs, a);
+  c.add("Last  %-10s L%u", a, f.laps);
+  lapText(f.bestLapMs, a);
+  c.add("Best  %s", a);
+  c.add("Auto start: %s", f.autoStart ? "on" : "off");
+  if (size == TextSize::Large) {  // the small grid has them in its status bar
+    c.add("Car %s", profileName(f, f.menu.activeProfile));
+    freeText(f, a);
+    c.add("Card free %s", a);
+  }
+  c.setHint("OK menu  hold: start");
+}
+
+void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content& c) {
+  ScreenId screen = b.menu().screen();
+  switch (screen) {
+    case ScreenId::Home:
+      home(f, size, c);
+      return;
+    case ScreenId::Menu:
+    case ScreenId::Track:
+    case ScreenId::Settings:
+    case ScreenId::DisplaySettings:
+      list(b, f, screen, layout, c);
+      return;
+    case ScreenId::CarProfile:
+    case ScreenId::Brightness:
+    case ScreenId::DimDelay:
+    case ScreenId::TextSize:
+      editor(b, f, screen, layout, c);
+      return;
+    case ScreenId::Dialog:
+      dialog(b.menu().dialog(), f, c);
+      return;
+    case ScreenId::Session:
+      c.add("Next: session_%03u", f.nextSession);
+      c.add("Track %s", trackText(f));
+      c.add("Auto start: %s", f.autoStart ? "on" : "off");
+      c.setHint("hold OK: start");
+      return;
+    case ScreenId::StartLine:
+      c.add("Track %s", trackText(f));
+      c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
+      if (!f.menu.hasFix) c.add("Needs a fix");
+      c.setHint("hold OK: record");
+      return;
+    case ScreenId::Geometry:
+      c.add("Track %s", trackText(f));
+      c.add("Geometry: %s", f.hasGeometry ? "recorded" : "none");
+      c.add("Optional; more laps");
+      c.add("give a better shape");
+      c.setHint("hold OK: record");
+      return;
+    case ScreenId::TrackInfo:
+      c.add("Cell %s", trackText(f));
+      c.add("Sessions here %u", f.trackSessions);
+      c.setHint(backHint(layout));
+      return;
+    case ScreenId::Gnss:
+      c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);
+      c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
+      c.add("pDOP %u.%02u", f.pdopX100 / 100, f.pdopX100 % 100);
+      c.add("First fix %u s", f.ttffS);
+      c.setHint("hold OK: restart");
+      return;
+    case ScreenId::Calibrate:
+      c.add("Profile %s", profileName(f, f.menu.activeProfile));
+      c.add("Calibrated: %s", f.profileCalibrated ? "yes" : "no");
+      c.add("RC signal: %s", f.menu.rcSignal ? "yes" : "no");
+      c.setHint("OK: start");
+      return;
+    case ScreenId::DeleteSessions:
+      c.add("%u sessions on card", f.cardSessions);
+      c.add("Tracks, start lines");
+      c.add("and geometries stay");
+      c.setHint("hold OK: delete");
+      return;
+    case ScreenId::About:
+      c.add("Firmware %s", f.firmware);
+      c.add("POST %s", f.postSummary);
+      c.add("Card %uGB %uKB/s", f.cardGb, f.cardKbps);
+      c.setHint(backHint(layout));
+      return;
+    default:
+      return;
+  }
+}
+
+// One list in three groups — laps, GNSS, inputs — that UP/DOWN turn a page at a time.
+void session(const Board& b, const Facts& f, Content& c) {
+  char a[16];
+  c.add("Lap %u", f.laps);
+  lapText(f.lastLapMs, a);
+  c.add("Last   %s", a);
+  lapText(f.bestLapMs, a);
+  c.add("Best   %s", a);
+  deltaText(f.deltaMs, a);
+  c.add("Delta  %s", f.lastLapMs ? a : "--");
+  c.add("Markers %u", b.markers());
+  c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);
+  c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
+  c.add("Speed %u km/h", f.speedKmh);
+  c.add("GNSS loss %lu", (unsigned long)f.gnssLoss);
+  c.add("Steering %+4d %%", f.steeringPct);
+  c.add("Throttle %+4d %%", f.throttlePct);
+  c.setHint("OK mark  hold: stop");
+}
+
+// Three lines per step, so the live widths show with either text size; DOWN is the aux step's skip.
+void calibration(const Board& b, const Facts& f, Layout layout, Content& c) {
+  static const char* const kSteps[kCalibrationSteps][2] = {
+      {"Sticks at neutral", ""},           {"Steer full LEFT", "and hold it"},
+      {"Steer full RIGHT", "and hold it"}, {"Full throttle", "and hold it"},
+      {"Full brake", "and hold it"},       {"Aux: move through", "every position"},
+  };
+  uint8_t step = b.calibrationStep();
+  if (step >= kCalibrationSteps) {
+    c.add("Endpoints captured");
+    c.add("for %s", profileName(f, f.menu.activeProfile));
+    c.setHint("hold OK: save");
+    return;
+  }
+  c.add("%s", kSteps[step][0]);
+  c.add("%s", kSteps[step][1]);
+  c.add("St %4uus  Th %4uus", f.steeringUs, f.throttleUs);
+  bool aux = step == kCalibrationSteps - 1;
+  if (layout == Layout::TwoButtons) {
+    c.setHint(aux ? "OK capture  NAV skip" : "OK capture");
+  } else {
+    c.setHint(aux ? "OK capture  DOWN skip" : "OK capture  < back");
+  }
+}
+
+void content(const Board& b, const Facts& f, Layout layout, TextSize size, Content& c) {
+  if (b.dialog() != DialogKind::None) {
+    dialog(b.dialog(), f, c);
+    return;
+  }
+  switch (b.mode()) {
+    case Mode::Idle:
+      idle(b, f, layout, size, c);
+      return;
+    case Mode::Session:
+      session(b, f, c);
+      return;
+    case Mode::Geometry:
+      c.add("Recording track");
+      c.add("Distance %lu m", (unsigned long)f.geometryM);
+      c.add("Points %u", f.geometryPoints);
+      c.setHint("hold OK: stop+save");
+      return;
+    case Mode::Calibration:
+      calibration(b, f, layout, c);
+      return;
+    case Mode::Transfer:
+      c.add("USB %s", f.usbHost ? "host attached" : "no host");
+      c.add("BLE %s", f.bleConnected ? "phone connected" : "advertising");
+      if (f.usbHost) c.add("Eject on host first");
+      c.setHint(layout == Layout::TwoButtons ? "hold NAV: exit" : "< exit");
+      return;
+  }
+}
+
+// --- Layout -------------------------------------------------------------------
+
+// The window of the content the body shows: around the cursor in a list, else the scrolled page.
+void layOut(const Content& c, TextSize size, int16_t scroll, ScreenText& out) {
+  uint8_t rows = bodyRows(size);
+  uint8_t first = 0;
+  if (c.cursor >= 0) {
+    first = c.cursor < rows ? 0 : c.cursor - rows + 1;
+  } else if (c.count > rows) {
+    int pages = (c.count + rows - 1) / rows;
+    int page = ((scroll % pages) + pages) % pages;
+    first = page * rows;
+  }
+  uint8_t base = statusRows(size);
+  for (uint8_t i = 0; i < rows; ++i) {
+    uint8_t line = first + i;
+    snprintf(out.lines[base + i], sizeof out.lines[base + i], "%s",
+             line < c.count ? c.lines[line] : "");
+  }
+  snprintf(out.lines[base + rows], sizeof out.lines[base + rows], "%s", c.hint);
+  if (c.count > rows) {
+    out.scrollTotal = c.count;
+    out.scrollFirst = first;
+  }
+  out.overflow += c.overflow;
+}
+
+}  // namespace
+
+void render(const Board& board, const Facts& facts, Layout layout, TextSize size, uint32_t nowMs,
+            ScreenText& out) {
+  for (auto& line : out.lines) line[0] = '\0';
+  out.count = screenLines(size);
+  out.scrollTotal = 0;
+  out.scrollFirst = 0;
+  out.overflow = 0;
+  statusBar(board, facts, size, nowMs, out);
+
+  Content c;
+  content(board, facts, layout, size, c);
+  layOut(c, size, board.scroll(), out);
+}
+
+}  // namespace ui

@@ -7,8 +7,8 @@
 //   KeyReader  a reading in mV, at 100 Hz   → the key held now (its window, seen twice in a row)
 //   Gestures   the key held now + the time  → events: press, up, down, back, open, hold
 //
-// Gestures is also where the two layouts differ — in the two-button one NAV short means DOWN and NAV
-// held means LEFT — and it is the only code that knows which hardware is fitted.
+// Gestures is also where the two layouts differ — in the two-button one NAV short means DOWN and
+// NAV held means LEFT — and it is the only code that knows which hardware is fitted.
 //
 // Framework-free (§6.1): the caller supplies the readings and the milliseconds, and the constants
 // arrive through KeyConfig (firmware/include/ui_config.h builds it from config.h).

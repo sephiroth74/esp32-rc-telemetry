@@ -93,9 +93,7 @@ static void bounds_are_exclusive_above() {
   }
 }
 
-static void nav_window_is_left() {
-  ASSERT_KEY(Key::Left, keyConfig().navKey);
-}
+static void nav_window_is_left() { ASSERT_KEY(Key::Left, keyConfig().navKey); }
 
 // --- KeyReader ----------------------------------------------------------------
 
@@ -208,8 +206,8 @@ static void one_button_straight_to_the_other() {
   feed(g, log, Key::Left, 410, 600);
   g.update(Key::None, 610);
   log.drain(g);
-  expectEvents(log, {Event::Press, Event::Down, Event::Press, Event::Open, Event::Press,
-                     Event::Down});
+  expectEvents(log,
+               {Event::Press, Event::Down, Event::Press, Event::Open, Event::Press, Event::Down});
 }
 
 // --- Five-way switch ----------------------------------------------------------

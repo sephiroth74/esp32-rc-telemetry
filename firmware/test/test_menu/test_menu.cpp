@@ -86,14 +86,14 @@ static void down_reaches_every_entry_and_wraps() {
 static void walk_to_brightness_and_save() {
   Walk w;
   w.context.brightness = 2;
-  w.key(Event::Open);   // Menu
-  w.down(4);            // Settings
+  w.key(Event::Open);  // Menu
+  w.down(4);           // Settings
   w.key(Event::Open);
   ASSERT_SCREEN(Settings, w.menu);
-  w.down(2);            // Display
+  w.down(2);  // Display
   w.key(Event::Open);
   ASSERT_SCREEN(DisplaySettings, w.menu);
-  w.key(Event::Open);   // Brightness
+  w.key(Event::Open);  // Brightness
   ASSERT_SCREEN(Brightness, w.menu);
   TEST_ASSERT_EQUAL_UINT8(2, w.menu.cursor());  // opens on the value in force
   w.key(Event::Down);                           // wraps to "low"
@@ -141,6 +141,25 @@ static void transfer_is_a_command_not_a_screen() {
   MenuResult r = w.key(Event::Open);
   ASSERT_COMMAND(EnterTransfer, r);
   ASSERT_SCREEN(Menu, w.menu);
+}
+
+static void text_size_is_a_display_setting() {
+  Walk w;
+  w.context.textSize = 1;  // large
+  w.key(Event::Open);
+  w.down(4);
+  w.key(Event::Open);
+  w.down(2);
+  w.key(Event::Open);  // Settings › Display
+  w.down(2);
+  w.key(Event::Open);  // › Text size
+  ASSERT_SCREEN(TextSize, w.menu);
+  TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());
+  w.key(Event::Down);
+  MenuResult r = w.key(Event::Open);
+  ASSERT_COMMAND(SetTextSize, r);
+  TEST_ASSERT_EQUAL_UINT8(0, r.arg);  // small
+  ASSERT_SCREEN(DisplaySettings, w.menu);
 }
 
 static void car_profile_editor_spans_the_profiles() {
@@ -316,8 +335,8 @@ static void a_press_counts_as_activity() {
 // --- The tables ---------------------------------------------------------------
 
 static void every_entry_fits_and_knows_its_way_back() {
-  for (ScreenId list : {ScreenId::Menu, ScreenId::Track, ScreenId::Settings,
-                        ScreenId::DisplaySettings}) {
+  for (ScreenId list :
+       {ScreenId::Menu, ScreenId::Track, ScreenId::Settings, ScreenId::DisplaySettings}) {
     uint8_t count = 0;
     const ui::Entry* entries = Menu::entries(list, count);
     TEST_ASSERT_NOT_NULL(entries);
@@ -341,6 +360,7 @@ int main(int, char**) {
   RUN_TEST(back_in_an_editor_cancels);
   RUN_TEST(back_keeps_each_lists_cursor);
   RUN_TEST(transfer_is_a_command_not_a_screen);
+  RUN_TEST(text_size_is_a_display_setting);
   RUN_TEST(car_profile_editor_spans_the_profiles);
   RUN_TEST(holding_ok_on_home_or_session_starts_a_session);
   RUN_TEST(a_session_needs_the_card_and_logging);

@@ -93,15 +93,20 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   refusals of §3.4 (no card, no fix, logging refused, no RC signal), and the two confirmation
   dialogs reachable from the menu. What an entry does comes out as a `Command` for the caller; the
   facts go in through `MenuContext`. 21 host tests in `test/test_menu`.
-- [ ] **2.6 Screens on placeholder data.** Render every screen of §3.4 from the model, with fixed
+- [x] **2.6 Screens on placeholder data.** Render every screen of §3.4 from the model, with fixed
   sample data for GNSS, card, track and laps. SESSION, GEOMETRY, CALIBRATION and TRANSFER are stub
   states, entered and left as §3.7 says.
   *Test:* on the bench, every screen reached and left with the two buttons; every text within 21
   columns; the key hints in the two-button wording.
-- [ ] **2.7 The two on-device settings, for real.** Display brightness and dim delay applied to the
-  panel; the car profile selection stored. Kept in NVS for now — they move into `config.json` in
+  *Result:* `lib/ui/ui_board` (the modes, their dialogs and toasts) and `lib/ui/ui_screens` (a pure
+  render), with 16 host tests in `test/test_board` — one renders every screen and mode in both
+  layouts and both text sizes and proves each line fits. On the bench the 5x8 text proved too small:
+  `tools/font-test` compared seven fonts, the **6x13B** won, and text size became a setting of its
+  own, small or large, with large the default and content that scrolls (§3.2).
+- [ ] **2.7 The on-device settings, for real.** Display brightness, dim delay and text size applied to
+  the panel; the car profile selection stored. Kept in NVS for now — they move into `config.json` in
   step 3.6.
-  *Test:* both survive a reset.
+  *Test:* all of them survive a reset.
 
 *Phase done when:* a walk through all of §3.4 on the bench, with the two buttons only.
 

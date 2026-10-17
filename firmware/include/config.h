@@ -10,22 +10,22 @@
 #define FW_VERSION "0.1.0-dev"
 
 // --- GNSS (§5.1, §5.2) ------------------------------------------------------
-constexpr uint32_t GNSS_BAUD = 230400;             // CFG-UART1-BAUDRATE
+constexpr uint32_t GNSS_BAUD = 230400;  // CFG-UART1-BAUDRATE
 constexpr uint32_t GNSS_BAUD_SCAN[] = {230400, 115200, 38400, 9600};
 constexpr uint32_t GNSS_BAUD_SCAN_TIMEOUT_MS = 1500;  // per attempt
-constexpr uint16_t GNSS_NAV_PERIOD_MS = 100;       // CFG-RATE-MEAS → 10 Hz, the M10 maximum
-constexpr uint8_t GNSS_SAT_RATE_DIVISOR = 10;      // NAV-SAT at 1 Hz, logged not just debugged
-constexpr uint8_t GNSS_DYNMODEL = 4;               // automotive; A/B against 8 on track
+constexpr uint16_t GNSS_NAV_PERIOD_MS = 100;          // CFG-RATE-MEAS → 10 Hz, the M10 maximum
+constexpr uint8_t GNSS_SAT_RATE_DIVISOR = 10;         // NAV-SAT at 1 Hz, logged not just debugged
+constexpr uint8_t GNSS_DYNMODEL = 4;                  // automotive; A/B against 8 on track
 constexpr size_t GNSS_UART_RX_BUFFER = 2048;
-constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;     // >3 s of headroom at 10 Hz (§4.2)
+constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;  // >3 s of headroom at 10 Hz (§4.2)
 
 // --- Logging and the SD write path (§4.4) -----------------------------------
-constexpr size_t LOG_RING_BYTES = 256 * 1024;          // PSRAM, ~75 s of stall absorption
+constexpr size_t LOG_RING_BYTES = 256 * 1024;  // PSRAM, ~75 s of stall absorption
 constexpr size_t LOG_WRITE_CHUNK = 32 * 1024;
-constexpr uint32_t LOG_FLUSH_INTERVAL_MS = 5000;       // bounds loss on an ungraceful stop
-constexpr size_t LOG_EXTENT_BYTES = 4u * 1024 * 1024;  // ~20 min per extent
+constexpr uint32_t LOG_FLUSH_INTERVAL_MS = 5000;              // bounds loss on an ungraceful stop
+constexpr size_t LOG_EXTENT_BYTES = 4u * 1024 * 1024;         // ~20 min per extent
 constexpr size_t LOG_EXTENT_REFILL_BYTES = 1u * 1024 * 1024;  // extend when this much is left
-constexpr uint32_t LOG_SLOW_WRITE_MS = 250;            // counted per session and reported
+constexpr uint32_t LOG_SLOW_WRITE_MS = 250;                   // counted per session and reported
 
 // --- Power-on self-test (§3.3) ----------------------------------------------
 constexpr size_t POST_PROBE_BYTES = 256 * 1024;   // one probe answers "writable?" and "how fast?"
@@ -41,9 +41,10 @@ constexpr uint32_t POST_RC_EDGE_WINDOW_MS = 500;  // no edges → no power-loss 
 // Each bound sits halfway between neighbouring levels.
 constexpr uint16_t KEY_MV_BOUNDS[] = {300, 825, 1335, 1945, 2695};  // OK|UP|DOWN|LEFT|RIGHT|none
 constexpr uint16_t KEY_SAMPLE_HZ = 100;
-constexpr uint8_t KEY_CONFIRM_SAMPLES = 2;   // same window twice in a row, or it is a bounce
-constexpr uint16_t KEY_SHORT_MAX_MS = 800;   // OK released after this and before the long press: nothing
-constexpr uint16_t KEY_LONG_MS = 1500;       // fires while still held, not on release
+constexpr uint8_t KEY_CONFIRM_SAMPLES = 2;  // same window twice in a row, or it is a bounce
+// OK released after KEY_SHORT_MAX_MS but before the long press does nothing.
+constexpr uint16_t KEY_SHORT_MAX_MS = 800;
+constexpr uint16_t KEY_LONG_MS = 1500;  // fires while still held, not on release
 constexpr uint16_t KEY_HOLD_BAR_FROM_MS = 300;
 constexpr uint16_t KEY_REPEAT_DELAY_MS = 500;  // UP/DOWN held
 constexpr uint16_t KEY_REPEAT_MS = 200;
@@ -57,25 +58,30 @@ constexpr uint16_t KEY_NAV_BACK_MS = 1000;  // two-button layout: NAV held this 
 constexpr uint8_t KEY_NAV_WINDOW = 3;       // NAV's window in KEY_MV_BOUNDS: the LEFT one
 
 // --- Menus and dialogs (§3.1) -----------------------------------------------
-constexpr uint32_t UI_MENU_TIMEOUT_MS = 30000;   // back to Home without a key
-constexpr uint32_t UI_DIALOG_TIMEOUT_MS = 10000; // a dialog left alone answers "no"
+constexpr uint32_t UI_MENU_TIMEOUT_MS = 30000;    // back to Home without a key
+constexpr uint32_t UI_DIALOG_TIMEOUT_MS = 10000;  // a dialog left alone answers "no"
 
 // --- Display (§2.4, §3.2) ---------------------------------------------------
-constexpr uint8_t DISPLAY_I2C_ADDR = 0x3C;       // 7-bit; 0x78 in 8-bit listings
-constexpr uint16_t DISPLAY_REFRESH_MS = 200;     // 5 Hz at most, dirty pages only: the IMU shares the bus
+constexpr uint8_t DISPLAY_I2C_ADDR = 0x3C;  // 7-bit; 0x78 in 8-bit listings
+// 5 Hz at most, and dirty pages only: the IMU shares the bus.
+constexpr uint16_t DISPLAY_REFRESH_MS = 200;
 constexpr uint16_t DISPLAY_TOAST_MS = 1500;
-constexpr uint16_t DISPLAY_ACK_INVERT_MS = 80;   // long press acknowledged by inverting the screen
+constexpr uint16_t DISPLAY_ACK_INVERT_MS = 80;  // long press acknowledged by inverting the screen
 constexpr uint16_t DISPLAY_POST_DEGRADED_MS = 3000;  // degraded checks stay listed this long
-constexpr uint32_t DISPLAY_DIM_AFTER_MS = 30000;     // default of a display setting (§3.8); dimmed, never blank
+// The default of a display setting (§3.8). Dimmed, never blank.
+constexpr uint32_t DISPLAY_DIM_AFTER_MS = 30000;
+// Text size, a display setting too: 0 small (5x8, 21×8), 1 large (6x13B), picked on the bench.
+constexpr uint8_t DISPLAY_TEXT_SIZE_DEFAULT = 1;
 
 // --- Sessions, automatic start and stop (§3.6) ------------------------------
 constexpr float SESSION_START_SPEED_KMH = 5.0f;  // with a 3D fix...
 constexpr uint16_t SESSION_START_SPEED_MS = 2000;
-constexpr uint8_t SESSION_START_THROTTLE_PCT = 10;  // ...or throttle off neutral, calibrated profile
+// ...or the throttle this far off neutral, with a calibrated profile.
+constexpr uint8_t SESSION_START_THROTTLE_PCT = 10;
 constexpr uint16_t SESSION_START_THROTTLE_MS = 1000;
-constexpr float SESSION_STILL_SPEED_KMH = 2.0f;  // standing still: below this speed...
-constexpr uint8_t SESSION_STILL_THROTTLE_PCT = 5;   // ...and within this of neutral
-constexpr uint8_t SESSION_AUTO_STOP_MIN = 5;         // session.auto_stop_min default
+constexpr float SESSION_STILL_SPEED_KMH = 2.0f;    // standing still: below this speed...
+constexpr uint8_t SESSION_STILL_THROTTLE_PCT = 5;  // ...and within this of neutral
+constexpr uint8_t SESSION_AUTO_STOP_MIN = 5;       // session.auto_stop_min default
 
 // --- Sleep and wake (§4.5) --------------------------------------------------
 constexpr uint32_t SLEEP_CAR_OFF_NOTICE_MS = 10000;  // from IDLE; any key cancels
@@ -95,8 +101,8 @@ constexpr uint16_t RC_SIGNAL_LOST_MS = 200;  // no edges for this long → the c
 
 // --- IMU (§2.6) -------------------------------------------------------------
 constexpr uint16_t IMU_SAMPLE_HZ = 200;
-constexpr uint8_t IMU_I2C_ADDR = 0x6A;   // LSM6DSO32, 0x6B with SDO high
-constexpr bool IMU_LOG_RAW = false;      // the 100 Hz raw stream — open question 7
+constexpr uint8_t IMU_I2C_ADDR = 0x6A;  // LSM6DSO32, 0x6B with SDO high
+constexpr bool IMU_LOG_RAW = false;     // the 100 Hz raw stream — open question 7
 
 // --- Task placement (§4.1) --------------------------------------------------
 // Core 1 is the acquisition core: it is where loop() already runs

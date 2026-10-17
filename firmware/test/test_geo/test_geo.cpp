@@ -8,9 +8,7 @@
 void setUp() {}
 void tearDown() {}
 
-static void pending() {
-  TEST_IGNORE_MESSAGE("lib/geo is a skeleton — see PLAN-ESP32.md §7.1");
-}
+static void pending() { TEST_IGNORE_MESSAGE("lib/geo is a skeleton — see PLAN-ESP32.md §7.1"); }
 
 int main(int, char**) {
   UNITY_BEGIN();

@@ -154,8 +154,10 @@ What it takes:
   3. Every bus transaction goes through **one mutex**: the `ui` and `imu` tasks run on different cores
      (§4.1).
 - **Driver: U8g2**, not the Adafruit library used on the bench. Its `updateDisplayArea()` provides
-  rule 2, and it also drives the SH1106 used by 1.3" modules. Text is `u8g2_font_5x8_mr` drawn on a
-  6-pixel grid: the 21 columns × 8 rows of §3, one row per page.
+  rule 2, and it also drives the SH1106 used by 1.3" modules. Text comes in the two sizes of §3.2,
+  both drawn on a 6-pixel grid for 21 columns: `u8g2_font_5x8_mr`, eight rows of one page each, and
+  `u8g2_font_6x13B_mr`, picked on the bench for reading at arm's length (`docs/hardware.md`). A
+  13-pixel row can straddle two pages, so the driver redraws every row that touches a dirty page.
 - **Colours:** on the bench module rows 0–15 are yellow and the rest blue. The status bar of §3.2
   lives in that band; on single-colour modules it is just a band.
 - **Wear:** an OLED burns in under static content. Dim it after 30 s without a key press, and
@@ -320,14 +322,20 @@ wakes is simply ignored, since the keys are dead throughout the POST (§3.3).
 
 ### 3.2 Screen layout
 
-Every screen in this document is built from the same parts, so nothing is placed ad hoc.
+Every screen in this document is built from the same parts, so nothing is placed ad hoc. Text
+comes in two sizes, a display setting (§3.8), both 21 columns wide:
 
-| Part | Where | Content |
+| | Small — `5x8` | Large — `6x13B`, the default |
 | --- | --- | --- |
-| **Status bar** | Rows 0–15, the yellow band of §2.4: two text lines, on every screen after the POST | Line 1: car profile · GNSS fix type and satellites · free card space. Line 2: the state — `Ready`, `REC 12:34`, `Menu`, `Calibrate 2/6`, `Transfer` — then marks for a warning, a USB host, BLE and a low backup LiPo |
-| **Body** | Rows 16–63: six text lines | The current screen (§3.4). Its last line is the key hint, e.g. `OK menu  hold: start` |
-| **Toast** | The last body line, for 1.5 s | Acknowledgements and refusals: `Marker 4`, `Session 4 saved`, `Start line saved`, or an action refused — with the reason |
-| **Hold bar** | The bottom pixel row | Fills while OK is held, from 300 ms to 1.5 s (§3.1) |
+| **Status bar**, rows 0–15, the yellow band of §2.4 | Two lines. 1: car profile · GNSS fix and satellites · free card space. 2: the state, then the marks | One line: the state, the fix (`3D14`), and the marks packed into four columns (`!`, `U`, `B`, `L`). The profile and the free space move into Home's content |
+| **Body**, under it | Five rows | Three rows |
+| **Hint**, the last row | In the small font: what the keys do here, e.g. `OK menu  hold: start` | Same — kept small, so the large font goes to the content |
+| **Toast**, for 1.5 s | Over the hint | Over the last body row, so it reads in the large font |
+
+The state is one of `Ready`, `Menu`, `REC 12:34`, `Calib 2/6`, `Transfer`…; the marks stand for a
+warning, a USB host, BLE and a low backup LiPo. On both grids the **hold bar** fills the bottom pixel
+row while OK is held, from 300 ms to 1.5 s (§3.1), and a **scroll bar** two pixels wide runs down the
+right edge of the body whenever the content is longer than the body.
 
 Rules that every screen follows:
 
@@ -339,8 +347,10 @@ Rules that every screen follows:
   which is all anyone can read anyway.
 - **Dim after 30 s without a key** (a display setting, §3.8), and return to full contrast on the next
   key or on any error. Dimmed is not blank: the screen stays readable, and a key always acts.
-- **Short English words.** The small font gives 21 columns, so every message is written to fit them
-  rather than truncated.
+- **Short English words.** Both text sizes give 21 columns, so every message is written to fit them
+  rather than truncated — a host test renders every screen at both sizes to prove it.
+- **Content longer than the body scrolls.** A list keeps its cursor in view. Any other screen turns
+  a page per UP/DOWN — NAV with the two buttons — and wraps back to its first page.
 
 ### 3.3 Power-on self-test
 
@@ -400,33 +410,32 @@ later instead of argued about.
 ### 3.4 Screens and menu
 
 After the POST the device shows **Home** and starts GNSS acquisition. OK opens the **menu**, a list
-moved through with UP/DOWN; LEFT goes back up. Six of the screens, as they look on the 21 × 8 grid,
-status bar on top:
+moved through with UP/DOWN; LEFT goes back up. Six of the screens with large text, the status line
+in the yellow band, three body rows, the hint in the small font, and the hints worded for the
+five-way switch:
 
 ```text
-HOME (IDLE)              MENU                     SESSION, page 1
-Car 2    3D 14  58GB     Car 2    3D 14  58GB     Car 2    3D 14  58GB
-Ready             Li     Menu              Li     REC 12:34         Li
+HOME (IDLE), page 1      MENU                     SESSION, page 1
+Ready       3D14         Menu        3D14         REC 12:34   3D14
 Track N4512E00934        > Session                Lap 12
 Start line: set            Track                  Last   1:02.341
 Last  1:02.341  L12        GNSS                   Best   0:58.902
-Best  0:58.902             Transfer               Delta  +3.439
-Auto start: on             Settings               Markers 3
 OK menu  hold: start     < back   OK open         OK mark  hold: stop
 
 DIALOG                   CALIBRATION, a step      TRANSFER
-Car 2    3D 14  58GB     Car 2    3D 14  58GB     Car 2    3D 14  58GB
-Ready             Li     Calibrate 2/6     Li     Transfer        U B
-Overwrite start          Steer full LEFT          USB  host attached
-line N4512E00934?        and hold it              BLE  advertising
-                         steer  1012 us
-                         thr    1500 us           Eject on host first
-hold OK: yes             OK capture  < back
-other key: no (10s)                               < exit
+Confirm     3D14         Calib 2/6   3D14         Transfer    3D14   UB
+Overwrite start          Steer full LEFT          USB host attached
+line N4512E00934?        and hold it              BLE advertising
+hold OK: yes             St 1012us  Th 1500us     Eject on host first
+other key: no (10s)      OK capture  < back       < exit
 ```
 
+Home, the menu and the session all go on below the three rows shown: NAV turns Home's pages, the
+cursor scrolls the menu, and the session's laps, GNSS and inputs are pages of one screen.
+
 **Home** shows the resolved track, whether it has a start line, the last session's best lap and lap
-count, and whether the automatic start is on (§3.6). Holding OK on Home starts a session by hand.
+count, and whether the automatic start is on (§3.6) — with large text also the car profile and the
+free space, which its status line has no room for. Holding OK on Home starts a session by hand.
 
 The menu:
 
@@ -440,7 +449,7 @@ The menu:
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
 | **Settings › Car profile** | The profiles in `config.json`, the active one marked | OK: make the highlighted one active (§3.8) |
 | **Settings › Calibrate** | Whether the active profile is calibrated | OK: enter CALIBRATION (§3.7, §3.8) |
-| **Settings › Display** | Brightness (low, medium, high) and dim delay (15, 30, 60 s, never) | UP/DOWN change, OK saves, LEFT cancels |
+| **Settings › Display** | Brightness (low, medium, high), dim delay (15, 30, 60 s, never) and text size (small, large — §3.2) | UP/DOWN change, OK saves, LEFT cancels |
 | **Settings › Delete sessions** | How many sessions the card holds | Hold OK, then confirm: deletes **every `session_*` folder**, keeping tracks, geometries and start lines (§7.1). `Deleting` while it runs, a toast on completion |
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
 
@@ -453,7 +462,7 @@ The screens outside the menu:
 | Screen | Content |
 | --- | --- |
 | **POST** | One check per line as they run, no status bar (§3.3) |
-| **Session** — three pages, UP/DOWN | Laps: lap count, last, best, delta, markers · GNSS: fix, hAcc, speed, loss count · Inputs: steering and throttle in %, to check a calibration in the pits |
+| **Session** — one screen, its pages turned with UP/DOWN | Laps: lap count, last, best, delta, markers · GNSS: fix, hAcc, speed, loss count · Inputs: steering and throttle in %, to check a calibration in the pits |
 | **Calibration** — one screen per step | The instruction, and the live steering and throttle widths in µs (§3.8) |
 | **Geometry** | Distance covered, laps, points; `hold OK: stop+save` |
 | **Transfer** | USB host and BLE state; `Eject on host first` |
@@ -499,7 +508,7 @@ without a key press; the keys remain for doing either by hand.
   controlled by hand; Home shows which is active.
 
 While a session is open the menu is **locked**. OK inserts a **marker record** into the log (toast
-`Marker N`), which is far more useful mid-run than navigation; UP/DOWN change the session page; only
+`Marker N`), which is far more useful mid-run than navigation; UP/DOWN turn the session's pages; only
 the stop and the error states remain active. The session screen is read in the pits, not while
 driving.
 
@@ -555,7 +564,7 @@ Rules across the states:
   file. Hardware choices live there too, such as `keys.layout` (§3.1), so a hardware swap needs no
   reflash.
 - **On the device, only two things are edited**, the ones changed in the pits: the active car profile
-  and the display (brightness, dim delay). Those edits are written to both copies.
+  and the display (brightness, dim delay, text size). Those edits are written to both copies.
 - **Car profiles**: up to eight, `profiles[0..7]` in `config.json`, each with a name — shown in the
   status bar, up to 8 characters — and its aux-channel band mapping (§8). Each profile's RC
   calibration lives in NVS, keyed by profile index, so it survives a card swap; the active index is

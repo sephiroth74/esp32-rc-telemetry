@@ -58,7 +58,8 @@ How to read a mount failure:
 | Driver | Adafruit SSD1306 2.5.17 in the bench tools; **U8g2** in the firmware (§2.4) |
 | Full frame, 1 KB, U8g2 at 400 kHz | **31.3 ms** (`sendBuffer()`, averaged over 4) |
 | One 8-row page, 128 B | **3.9 ms** (`updateDisplayArea()`, averaged over 4) |
-| Text grid | `u8g2_font_5x8_mr` drawn on a 6-pixel grid: 21 columns × 8 rows, one row per page |
+| Text, small | `u8g2_font_5x8_mr` on a 6-pixel grid: 21 columns × 8 rows, one row per page. Readable, but too small at arm's length |
+| Text, large | **`u8g2_font_6x13B_mr`** on the same grid: 21 columns, a status line in the yellow band and three body rows. Picked with `tools/font-test` from seven candidates (5x8, 6x12, 6x13B, 7x13B, 8x13B, spleen8x16, 9x15B): the largest that keeps 21 columns |
 
 ### Button
 

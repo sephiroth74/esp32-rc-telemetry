@@ -7,9 +7,7 @@
 void setUp() {}
 void tearDown() {}
 
-static void pending() {
-  TEST_IGNORE_MESSAGE("lib/ubx is a skeleton — see PLAN-ESP32.md §5.4");
-}
+static void pending() { TEST_IGNORE_MESSAGE("lib/ubx is a skeleton — see PLAN-ESP32.md §5.4"); }
 
 int main(int, char**) {
   UNITY_BEGIN();
