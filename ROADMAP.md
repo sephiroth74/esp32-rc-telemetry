@@ -114,6 +114,12 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   the panel; the car profile selection stored. Kept in NVS for now — they move into `config.json` in
   step 3.6.
   *Test:* all of them survive a reset.
+- [x] **2.8 New car and New track** (§3.4, §3.8, §7.1). New car is the choice after the profiles in
+  Settings › Car profile; New track an entry of Track, held to create. Both work for any car or
+  track that was not set up from a computer, and the apps rename them.
+  *Result:* in `lib/ui` with their refusals — no card, no fix, `Full: 8 profiles` — and New car
+  landing on Calibrate. Every screen is now tested with the longest track id, `N4512E00934-99`, which
+  moved the start-line dialog onto new lines. The placeholder facts carry both out on the bench.
 
 *Phase done when:* a walk through all of §3.4 on the bench, with the two buttons only.
 
@@ -189,6 +195,8 @@ ends on the screen §3.3 describes.
 - [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.
+  Among several matching tracks the one used most recently wins, and Track › New track creates a
+  folder at the fix with the next suffix.
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.
@@ -201,6 +209,8 @@ ends on the screen §3.3 describes.
   log; POST check 10 (§4.3).
 - [ ] **6.3 Car profiles and calibration** (§3.8, §4.3).
   - Profiles read from `config.json` and chosen in Settings › Car profile.
+  - New car: a `Car N` profile appended to both copies of `config.json`, the NVS calibration at its
+    index cleared, the profile made active.
   - The Calibrate procedure, with its overwrite confirmation.
   - One calibration per profile in NVS, copied into each session's `meta.json`.
 - [ ] **6.4 Automatic start and stop** (§3.6). The rules are host-tested in `lib/ui`.

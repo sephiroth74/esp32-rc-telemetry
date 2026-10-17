@@ -1,6 +1,7 @@
 #include "ui_fsm.h"
 
 #include <Arduino.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "config.h"
@@ -18,15 +19,21 @@ constexpr uint32_t kStackBytes = 6144;
 // Every screen shows plausible values until the modules that own them arrive: the card in phase 3,
 // GNSS in phase 4, sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
 
-const char* const kProfileNames[] = {"Car 1", "Car 2", "Car 3"};
+// Writable, so that New car and New track show their result.
+char profileNames[CAR_PROFILES_MAX][CAR_PROFILE_NAME_MAX + 1] = {"Car 1", "Car 2", "Car 3"};
+const char* profileNamePtrs[CAR_PROFILES_MAX];
+char trackId[16] = "N4512E00934";
+uint8_t trackSuffix = 1;
 
 ui::Facts sampleFacts() {
   ui::Facts f;
   f.menu.hasFix = true;
   f.menu.rcSignal = true;
   f.menu.profileCount = 3;
+  f.menu.profileMax = CAR_PROFILES_MAX;
   f.menu.textSize = DISPLAY_TEXT_SIZE_DEFAULT;
-  f.profileNames = kProfileNames;
+  for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) profileNamePtrs[i] = profileNames[i];
+  f.profileNames = profileNamePtrs;
   f.fixType = 3;
   f.sats = 14;
   f.hAccCm = 120;
@@ -35,7 +42,7 @@ ui::Facts sampleFacts() {
   f.freeMb = 59600;
   f.cardGb = 62;
   f.cardKbps = 3495;
-  f.trackId = "N4512E00934";
+  f.trackId = trackId;
   f.trackSessions = 3;
   f.cardSessions = 3;
   f.nextSession = 4;
@@ -75,6 +82,19 @@ void runPlaceholder(const ui::BoardOutput& o) {
     case ui::Command::SelectProfile:
       facts.menu.activeProfile = o.arg;
       facts.profileCalibrated = false;
+      break;
+    case ui::Command::NewProfile:
+      ui::newProfileName(o.arg, profileNames[o.arg]);
+      facts.menu.profileCount = o.arg + 1;
+      facts.menu.activeProfile = o.arg;
+      facts.profileCalibrated = false;
+      break;
+    case ui::Command::NewTrack:  // the next free suffix of the cell id, as in §7.1
+      snprintf(trackId, sizeof trackId, "N4512E00934-%u", ++trackSuffix);
+      facts.menu.hasStartLine = false;
+      facts.hasGeometry = false;
+      facts.trackSessions = 0;
+      facts.nextSession = 1;
       break;
     case ui::Command::SetBrightness:  // applied to the panel in step 2.7
       facts.menu.brightness = o.arg;

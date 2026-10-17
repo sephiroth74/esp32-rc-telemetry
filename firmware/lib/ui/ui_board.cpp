@@ -27,6 +27,10 @@ const char* profileName(const Facts& f, uint8_t index) {
   return f.profileNames[index];
 }
 
+void newProfileName(uint8_t index, char (&out)[9]) {
+  snprintf(out, sizeof out, "Car %u", index + 1);
+}
+
 void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
   switch (refusal) {
     case Refusal::NoCard:
@@ -40,6 +44,9 @@ void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
       break;
     case Refusal::NoRcSignal:
       snprintf(out, sizeof out, "No RC signal");
+      break;
+    case Refusal::ProfilesFull:
+      snprintf(out, sizeof out, "Full: %u profiles", arg);
       break;
     default:
       out[0] = '\0';
@@ -108,6 +115,15 @@ BoardOutput Board::fromMenu(const MenuResult& r, const Facts& f, uint32_t nowMs)
       break;
     case Command::SelectProfile:
       toast(o, "Profile: %s", profileName(f, r.arg));
+      break;
+    case Command::NewProfile: {
+      char name[9];
+      newProfileName(r.arg, name);
+      toast(o, "New car: %s", name);
+      break;
+    }
+    case Command::NewTrack:
+      toast(o, "New track created");
       break;
     case Command::SetBrightness:
       toast(o, "Brightness: %s", kBrightnessLabels[r.arg % 3]);

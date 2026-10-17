@@ -428,8 +428,8 @@ OK menu  hold: start     < back   OK open         OK mark  hold: stop
 
 DIALOG                   CALIBRATION, a step      TRANSFER
 Confirm     3D14         Calib 2/6   3D14         Transfer    3D14   UB
-Overwrite start          Steer full LEFT          USB host attached
-line N4512E00934?        and hold it              BLE advertising
+Overwrite start line     Steer full LEFT          USB host attached
+of N4512E00934?          and hold it              BLE advertising
 hold OK: yes             St 1012us  Th 1500us     Eject on host first
 other key: no (10s)      OK capture  < back       < exit
 ```
@@ -449,17 +449,18 @@ The menu, each list ending in Back:
 | **Track › Start line** | Whether the resolved track has a start line, and where it came from (§7.5) | Hold OK: record the current position and heading into `start_line.json` (§7.1), confirming first if one exists. **Optional**: without one, laps are timed from the fastest point of the lap |
 | **Track › Geometry** | Whether the resolved track has a geometry, and where it came from (§7.5) | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. **Optional**: the desktop app builds the geometry from the sessions anyway |
 | **Track › Info** | Cell id, the name in `track.json`, how many sessions were recorded there | — |
+| **Track › New track** | The resolved track, and what a new one is for | Hold OK: create a track at the current position although one is resolved there — for a new layout at a known venue. It starts with no start line and no geometry, its folder takes the cell id with the next suffix, and the apps name it (§7.1) |
 | **GNSS** | Fix type, satellites, hAcc, pDOP, time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s | Hold OK: restart acquisition |
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
-| **Settings › Car profile** | The profiles in `config.json`, the active one marked | OK: make the highlighted one active (§3.8) |
+| **Settings › Car profile** | The profiles in `config.json`, the active one marked, then **New car** | OK: make the highlighted one active. New car adds a profile named `Car N`, makes it active and lands on Calibrate; the apps rename it (§3.8) |
 | **Settings › Calibrate** | Whether the active profile is calibrated | Hold OK: enter CALIBRATION (§3.7, §3.8) |
 | **Settings › Display** | Brightness (low, medium, high), dim delay (15, 30, 60 s, never) and text size (small, large — §3.2) | UP/DOWN change, OK saves, LEFT cancels |
 | **Settings › Delete sessions** | How many sessions the card holds | Hold OK, then confirm: deletes **every `session_*` folder**, keeping tracks, geometries and start lines (§7.1). `Deleting` while it runs, a toast on completion |
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
 
 Entries that write to the card are refused while it is unavailable (§3.5), with a toast saying so.
-Start line and Geometry additionally require a valid fix, since both write a position; a session does
-not (§7.1).
+Start line, Geometry and New track additionally require a valid fix, since all three write a
+position; a session does not (§7.1).
 
 The screens outside the menu:
 
@@ -568,11 +569,18 @@ Rules across the states:
   file. Hardware choices live there too, such as `keys.layout` (§3.1), so a hardware swap needs no
   reflash.
 - **On the device, only two things are edited**, the ones changed in the pits: the active car profile
-  and the display (brightness, dim delay, text size). Those edits are written to both copies.
+  and the display (brightness, dim delay, text size). Those edits are written to both copies. The
+  one thing added on the device is a car profile, with New car.
 - **Car profiles**: up to eight, `profiles[0..7]` in `config.json`, each with a name — shown in the
   status bar, up to 8 characters — and its aux-channel band mapping (§8). Each profile's RC
   calibration lives in NVS, keyed by profile index, so it survives a card swap; the active index is
   in NVS too. The profile's name and calibration are copied into every session's `meta.json`.
+- **New car**, the choice after the profiles in Settings › Car profile, is for the car nobody added
+  from a computer. It appends a profile named `Car N` (N = its index + 1) to both copies of
+  `config.json`, clears whatever calibration NVS still holds at that index (a profile deleted in an
+  app leaves one behind), makes it active, and returns to Settings with Calibrate highlighted. It is
+  refused without a card, where `config.json` lives (`Refused: no card`), and once there are eight
+  (`Full: 8 profiles`). The apps rename it.
 - **Calibrate** walks through six steps for the active profile: sticks at neutral → steering full
   left → full right → full throttle → full brake → the aux channel through its positions (DOWN
   skips it). Each step shows the live widths and is captured with OK; LEFT goes back a step, and at
@@ -919,7 +927,7 @@ derived from the first valid fix**, so the device files each session under the r
 user having to type a name on a device with a five-way switch and a 21-column display.
 
 ```text
-/tracks/N4512E00934/track.json               # human name, created, cell id, centre point
+/tracks/N4512E00934/track.json               # human name, created, last used, cell id, centre point
 /tracks/N4512E00934/start_line.json          # position + heading of the gate, and its source (§7.5)
 /tracks/N4512E00934/geometry.rcg             # the track's shape, and its source (§7.5)
 /tracks/N4512E00934/session_001/session.rcl  # binary, high-rate records
@@ -947,10 +955,19 @@ track could split across two days. So the cell id *names* the folder but does no
 
 1. Take the first valid fix (3D, hAcc ≤ 5 m).
 2. Scan `/tracks/*/track.json` and reuse the folder whose `start_line` — or `centre`, if no start line
-   is set yet — lies within `track.match_radius_m` (default **300 m**) of that fix.
+   is set yet — lies within `track.match_radius_m` (default **300 m**) of that fix. If several do,
+   take the one used most recently: `last_used` is updated whenever a session is filed there.
 3. Otherwise create a new folder named from the cell id and write `track.json` with the fix as
    `centre`. If that name exists but belongs to a different track — two circuits inside one kilometre
-   cell — append `-2`, `-3`, …
+   cell — append `-2`, `-3`, … up to `-99`. The longest id is therefore 14 characters,
+   `N4512E00934-99`, and every screen is tested with it.
+
+A track never has to be registered beforehand: a new venue gets its folder from step 3 on its own.
+What step 2 cannot tell is a **new layout at a known venue**, which matches the old track by position.
+For that, **Track › New track** (§3.4) skips step 2: it creates a folder at the current fix as step 3
+does, with the next free suffix, and makes it the resolved track. Being the one used most recently, it
+keeps winning step 2 at that venue from then on. The desktop app names it, and re-files a session
+into the other track if the old layout comes back.
 
 300 m is far larger than any GNSS error and comfortably covers a 1/8 track (100–200 m across) from its
 centre, while staying well below the separation between genuinely distinct venues. Scanning a handful

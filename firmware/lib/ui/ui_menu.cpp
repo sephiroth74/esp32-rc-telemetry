@@ -21,6 +21,7 @@ const Entry kTrack[] = {
     {"Start line", ScreenId::StartLine, Command::None},
     {"Geometry", ScreenId::Geometry, Command::None},
     {"Info", ScreenId::TrackInfo, Command::None},
+    {"New track", ScreenId::NewTrack, Command::None},
     {"Back", kBackEntry, Command::None},
 };
 const Entry kSettings[] = {
@@ -41,6 +42,14 @@ const Entry kDisplay[] = {
 template <size_t N>
 constexpr uint8_t countOf(const Entry (&)[N]) {
   return N;
+}
+
+template <size_t N>
+uint8_t indexOf(const Entry (&list)[N], ScreenId screen) {
+  for (uint8_t i = 0; i < N; ++i) {
+    if (list[i].screen == screen) return i;
+  }
+  return 0;
 }
 
 MenuResult refused(Refusal refusal, uint8_t arg = 0) {
@@ -68,10 +77,13 @@ MenuResult startSession(const MenuContext& c) {
 
 const char* commandName(Command command) {
   static const char* const kNames[] = {
-      "none",           "start session", "stop session",  "marker",          "record start line",
-      "enter geometry", "stop geometry", "restart gnss",  "enter transfer",  "leave transfer",
-      "enter calib",    "calib capture", "save calib",    "cancel calib",    "select profile",
-      "set brightness", "set dim delay", "set text size", "delete sessions",
+      "none",           "start session",     "stop session",
+      "marker",         "record start line", "enter geometry",
+      "stop geometry",  "new track",         "restart gnss",
+      "enter transfer", "leave transfer",    "enter calib",
+      "calib capture",  "save calib",        "cancel calib",
+      "select profile", "new profile",       "set brightness",
+      "set dim delay",  "set text size",     "delete sessions",
   };
   return kNames[static_cast<uint8_t>(command)];
 }
@@ -110,6 +122,7 @@ ScreenId Menu::parent(ScreenId screen) {
     case ScreenId::StartLine:
     case ScreenId::Geometry:
     case ScreenId::TrackInfo:
+    case ScreenId::NewTrack:
       return ScreenId::Track;
     case ScreenId::CarProfile:
     case ScreenId::Calibrate:
@@ -160,7 +173,8 @@ uint8_t Menu::choiceCount(ScreenId screen, const MenuContext& c) const {
   uint8_t count = 0;
   if (entries(screen, count)) return count;
   uint8_t values = valueCount(screen, c);
-  return values ? values + 1 : 0;  // an editor's values, then its Back
+  if (!values) return 0;
+  return values + (hasNewChoice(screen) ? 1 : 0) + 1;  // an editor's values, New, then its Back
 }
 
 // UP and DOWN wrap around: with the two buttons there is no UP, so DOWN alone must reach every
@@ -216,8 +230,18 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
     case ScreenId::TextSize: {
       // An editor: the highlighted choice is saved and the editor closes; its Back saves nothing.
       uint8_t choice = cursor();
+      uint8_t values = valueCount(current, c);
+      if (hasNewChoice(current) && choice == values) {
+        // New car. Profiles live in the card's config.json (§3.8); a refusal keeps the editor open.
+        if (!c.cardOk) return refused(Refusal::NoCard);
+        if (values >= c.profileMax) return refused(Refusal::ProfilesFull, c.profileMax);
+        // Back on Settings, on Calibrate: the new car has no calibration yet.
+        screen_ = parent(current);
+        cursorOf(screen_) = indexOf(kSettings, ScreenId::Calibrate);
+        return issue(Command::NewProfile, values);
+      }
       screen_ = parent(current);
-      if (choice >= valueCount(current, c)) return {};
+      if (choice >= values) return {};
       Command command = current == ScreenId::CarProfile   ? Command::SelectProfile
                         : current == ScreenId::Brightness ? Command::SetBrightness
                         : current == ScreenId::DimDelay   ? Command::SetDimDelay
@@ -280,6 +304,10 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
       if (!c.cardOk) return refused(Refusal::NoCard);
       if (!c.hasFix) return refused(Refusal::NoFix);
       return issue(Command::EnterGeometry);
+    case ScreenId::NewTrack:
+      if (!c.cardOk) return refused(Refusal::NoCard);
+      if (!c.hasFix) return refused(Refusal::NoFix);
+      return issue(Command::NewTrack);
     case ScreenId::Gnss:
       return issue(Command::RestartGnss);
     case ScreenId::DeleteSessions:

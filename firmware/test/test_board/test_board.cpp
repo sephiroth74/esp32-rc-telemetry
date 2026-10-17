@@ -56,7 +56,7 @@ static Facts worstCase() {
   f.freeMb = 60000;
   f.cardGb = 2000;
   f.cardKbps = 65535;
-  f.trackId = "N4512E00934";
+  f.trackId = "N4512E00934-99";
   f.trackSessions = 999;
   f.cardSessions = 999;
   f.nextSession = 999;
@@ -333,19 +333,24 @@ static void every_screen_fits_in_21_columns() {
       {"Session entry", {Event::Open, Event::Open}},
       {"Track", {Event::Open, Event::Down, Event::Open}},
       {"Track, on Back",
-       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down}},
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down}},
       {"Start line", {Event::Open, Event::Down, Event::Open, Event::Open}},
       {"Start line dialog", {Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold}},
       {"Geometry entry", {Event::Open, Event::Down, Event::Open, Event::Down, Event::Open}},
       {"Track info",
        {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Open}},
+      {"New track",
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Open}},
       {"GNSS", {Event::Open, Event::Down, Event::Down, Event::Open}},
       {"Settings", {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open}},
       {"Car profile",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Open}},
-      {"Car profile, on Back",
+      {"Car profile, on New car",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Open,
         Event::Down, Event::Down, Event::Down}},
+      {"Car profile, on Back",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Open,
+        Event::Down, Event::Down, Event::Down, Event::Down}},
       {"Calibrate",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Open}},
@@ -412,14 +417,14 @@ static void the_home_screen_reads_as_designed() {
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Typhon 6 3D 32  58GB", t.lines[0]);
   TEST_ASSERT_EQUAL_STRING("Ready          ! U Li", t.lines[1]);  // marks right-aligned
-  TEST_ASSERT_EQUAL_STRING("Track N4512E00934", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[2]);
   TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[4]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[7]);
   TEST_ASSERT_EQUAL_UINT8(0, t.scrollTotal);  // five lines in five rows: nothing to scroll
 
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Ready       3D32  !UL", t.lines[0]);
-  TEST_ASSERT_EQUAL_STRING("Track N4512E00934", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[1]);
   TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[3]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[4]);
   TEST_ASSERT_EQUAL_UINT8(7, t.scrollTotal);  // the profile and free space join the content

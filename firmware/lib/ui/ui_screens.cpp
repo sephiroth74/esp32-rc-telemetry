@@ -94,6 +94,8 @@ const char* screenTitle(ScreenId s) {
       return "Geometry";
     case ScreenId::TrackInfo:
       return "Track info";
+    case ScreenId::NewTrack:
+      return "New track";
     case ScreenId::Gnss:
       return "GNSS";
     case ScreenId::Settings:
@@ -220,7 +222,7 @@ void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Conten
   c.setHint(listHint(layout));
 }
 
-// An editor: its choices, a star on the value in force, the cursor, and Back last.
+// An editor: its choices, a star on the value in force, the cursor, New if it has one, Back last.
 void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Content& c) {
   uint8_t count = Menu::valueCount(screen, f.menu), active;
   switch (screen) {
@@ -245,17 +247,19 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
                                                          : kTextSizeLabels[i];
     c.add("%s %s%s", i == cursor ? ">" : " ", label, i == active ? " *" : "");
   }
+  if (Menu::hasNewChoice(screen)) c.add("%s New car", cursor == count++ ? ">" : " ");
   c.add("%s Back", cursor == count ? ">" : " ");
   c.cursor = cursor;
   c.setHint(editorHint(layout));
 }
 
-// At most two lines of question, so that the answer still shows with three body rows.
+// At most two lines of question, so that the answer still shows with three body rows. A track id
+// takes up to 14 columns, N4512E00934-99 (§7.1).
 void dialog(DialogKind kind, const Facts& f, Content& c) {
   switch (kind) {
     case DialogKind::OverwriteStartLine:
-      c.add("Overwrite start");
-      c.add("line of %s?", trackText(f));
+      c.add("Overwrite start line");
+      c.add("of %s?", trackText(f));
       break;
     case DialogKind::DeleteSessions:
       c.add("Delete %u sessions?", f.cardSessions);
@@ -340,6 +344,14 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.add("Cell %s", trackText(f));
       c.add("Sessions here %u", f.trackSessions);
       c.setHint("OK: back");
+      return;
+    case ScreenId::NewTrack:
+      c.add("Track %s", trackText(f));
+      c.add("A new one here, for");
+      c.add("a new layout; name");
+      c.add("it in the app");
+      if (!f.menu.hasFix) c.add("Needs a fix");
+      c.setHint("OK back  hold: create");
       return;
     case ScreenId::Gnss:
       c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);

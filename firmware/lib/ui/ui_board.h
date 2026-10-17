@@ -115,5 +115,7 @@ class Board {
 // The toast for a refusal of §3.4, in 21 columns.
 void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]);
 const char* profileName(const Facts& facts, uint8_t index);  // "?" if there is no such profile
+// The name New car gives profile `index`, "Car 4" for index 3, until an app renames it (§3.8).
+void newProfileName(uint8_t index, char (&out)[9]);
 
 }  // namespace ui

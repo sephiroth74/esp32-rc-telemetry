@@ -25,6 +25,7 @@ enum class ScreenId : uint8_t {
   StartLine,
   Geometry,
   TrackInfo,
+  NewTrack,
   Gnss,
   Settings,
   CarProfile,
@@ -49,6 +50,7 @@ enum class Command : uint8_t {
   RecordStartLine,
   EnterGeometry,
   StopGeometry,
+  NewTrack,
   RestartGnss,
   EnterTransfer,
   LeaveTransfer,
@@ -57,6 +59,7 @@ enum class Command : uint8_t {
   SaveCalibration,
   CancelCalibration,
   SelectProfile,
+  NewProfile,
   SetBrightness,
   SetDimDelay,
   SetTextSize,
@@ -66,7 +69,7 @@ enum class Command : uint8_t {
 const char* commandName(Command command);  // for logs
 
 // Why an entry was refused; the screen shows it as a toast (§3.4).
-enum class Refusal : uint8_t { None, NoCard, NoFix, LoggingRefused, NoRcSignal };
+enum class Refusal : uint8_t { None, NoCard, NoFix, LoggingRefused, NoRcSignal, ProfilesFull };
 
 // The four confirmations of §3.1, plus leaving Transfer while a host has the card (§7.3).
 enum class DialogKind : uint8_t {
@@ -116,7 +119,8 @@ struct MenuContext {
   bool hasFix = false;
   bool rcSignal = false;  // edges on the RC inputs: calibration needs them
   bool hasStartLine = false;
-  uint8_t profileCount = 1;  // 1..CAR_PROFILES_MAX
+  uint8_t profileCount = 1;  // 1..profileMax
+  uint8_t profileMax = 8;    // CAR_PROFILES_MAX: New car is refused once there are this many
   uint8_t activeProfile = 0;
   uint8_t brightness = 2;  // index into kBrightnessLabels
   uint8_t dimDelay = 1;    // index into kDimDelayLabels
@@ -166,8 +170,10 @@ class Menu {
   // The entries of a list screen, or nullptr and 0 for any other screen.
   static const Entry* entries(ScreenId screen, uint8_t& count);
   static ScreenId parent(ScreenId screen);
-  // An editor's values, without its Back; 0 for any other screen.
+  // An editor's values, without its New and Back choices; 0 for any other screen.
   static uint8_t valueCount(ScreenId screen, const MenuContext& context);
+  // Whether the choice after an editor's values adds one: New car, in Car profile (§3.8).
+  static bool hasNewChoice(ScreenId screen) { return screen == ScreenId::CarProfile; }
   // Home and the screens that are neither a list nor an editor: UP/DOWN scroll their content,
   // and the board keeps the position (ui_board.h).
   static bool scrolls(ScreenId screen);

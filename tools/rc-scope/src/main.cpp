@@ -10,17 +10,17 @@
 //   receiver + (red): NOT connected. The XIAO runs from USB.
 //   OLED as in tools/oled-sd-test (VCC 3V3, SDA D4, SCL D5), optional
 // D3 sees half the wire voltage and the ADC reads up to about 3.1 V: 6.2 V on the wire, and 7.2 V
-// before D3 passes 3.6 V. On a BEC above 7 V use 22 kΩ on top and set kTopK. The divider is for this
-// measurement only (§2.5, rule 3); it also holds D3 at 0 V with the wire unplugged.
+// before D3 passes 3.6 V. On a BEC above 7 V use 22 kΩ on top and set kTopK. The divider is for
+// this measurement only (§2.5, rule 3); it also holds D3 at 0 V with the wire unplugged.
 //
-// The ADC is the scope. D3 is read as fast as analogReadMilliVolts() goes, about every 50 µs on core
-// 3.3.11 (46 µs of it is the one-shot conversion), and that interval is the resolution of every
-// width and period here; it is shown with them. Enough for the level and the shape; the firmware
-// times pulses digitally, behind the buffer of §2.5. Edges are found with hysteresis on the wire
-// voltage, which works at either logic level.
+// The ADC is the scope. D3 is read as fast as analogReadMilliVolts() goes, about every 50 µs on
+// core 3.3.11 (46 µs of it is the one-shot conversion), and that interval is the resolution of
+// every width and period here; it is shown with them. Enough for the level and the shape; the
+// firmware times pulses digitally, behind the buffer of §2.5. Edges are found with hysteresis on
+// the wire voltage, which works at either logic level.
 //
-// Output for the Arduino IDE's Serial Plotter, 115200 baud, whose window is 50 points. Send a letter
-// from its input box to switch:
+// Output for the Arduino IDE's Serial Plotter, 115200 baud, whose window is 50 points. Send a
+// letter from its input box to switch:
 //   v  values, the default: width_us, period_us and level_mV of a frame, every 50 ms. Untick
 //      period_us and level_mV in the legend to see the width at full scale.
 //   z  zoom: one pulse, from 0.5 ms before its rising edge to 2.5 ms after, as 50 points of wire_V
@@ -35,7 +35,7 @@
 #include "config.h"
 #include "pins.h"
 
-constexpr uint8_t kPin = PIN_RC_STEERING;  // D3, the firmware's steering input
+constexpr uint8_t kPin = PIN_RC_STEERING;      // D3, the firmware's steering input
 constexpr uint32_t kTopK = 10, kBottomK = 10;  // the divider, in kΩ: wire to D3, D3 to GND
 
 // The hysteresis, on the wire: above any logic low and below any logic high, at either level.
@@ -231,7 +231,8 @@ void emitTrace(uint32_t startUs, uint32_t spanUs) {
       --n;
     }
     if (count) mv = sum / count;
-    Serial.printf("wire_V:%lu.%02lu\n", (unsigned long)(mv / 1000), (unsigned long)(mv % 1000 / 10));
+    Serial.printf("wire_V:%lu.%02lu\n", (unsigned long)(mv / 1000),
+                  (unsigned long)(mv % 1000 / 10));
   }
 }
 
@@ -276,7 +277,9 @@ const char* levelName(uint32_t mv, bool clipped) {
   return "over 5.5 V";
 }
 
-bool inside(const Range& r, uint32_t lo, uint32_t hi) { return r.count && r.min >= lo && r.max <= hi; }
+bool inside(const Range& r, uint32_t lo, uint32_t hi) {
+  return r.count && r.min >= lo && r.max <= hi;
+}
 
 void printText(const Stats& s) {
   Serial.printf("-- %lu frames/s, a reading every %lu us (longest %lu)\n", (unsigned long)s.frames,
@@ -387,7 +390,7 @@ void loop() {
     second = Stats();
     if (mode == Mode::Text) printText(shown);
   }
-  // The panel takes ~25 ms of bus time, a frame or two lost every half second: never inside a trace.
+  // The panel takes ~25 ms of bus time, a frame or two lost at every draw: never during a trace.
   if (oledOk && !tracePending && nowMs - lastDrawMs >= kDrawEveryMs) {
     lastDrawMs = nowMs;
     draw();

@@ -222,12 +222,48 @@ static void car_profile_editor_spans_the_profiles() {
   w.keys({Event::Open, Event::Open});  // Settings › Car profile
   ASSERT_SCREEN(CarProfile, w.menu);
   TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());
-  w.down(3);  // 2, Back, then wraps to 0
+  w.down(4);  // 2, New car, Back, then wraps to 0
   TEST_ASSERT_EQUAL_UINT8(0, w.menu.cursor());
   MenuResult r = w.key(Event::Open);
   ASSERT_COMMAND(SelectProfile, r);
   TEST_ASSERT_EQUAL_UINT8(0, r.arg);
   ASSERT_SCREEN(Settings, w.menu);
+}
+
+static void new_car_comes_before_back_and_leads_to_calibrate() {
+  Walk w;
+  w.context.profileCount = 3;
+  w.context.activeProfile = 2;
+  w.key(Event::Open);
+  w.down(4);
+  w.keys({Event::Open, Event::Open});  // Settings › Car profile, on the active one
+  w.down(1);
+  MenuResult r = w.key(Event::Open);  // New car
+  ASSERT_COMMAND(NewProfile, r);
+  TEST_ASSERT_EQUAL_UINT8(3, r.arg);  // after the three there are
+  ASSERT_SCREEN(Settings, w.menu);
+  TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());  // on Calibrate: the new car has no calibration
+}
+
+static void new_car_needs_the_card_and_a_free_profile() {
+  for (bool full : {false, true}) {
+    Walk w;
+    w.context.profileCount = full ? w.context.profileMax : 1;
+    w.context.activeProfile = w.context.profileCount - 1;
+    w.context.cardOk = full;
+    w.key(Event::Open);
+    w.down(4);
+    w.keys({Event::Open, Event::Open, Event::Down});  // › Car profile › New car
+    MenuResult r = w.key(Event::Open);
+    ASSERT_COMMAND(None, r);
+    if (full) {
+      ASSERT_REFUSAL(ProfilesFull, r);
+      TEST_ASSERT_EQUAL_UINT8(w.context.profileMax, r.arg);
+    } else {
+      ASSERT_REFUSAL(NoCard, r);
+    }
+    ASSERT_SCREEN(CarProfile, w.menu);  // still there, to pick an existing one instead
+  }
 }
 
 // --- Actions and refusals -----------------------------------------------------
@@ -304,6 +340,24 @@ static void start_line_and_geometry_need_card_and_fix() {
   ASSERT_REFUSAL(NoCard, w.key(Event::Hold));
   w.context.cardOk = true;
   ASSERT_COMMAND(EnterGeometry, w.key(Event::Hold));
+}
+
+static void new_track_is_a_hold_and_needs_card_and_fix() {
+  Walk w;
+  w.keys({Event::Open, Event::Down, Event::Open});
+  w.down(3);
+  w.key(Event::Open);  // Track › New track
+  ASSERT_SCREEN(NewTrack, w.menu);
+  ASSERT_REFUSAL(NoFix, w.key(Event::Hold));
+  w.context.hasFix = true;
+  w.context.cardOk = false;
+  ASSERT_REFUSAL(NoCard, w.key(Event::Hold));
+  w.context.cardOk = true;
+  ASSERT_COMMAND(NewTrack, w.key(Event::Hold));
+  ASSERT_SCREEN(NewTrack, w.menu);
+  w.key(Event::Open);  // a leaf: OK goes back
+  ASSERT_SCREEN(Track, w.menu);
+  TEST_ASSERT_EQUAL_UINT8(3, w.menu.cursor());
 }
 
 static void deleting_sessions_always_asks() {
@@ -416,12 +470,15 @@ int main(int, char**) {
   RUN_TEST(an_editors_back_saves_nothing);
   RUN_TEST(ok_on_a_leaf_goes_back);
   RUN_TEST(car_profile_editor_spans_the_profiles);
+  RUN_TEST(new_car_comes_before_back_and_leads_to_calibrate);
+  RUN_TEST(new_car_needs_the_card_and_a_free_profile);
   RUN_TEST(holding_ok_on_home_or_session_starts_a_session);
   RUN_TEST(a_session_needs_the_card_and_logging);
   RUN_TEST(start_line_is_recorded_directly_when_there_is_none);
   RUN_TEST(overwriting_a_start_line_asks_first);
   RUN_TEST(any_other_key_answers_no);
   RUN_TEST(start_line_and_geometry_need_card_and_fix);
+  RUN_TEST(new_track_is_a_hold_and_needs_card_and_fix);
   RUN_TEST(deleting_sessions_always_asks);
   RUN_TEST(calibrate_needs_an_rc_signal);
   RUN_TEST(gnss_hold_restarts_acquisition);

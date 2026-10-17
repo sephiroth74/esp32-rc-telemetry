@@ -11,7 +11,8 @@ disagree, §3 wins and this file is corrected. The steps that build it are Phase
 | --- | --- | --- |
 | Input | **E-Switch JS5208** five-way switch on one ADC pin (D0) through a resistor ladder; **two buttons** (OK, NAV) on the same ladder until it is fitted | §3.1 |
 | Structure | A **Home** screen and a **list menu** | §3.4 |
-| Settings | Only the **car profile** and the **display** (brightness, dim delay, text size) are edited on the device; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
+| Settings | Only the **car profile** and the **display** (brightness, dim delay, text size) are edited on the device, and a **New car** profile can be added there; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
+| Tracks | Found by position, never registered beforehand; **New track** starts a fresh one at a known venue, for a new layout | §7.1 |
 | Text | Two sizes, both 21 columns: **small** (5x8) and **large** (6x13B, the default, picked on the bench). Content longer than the body scrolls | §3.2 |
 | Sessions | **Automatic** start (moving, or throttle off neutral) and stop (car off, or 5 min standing still), plus **manual** start and stop | §3.6 |
 | Confirmations | Stopping a session by hand, overwriting a start line, overwriting a calibration, deleting sessions | §3.1 |
@@ -91,7 +92,7 @@ OK menu  hold: start     < back   OK open         OK mark  hold: stop
 | --- | --- |
 | **POST** | One check per line as they run; a fatal failure with `hold OK: retry` |
 | **Home** | Track, start line, last and best lap, automatic start on or off; hold OK starts a session |
-| **Menu** | Session · Track (Start line, Geometry, Info) · GNSS · Transfer · Settings (Car profile, Calibrate, Display, Delete sessions, About) |
+| **Menu** | Session · Track (Start line, Geometry, Info, New track) · GNSS · Transfer · Settings (Car profile and New car, Calibrate, Display, Delete sessions, About) |
 | **Session** | Three pages: laps · GNSS · steering and throttle inputs |
 | **Calibration** | Six steps — neutral, left, right, full throttle, full brake, aux — then a summary to save |
 | **Geometry** | Distance, laps, points; hold OK stops and saves |
