@@ -11,7 +11,7 @@
 // held means LEFT — and it is the only code that knows which hardware is fitted.
 //
 // Framework-free (§6.1): the caller supplies the readings and the milliseconds, and the constants
-// arrive through KeyConfig (firmware/include/key_config.h builds it from config.h).
+// arrive through KeyConfig (firmware/include/ui_config.h builds it from config.h).
 #pragma once
 
 #include <stdint.h>

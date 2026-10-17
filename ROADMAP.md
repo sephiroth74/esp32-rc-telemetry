@@ -84,11 +84,15 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   3.9 ms — a little above the plan's estimate, same conclusion. On the bench the toast, the hold
   bar and the 80 ms inversion behave as §3.1–§3.2 say. A missing display is skipped in the code
   (headless boot), but that path is first tested in step 3.2.
-- [ ] **2.5 Menu model.** `lib/ui`: the menu tree of §3.4 as data — Home, Menu, submenus, dialogs
+- [x] **2.5 Menu model.** `lib/ui`: the menu tree of §3.4 as data — Home, Menu, submenus, dialogs
   (hold OK = yes, any other key or 10 s = no), list and value editors — with the cursor,
   wrap-around, back, and the 30 s fall-back to Home.
   *Test:* host tests that walk paths: Home → OK → Menu → … → Settings › Display → change → OK;
   dialogs answered both ways; both timeouts.
+  *Result:* `lib/ui/ui_menu.{h,cpp}` — the lists as data, editors opening on the value in force, the
+  refusals of §3.4 (no card, no fix, logging refused, no RC signal), and the two confirmation
+  dialogs reachable from the menu. What an entry does comes out as a `Command` for the caller; the
+  facts go in through `MenuContext`. 21 host tests in `test/test_menu`.
 - [ ] **2.6 Screens on placeholder data.** Render every screen of §3.4 from the model, with fixed
   sample data for GNSS, card, track and laps. SESSION, GEOMETRY, CALIBRATION and TRANSFER are stub
   states, entered and left as §3.7 says.

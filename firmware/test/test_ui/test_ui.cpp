@@ -1,13 +1,13 @@
 // Host tests for lib/ui — run with `make test`.
 //
 // The key path of PLAN-ESP32.md §3.1, checked against the constants the device ships with
-// (key_config.h): the ladder bounds measured on the bench (docs/hardware.md) and the gesture
+// (ui_config.h): the ladder bounds measured on the bench (docs/hardware.md) and the gesture
 // timings of config.h. Timestamps are fed explicitly, one sample tick at a time.
 #include <unity.h>
 
 #include <initializer_list>
 
-#include "key_config.h"
+#include "ui_config.h"
 
 using ui::Event;
 using ui::Gestures;

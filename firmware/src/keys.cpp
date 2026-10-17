@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 
-#include "key_config.h"
 #include "pins.h"
+#include "ui_config.h"
 
 namespace {
 

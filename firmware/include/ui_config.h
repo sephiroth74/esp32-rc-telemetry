@@ -1,4 +1,4 @@
-// The key path's parameters (lib/ui, PLAN-ESP32.md §3.1), taken from config.h.
+// lib/ui's parameters (PLAN-ESP32.md §3.1, §3.4), taken from config.h.
 //
 // One place, shared by the device glue and the host tests, so the tests check the constants the
 // device actually ships with — including the ladder bounds measured on the bench.
@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "ui_keys.h"
+#include "ui_menu.h"
 
 inline ui::KeyConfig keyConfig(KeyLayout layout = KEY_LAYOUT_DEFAULT) {
   ui::KeyConfig c{};
@@ -20,4 +21,11 @@ inline ui::KeyConfig keyConfig(KeyLayout layout = KEY_LAYOUT_DEFAULT) {
   c.repeatMs = KEY_REPEAT_MS;
   c.navBackMs = KEY_NAV_BACK_MS;
   return c;
+}
+
+inline ui::MenuTiming menuTiming() {
+  ui::MenuTiming t{};
+  t.menuTimeoutMs = UI_MENU_TIMEOUT_MS;
+  t.dialogTimeoutMs = UI_DIALOG_TIMEOUT_MS;
+  return t;
 }
