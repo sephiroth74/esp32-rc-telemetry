@@ -1,6 +1,6 @@
 // Host tests for lib/ubx — run with `make test`.
 //
-// Placeholder. The real tests arrive in phase 2 with the frame scanner, checked
+// Placeholder. The real tests arrive in phase 3 with the frame scanner, checked
 // against captured NAV-PVT / NAV-SAT frames in docs/fixtures/ (PLAN-ESP32.md §5.4).
 #include <unity.h>
 

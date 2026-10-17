@@ -1,7 +1,7 @@
 // Host tests for lib/geo — run with `make test`.
 //
 // Placeholder. Cell ids come first (PLAN-ESP32.md §7.1); gate crossing and lap
-// detection follow in phase 6, against a recorded lap with known crossing times
+// detection follow in phase 8, against a recorded lap with known crossing times
 // in docs/fixtures/.
 #include <unity.h>
 

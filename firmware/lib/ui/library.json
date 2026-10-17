@@ -1,0 +1,7 @@
+{
+  "name": "ui",
+  "version": "0.1.0",
+  "description": "Key ladder reading, gestures and, later, the menu and board states of the UI. Framework-free.",
+  "frameworks": "*",
+  "platforms": "*"
+}
