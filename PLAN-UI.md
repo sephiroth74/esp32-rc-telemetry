@@ -26,7 +26,7 @@ disagree, §3 wins and this file is corrected. The steps that build it are Phase
 | --- | --- | --- |
 | Move the cursor, change page | UP / DOWN, repeating when held | NAV short (lists wrap around) |
 | Open, choose | OK short or RIGHT | OK short |
-| Back; cancel an editor | LEFT | NAV held 1 s |
+| Back; cancel an editor | The **Back** entry that ends every list and editor; OK on an information screen; LEFT | The same, or NAV held 1 s |
 | Perform the screen's action, confirm | OK held 1.5 s, with a hold bar from 300 ms | Same |
 | Close a full-screen error | Any key | Any key |
 
@@ -42,7 +42,7 @@ without a key a menu falls back to Home and the display dims.
 | **IDLE** | End of the POST; a session closed; a mode left | → SESSION, GEOMETRY, CALIBRATION, TRANSFER, SLEEP | Navigation |
 | **SESSION** | Hold OK on Home or Session; the automatic start | Stop confirmed, 5 min still, card error → IDLE; car off → SAVING | OK = marker, hold OK = stop, UP/DOWN = page |
 | **GEOMETRY** | Hold OK on Track › Geometry | Hold OK = stop and save | Hold OK |
-| **CALIBRATION** | OK on Settings › Calibrate, with an RC signal | Saved, or cancelled at the first step | OK = capture, LEFT = back, DOWN = skip aux |
+| **CALIBRATION** | Hold OK on Settings › Calibrate, with an RC signal | Saved, or cancelled at the first step | OK = capture, LEFT = back, DOWN = skip aux |
 | **TRANSFER** | OK on Menu › Transfer | LEFT, confirmed while a USB host is attached | LEFT |
 | **SAVING** | The car was switched off during a session | File closed → SLEEP | Dead |
 | **SLEEP** | After SAVING; car off while idle (10 s notice); 5 min idle with no RC, no USB, no key | OK or an RC signal → POST | OK wakes |

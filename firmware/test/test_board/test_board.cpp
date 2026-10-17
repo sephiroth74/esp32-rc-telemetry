@@ -210,7 +210,7 @@ static void calibration_walks_its_steps() {
   w.toSettings();
   w.down(1);
   w.key(Event::Open);  // Settings › Calibrate
-  ASSERT_COMMAND(EnterCalibration, w.key(Event::Open));
+  ASSERT_COMMAND(EnterCalibration, w.key(Event::Hold));
   ASSERT_MODE(Calibration, w.board);
   for (uint8_t step = 0; step < ui::kCalibrationSteps - 1; ++step) {
     BoardOutput o = w.key(Event::Open);
@@ -237,7 +237,7 @@ static void calibration_cancels_at_its_first_step() {
   w.facts.profileCalibrated = false;
   w.toSettings();
   w.down(1);
-  w.keys({Event::Open, Event::Open});
+  w.keys({Event::Open, Event::Hold});
   ASSERT_MODE(Calibration, w.board);
   BoardOutput o = w.key(Event::Back);
   ASSERT_COMMAND(CancelCalibration, o);
@@ -250,7 +250,7 @@ static void an_uncalibrated_profile_saves_without_asking() {
   w.facts.profileCalibrated = false;
   w.toSettings();
   w.down(1);
-  w.keys({Event::Open, Event::Open});
+  w.keys({Event::Open, Event::Hold});
   for (uint8_t i = 0; i < ui::kCalibrationSteps; ++i) w.key(Event::Open);
   ASSERT_COMMAND(SaveCalibration, w.key(Event::Hold));
   ASSERT_MODE(Idle, w.board);
@@ -328,30 +328,48 @@ static void every_screen_fits_in_21_columns() {
       {"Home, page 2", {Event::Down}},
       {"Home, page 3", {Event::Down, Event::Down}},
       {"Menu", {Event::Open}},
+      {"Menu, on Back",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Down}},
       {"Session entry", {Event::Open, Event::Open}},
       {"Track", {Event::Open, Event::Down, Event::Open}},
+      {"Track, on Back",
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down}},
       {"Start line", {Event::Open, Event::Down, Event::Open, Event::Open}},
       {"Start line dialog", {Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold}},
       {"Geometry entry", {Event::Open, Event::Down, Event::Open, Event::Down, Event::Open}},
       {"Track info",
        {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Open}},
       {"GNSS", {Event::Open, Event::Down, Event::Down, Event::Open}},
-      {"Settings", {Event::Open, Event::Up, Event::Open}},
-      {"Car profile", {Event::Open, Event::Up, Event::Open, Event::Open}},
-      {"Calibrate", {Event::Open, Event::Up, Event::Open, Event::Down, Event::Open}},
-      {"Display", {Event::Open, Event::Up, Event::Open, Event::Down, Event::Down, Event::Open}},
-      {"Brightness",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Down, Event::Open, Event::Open}},
-      {"Dim after",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Down, Event::Open, Event::Down,
+      {"Settings", {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open}},
+      {"Car profile",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Open}},
+      {"Car profile, on Back",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Open,
+        Event::Down, Event::Down, Event::Down}},
+      {"Calibrate",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Open}},
-      {"Text size",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Down, Event::Open, Event::Down,
+      {"Display",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Down, Event::Open}},
-      {"Delete sessions", {Event::Open, Event::Up, Event::Open, Event::Up, Event::Up, Event::Open}},
+      {"Brightness",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Open, Event::Open}},
+      {"Dim after",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Open, Event::Down, Event::Open}},
+      {"Text size",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Open, Event::Down, Event::Down, Event::Open}},
+      {"Delete sessions",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Down, Event::Open}},
       {"Delete dialog",
-       {Event::Open, Event::Up, Event::Open, Event::Up, Event::Up, Event::Open, Event::Hold}},
-      {"About", {Event::Open, Event::Up, Event::Open, Event::Up, Event::Open}},
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Down, Event::Open, Event::Hold}},
+      {"About",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Down, Event::Down, Event::Open}},
       {"Session, laps", {Event::Hold}},
       {"Session, page 2", {Event::Hold, Event::Down}},
       {"Session, page 3", {Event::Hold, Event::Down, Event::Down}},
@@ -360,18 +378,22 @@ static void every_screen_fits_in_21_columns() {
       {"Geometry mode",
        {Event::Open, Event::Down, Event::Open, Event::Down, Event::Open, Event::Hold}},
       {"Calibration step",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Open, Event::Open}},
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Open, Event::Hold}},
       {"Calibration aux",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Open, Event::Open, Event::Open,
-        Event::Open, Event::Open, Event::Open, Event::Open}},
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Open, Event::Hold, Event::Open, Event::Open, Event::Open, Event::Open, Event::Open}},
       {"Calibration summary",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Open, Event::Open, Event::Open,
-        Event::Open, Event::Open, Event::Open, Event::Open, Event::Open}},
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Open, Event::Hold, Event::Open, Event::Open, Event::Open, Event::Open, Event::Open,
+        Event::Open}},
       {"Overwrite calibration",
-       {Event::Open, Event::Up, Event::Open, Event::Down, Event::Open, Event::Open, Event::Open,
-        Event::Open, Event::Open, Event::Open, Event::Open, Event::Open, Event::Hold}},
-      {"Transfer", {Event::Open, Event::Up, Event::Up, Event::Open}},
-      {"Leave transfer", {Event::Open, Event::Up, Event::Up, Event::Open, Event::Back}},
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Open, Event::Hold, Event::Open, Event::Open, Event::Open, Event::Open, Event::Open,
+        Event::Open, Event::Hold}},
+      {"Transfer", {Event::Open, Event::Down, Event::Down, Event::Down, Event::Open}},
+      {"Leave transfer",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Open, Event::Back}},
   };
   for (const Path& p : paths) {
     for (Layout layout : {Layout::TwoButtons, Layout::FiveWay}) {
@@ -424,7 +446,7 @@ static void a_list_keeps_its_cursor_in_view() {
   TEST_ASSERT_EQUAL_STRING("  GNSS", t.lines[1]);
   TEST_ASSERT_EQUAL_STRING("  Transfer", t.lines[2]);
   TEST_ASSERT_EQUAL_STRING("> Settings", t.lines[3]);
-  TEST_ASSERT_EQUAL_UINT8(5, t.scrollTotal);
+  TEST_ASSERT_EQUAL_UINT8(6, t.scrollTotal);  // Back follows Settings
   TEST_ASSERT_EQUAL_UINT8(2, t.scrollFirst);
 }
 

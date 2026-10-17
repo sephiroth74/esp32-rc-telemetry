@@ -135,6 +135,10 @@ struct Entry {
   Command command;
 };
 
+// The screen of every list's last entry, "Back": choosing it goes up a level, so getting out never
+// needs the held NAV of the two-button layout. Editors end with a Back choice the same way.
+constexpr ScreenId kBackEntry = ScreenId::Count;
+
 extern const char* const kBrightnessLabels[3];  // low, medium, high
 extern const char* const kDimDelayLabels[4];    // 15 s, 30 s, 60 s, never
 extern const char* const kTextSizeLabels[2];    // small, large
@@ -162,6 +166,8 @@ class Menu {
   // The entries of a list screen, or nullptr and 0 for any other screen.
   static const Entry* entries(ScreenId screen, uint8_t& count);
   static ScreenId parent(ScreenId screen);
+  // An editor's values, without its Back; 0 for any other screen.
+  static uint8_t valueCount(ScreenId screen, const MenuContext& context);
   // Home and the screens that are neither a list nor an editor: UP/DOWN scroll their content,
   // and the board keeps the position (ui_board.h).
   static bool scrolls(ScreenId screen);

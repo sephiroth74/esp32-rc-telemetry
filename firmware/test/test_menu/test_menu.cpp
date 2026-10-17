@@ -96,7 +96,7 @@ static void walk_to_brightness_and_save() {
   w.key(Event::Open);  // Brightness
   ASSERT_SCREEN(Brightness, w.menu);
   TEST_ASSERT_EQUAL_UINT8(2, w.menu.cursor());  // opens on the value in force
-  w.key(Event::Down);                           // wraps to "low"
+  w.down(2);                                    // Back, then wraps to "low"
   TEST_ASSERT_EQUAL_UINT8(0, w.menu.cursor());
   MenuResult r = w.key(Event::Open);
   ASSERT_COMMAND(SetBrightness, r);
@@ -155,11 +155,62 @@ static void text_size_is_a_display_setting() {
   w.key(Event::Open);  // › Text size
   ASSERT_SCREEN(TextSize, w.menu);
   TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());
-  w.key(Event::Down);
+  w.down(2);  // Back, then wraps to small
   MenuResult r = w.key(Event::Open);
   ASSERT_COMMAND(SetTextSize, r);
   TEST_ASSERT_EQUAL_UINT8(0, r.arg);  // small
   ASSERT_SCREEN(DisplaySettings, w.menu);
+}
+
+static void every_list_and_editor_ends_in_back() {
+  for (ScreenId list :
+       {ScreenId::Menu, ScreenId::Track, ScreenId::Settings, ScreenId::DisplaySettings}) {
+    uint8_t count = 0;
+    const ui::Entry* entries = Menu::entries(list, count);
+    TEST_ASSERT_EQUAL_STRING("Back", entries[count - 1].label);
+  }
+  // Settings › Display › Back, then Settings › Back, then Menu › Back: Home, NAV and OK only.
+  Walk w;
+  w.key(Event::Open);
+  w.down(4);
+  w.key(Event::Open);
+  w.down(2);
+  w.key(Event::Open);
+  w.down(3);
+  w.key(Event::Open);
+  ASSERT_SCREEN(Settings, w.menu);
+  w.down(3);  // from Display to Back
+  w.key(Event::Open);
+  ASSERT_SCREEN(Menu, w.menu);
+  w.down(1);  // from Settings to Back
+  w.key(Event::Open);
+  ASSERT_SCREEN(Home, w.menu);
+}
+
+static void an_editors_back_saves_nothing() {
+  Walk w;
+  w.context.brightness = 1;
+  w.key(Event::Open);
+  w.down(4);
+  w.keys({Event::Open, Event::Down, Event::Down, Event::Open, Event::Open});  // › Brightness
+  ASSERT_SCREEN(Brightness, w.menu);
+  w.down(2);  // high, then Back
+  MenuResult r = w.key(Event::Open);
+  ASSERT_COMMAND(None, r);
+  ASSERT_SCREEN(DisplaySettings, w.menu);
+}
+
+static void ok_on_a_leaf_goes_back() {
+  for (int down : {0, 2}) {  // Session, then GNSS
+    Walk w;
+    w.key(Event::Open);
+    w.down(down);
+    w.key(Event::Open);
+    TEST_ASSERT_TRUE(Menu::scrolls(w.menu.screen()));
+    ASSERT_COMMAND(None, w.key(Event::Open));
+    ASSERT_SCREEN(Menu, w.menu);
+    TEST_ASSERT_EQUAL_UINT8(down, w.menu.cursor());
+  }
 }
 
 static void car_profile_editor_spans_the_profiles() {
@@ -171,7 +222,7 @@ static void car_profile_editor_spans_the_profiles() {
   w.keys({Event::Open, Event::Open});  // Settings › Car profile
   ASSERT_SCREEN(CarProfile, w.menu);
   TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());
-  w.down(2);  // 2, then wraps to 0
+  w.down(3);  // 2, Back, then wraps to 0
   TEST_ASSERT_EQUAL_UINT8(0, w.menu.cursor());
   MenuResult r = w.key(Event::Open);
   ASSERT_COMMAND(SelectProfile, r);
@@ -277,9 +328,9 @@ static void calibrate_needs_an_rc_signal() {
   w.down(1);
   w.key(Event::Open);  // Settings › Calibrate
   ASSERT_SCREEN(Calibrate, w.menu);
-  ASSERT_REFUSAL(NoRcSignal, w.key(Event::Open));
+  ASSERT_REFUSAL(NoRcSignal, w.key(Event::Hold));
   w.context.rcSignal = true;
-  ASSERT_COMMAND(EnterCalibration, w.key(Event::Open));
+  ASSERT_COMMAND(EnterCalibration, w.key(Event::Hold));
 }
 
 static void gnss_hold_restarts_acquisition() {
@@ -343,7 +394,7 @@ static void every_entry_fits_and_knows_its_way_back() {
     for (uint8_t i = 0; i < count; ++i) {
       // "> " in front of the label, in 21 columns.
       TEST_ASSERT_LESS_OR_EQUAL(19, strlen(entries[i].label));
-      if (entries[i].command == Command::None) {
+      if (entries[i].command == Command::None && entries[i].screen != ui::kBackEntry) {
         TEST_ASSERT_EQUAL_INT(static_cast<int>(list),
                               static_cast<int>(Menu::parent(entries[i].screen)));
       }
@@ -361,6 +412,9 @@ int main(int, char**) {
   RUN_TEST(back_keeps_each_lists_cursor);
   RUN_TEST(transfer_is_a_command_not_a_screen);
   RUN_TEST(text_size_is_a_display_setting);
+  RUN_TEST(every_list_and_editor_ends_in_back);
+  RUN_TEST(an_editors_back_saves_nothing);
+  RUN_TEST(ok_on_a_leaf_goes_back);
   RUN_TEST(car_profile_editor_spans_the_profiles);
   RUN_TEST(holding_ok_on_home_or_session_starts_a_session);
   RUN_TEST(a_session_needs_the_card_and_logging);

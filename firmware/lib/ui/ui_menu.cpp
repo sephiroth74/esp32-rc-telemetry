@@ -15,11 +15,13 @@ const Entry kMenu[] = {
     {"GNSS", ScreenId::Gnss, Command::None},
     {"Transfer", ScreenId::Menu, Command::EnterTransfer},
     {"Settings", ScreenId::Settings, Command::None},
+    {"Back", kBackEntry, Command::None},
 };
 const Entry kTrack[] = {
     {"Start line", ScreenId::StartLine, Command::None},
     {"Geometry", ScreenId::Geometry, Command::None},
     {"Info", ScreenId::TrackInfo, Command::None},
+    {"Back", kBackEntry, Command::None},
 };
 const Entry kSettings[] = {
     {"Car profile", ScreenId::CarProfile, Command::None},
@@ -27,11 +29,13 @@ const Entry kSettings[] = {
     {"Display", ScreenId::DisplaySettings, Command::None},
     {"Delete sessions", ScreenId::DeleteSessions, Command::None},
     {"About", ScreenId::About, Command::None},
+    {"Back", kBackEntry, Command::None},
 };
 const Entry kDisplay[] = {
     {"Brightness", ScreenId::Brightness, Command::None},
     {"Dim after", ScreenId::DimDelay, Command::None},
     {"Text size", ScreenId::TextSize, Command::None},
+    {"Back", kBackEntry, Command::None},
 };
 
 template <size_t N>
@@ -137,9 +141,7 @@ bool Menu::scrolls(ScreenId screen) {
   }
 }
 
-uint8_t Menu::choiceCount(ScreenId screen, const MenuContext& c) const {
-  uint8_t count = 0;
-  if (entries(screen, count)) return count;
+uint8_t Menu::valueCount(ScreenId screen, const MenuContext& c) {
   switch (screen) {
     case ScreenId::CarProfile:
       return c.profileCount ? c.profileCount : 1;
@@ -152,6 +154,13 @@ uint8_t Menu::choiceCount(ScreenId screen, const MenuContext& c) const {
     default:
       return 0;
   }
+}
+
+uint8_t Menu::choiceCount(ScreenId screen, const MenuContext& c) const {
+  uint8_t count = 0;
+  if (entries(screen, count)) return count;
+  uint8_t values = valueCount(screen, c);
+  return values ? values + 1 : 0;  // an editor's values, then its Back
 }
 
 // UP and DOWN wrap around: with the two buttons there is no UP, so DOWN alone must reach every
@@ -205,26 +214,32 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize: {
-      // An editor: the highlighted choice is saved, and the editor closes.
+      // An editor: the highlighted choice is saved and the editor closes; its Back saves nothing.
+      uint8_t choice = cursor();
+      screen_ = parent(current);
+      if (choice >= valueCount(current, c)) return {};
       Command command = current == ScreenId::CarProfile   ? Command::SelectProfile
                         : current == ScreenId::Brightness ? Command::SetBrightness
                         : current == ScreenId::DimDelay   ? Command::SetDimDelay
                                                           : Command::SetTextSize;
-      uint8_t choice = cursor();
-      screen_ = parent(current);
       return issue(command, choice);
     }
-    case ScreenId::Calibrate:
-      if (!c.rcSignal) return refused(Refusal::NoRcSignal);
-      return issue(Command::EnterCalibration);
     default:
       break;
   }
 
   uint8_t count = 0;
   const Entry* list = entries(current, count);
-  if (!list) return {};  // a leaf without an OK action
+  if (!list) {
+    // A leaf: OK goes back, and its action, if it has one, is a hold (§3.4).
+    screen_ = parent(current);
+    return {};
+  }
   const Entry& entry = list[cursor()];
+  if (entry.screen == kBackEntry) {
+    screen_ = parent(current);
+    return {};
+  }
   if (entry.command != Command::None) return issue(entry.command);
 
   // An editor opens on the value in force, so OK without a change saves nothing new.
@@ -271,6 +286,9 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
       if (!c.cardOk) return refused(Refusal::NoCard);
       openDialog(DialogKind::DeleteSessions, nowMs);
       return {};
+    case ScreenId::Calibrate:
+      if (!c.rcSignal) return refused(Refusal::NoRcSignal);
+      return issue(Command::EnterCalibration);
     default:
       return {};
   }

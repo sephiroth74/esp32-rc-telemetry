@@ -296,6 +296,10 @@ under a rubber boot.
 | **OK long** (held 1.5 s) | Perform the screen's action — start or stop a session, confirm. From 300 ms a **hold bar** fills (§3.2); it fires **at** 1.5 s while the key is still held, acknowledged by inverting the screen for 80 ms. Released earlier, nothing happens |
 | Any key | While a full-screen error is shown, the first press only closes it (§3.2) |
 
+**Getting back never needs a held key.** Every list and every editor ends with a **Back** entry, and
+on a screen that is neither — an information screen such as GNSS or About — OK goes back, while its
+action, if it has one, is a hold. LEFT, or NAV held with the two buttons, remains a shortcut.
+
 **Interim layout: two buttons.** Until the JS5208 is fitted, the device runs on two push buttons on
 the same ladder: **OK** straight to GND, and **NAV** through 10 kΩ — the LEFT level, so the windows
 carry over unchanged. `keys.layout` in `config.json` (`two` or `five`, §3.8) selects the mapping,
@@ -437,7 +441,7 @@ cursor scrolls the menu, and the session's laps, GNSS and inputs are pages of on
 count, and whether the automatic start is on (§3.6) — with large text also the car profile and the
 free space, which its status line has no room for. Holding OK on Home starts a session by hand.
 
-The menu:
+The menu, each list ending in Back:
 
 | Entry | Shows | Action |
 | --- | --- | --- |
@@ -448,7 +452,7 @@ The menu:
 | **GNSS** | Fix type, satellites, hAcc, pDOP, time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s | Hold OK: restart acquisition |
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
 | **Settings › Car profile** | The profiles in `config.json`, the active one marked | OK: make the highlighted one active (§3.8) |
-| **Settings › Calibrate** | Whether the active profile is calibrated | OK: enter CALIBRATION (§3.7, §3.8) |
+| **Settings › Calibrate** | Whether the active profile is calibrated | Hold OK: enter CALIBRATION (§3.7, §3.8) |
 | **Settings › Display** | Brightness (low, medium, high), dim delay (15, 30, 60 s, never) and text size (small, large — §3.2) | UP/DOWN change, OK saves, LEFT cancels |
 | **Settings › Delete sessions** | How many sessions the card holds | Hold OK, then confirm: deletes **every `session_*` folder**, keeping tracks, geometries and start lines (§7.1). `Deleting` while it runs, a toast on completion |
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
@@ -521,7 +525,7 @@ driving.
 | **IDLE** | Home, the menu and its entries, editors, dialogs | End of the POST; a session closed; a mode left | → SESSION, GEOMETRY, CALIBRATION, TRANSFER or SLEEP | Navigation (§3.1) |
 | **SESSION** | Three session pages, the stop dialog | Hold OK on Home or on Session; the automatic start (§3.6) | Stop confirmed, 5 min standing still, or a card error → IDLE; car switched off → SAVING | OK = marker, hold OK = stop dialog, UP/DOWN = page |
 | **GEOMETRY** | The geometry screen | Hold OK on Track › Geometry | Hold OK = stop and save → IDLE | Hold OK only |
-| **CALIBRATION** | Six steps, the summary, the overwrite dialog | OK on Settings › Calibrate, with an RC signal present | Saved, or LEFT at the first step → IDLE | OK = capture, LEFT = step back, DOWN = skip the aux step |
+| **CALIBRATION** | Six steps, the summary, the overwrite dialog | Hold OK on Settings › Calibrate, with an RC signal present | Saved, or LEFT at the first step → IDLE | OK = capture, LEFT = step back, DOWN = skip the aux step |
 | **TRANSFER** | The transfer screen | OK on Menu › Transfer | LEFT → IDLE, confirmed with hold OK while a USB host is attached (§7.3) | LEFT |
 | **SAVING** | `Power lost`, `Saving session N`, `Saved` | The car was switched off during a session (§4.5) | File closed → SLEEP | Dead |
 | **SLEEP** | Display off | After SAVING; from IDLE when the car is switched off (10 s notice, any key cancels); after 5 min with no RC signal, no USB host and no key | OK, or an RC signal → POST | OK wakes |

@@ -191,15 +191,14 @@ void statusBar(const Board& b, const Facts& f, TextSize size, uint32_t nowMs, Sc
 
 // --- Content, screen by screen ------------------------------------------------
 
-// The hints differ by layout only where a key does: with the two buttons, NAV moves and holding NAV
-// goes back (§3.1).
+// The hints differ by layout only where a key does: with the two buttons NAV moves, and the lists
+// and editors end in Back (§3.1).
 const char* listHint(Layout l) {
   return l == Layout::TwoButtons ? "NAV next  OK open" : "< back   OK open";
 }
 const char* editorHint(Layout l) {
   return l == Layout::TwoButtons ? "NAV next  OK save" : "< cancel  OK save";
 }
-const char* backHint(Layout l) { return l == Layout::TwoButtons ? "hold NAV: back" : "< back"; }
 
 void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Content& c) {
   uint8_t count = 0;
@@ -207,7 +206,7 @@ void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Conten
   uint8_t cursor = b.menu().cursor();
   for (uint8_t i = 0; i < count; ++i) {
     const char* mark = i == cursor ? ">" : " ";
-    if (screen == ScreenId::DisplaySettings) {
+    if (screen == ScreenId::DisplaySettings && entries[i].screen != kBackEntry) {
       const char* value =
           entries[i].screen == ScreenId::Brightness ? kBrightnessLabels[f.menu.brightness % 3]
           : entries[i].screen == ScreenId::DimDelay ? kDimDelayLabels[f.menu.dimDelay % 4]
@@ -221,24 +220,20 @@ void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Conten
   c.setHint(listHint(layout));
 }
 
-// An editor: its choices, the cursor, and a star on the value in force.
+// An editor: its choices, a star on the value in force, the cursor, and Back last.
 void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Content& c) {
-  uint8_t count, active;
+  uint8_t count = Menu::valueCount(screen, f.menu), active;
   switch (screen) {
     case ScreenId::CarProfile:
-      count = f.menu.profileCount;
       active = f.menu.activeProfile;
       break;
     case ScreenId::Brightness:
-      count = 3;
       active = f.menu.brightness;
       break;
     case ScreenId::DimDelay:
-      count = 4;
       active = f.menu.dimDelay;
       break;
     default:
-      count = 2;
       active = f.menu.textSize;
       break;
   }
@@ -250,6 +245,7 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
                                                          : kTextSizeLabels[i];
     c.add("%s %s%s", i == cursor ? ">" : " ", label, i == active ? " *" : "");
   }
+  c.add("%s Back", cursor == count ? ">" : " ");
   c.cursor = cursor;
   c.setHint(editorHint(layout));
 }
@@ -325,50 +321,50 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.add("Next: session_%03u", f.nextSession);
       c.add("Track %s", trackText(f));
       c.add("Auto start: %s", f.autoStart ? "on" : "off");
-      c.setHint("hold OK: start");
+      c.setHint("OK back  hold: start");
       return;
     case ScreenId::StartLine:
       c.add("Track %s", trackText(f));
       c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
       if (!f.menu.hasFix) c.add("Needs a fix");
-      c.setHint("hold OK: record");
+      c.setHint("OK back  hold: record");
       return;
     case ScreenId::Geometry:
       c.add("Track %s", trackText(f));
       c.add("Geometry: %s", f.hasGeometry ? "recorded" : "none");
       c.add("Optional; more laps");
       c.add("give a better shape");
-      c.setHint("hold OK: record");
+      c.setHint("OK back  hold: record");
       return;
     case ScreenId::TrackInfo:
       c.add("Cell %s", trackText(f));
       c.add("Sessions here %u", f.trackSessions);
-      c.setHint(backHint(layout));
+      c.setHint("OK: back");
       return;
     case ScreenId::Gnss:
       c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);
       c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
       c.add("pDOP %u.%02u", f.pdopX100 / 100, f.pdopX100 % 100);
       c.add("First fix %u s", f.ttffS);
-      c.setHint("hold OK: restart");
+      c.setHint("OK back hold:restart");
       return;
     case ScreenId::Calibrate:
       c.add("Profile %s", profileName(f, f.menu.activeProfile));
       c.add("Calibrated: %s", f.profileCalibrated ? "yes" : "no");
       c.add("RC signal: %s", f.menu.rcSignal ? "yes" : "no");
-      c.setHint("OK: start");
+      c.setHint("OK back  hold: start");
       return;
     case ScreenId::DeleteSessions:
       c.add("%u sessions on card", f.cardSessions);
       c.add("Tracks, start lines");
       c.add("and geometries stay");
-      c.setHint("hold OK: delete");
+      c.setHint("OK back  hold: delete");
       return;
     case ScreenId::About:
       c.add("Firmware %s", f.firmware);
       c.add("POST %s", f.postSummary);
       c.add("Card %uGB %uKB/s", f.cardGb, f.cardKbps);
-      c.setHint(backHint(layout));
+      c.setHint("OK: back");
       return;
     default:
       return;
