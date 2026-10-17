@@ -1,0 +1,7 @@
+{
+  "name": "gm10",
+  "version": "0.1.0",
+  "description": "Bench-only link to the Flywoo GM10: baud scan, NMEA GGA/RMC and UBX NAV-PVT/MON-VER decoding",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}
