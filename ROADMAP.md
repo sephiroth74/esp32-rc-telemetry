@@ -47,7 +47,14 @@ step 2.3: see [Switching to the JS5208](#switching-to-the-js5208).
   check that they idle at 3.3 V and not 5 V, then wire them to D4/D5 and read the I²C scan of
   `tools/oled-sd-test`. The config-flash half needs VALSET: step 4.1.
   *Done when:* answered in `docs/hardware.md`.
-- [ ] **1.5 Freeze the pin map.**
+- [ ] **1.5 What the receiver sends** (§2.5). `tools/rc-scope` reads one channel's signal wire on D3
+  through a 10 kΩ/10 kΩ divider, with the ADC as a scope, and plots it in the Arduino IDE's Serial
+  Plotter: width, period and level per frame, or the waveform. Only the signal and ground are wired;
+  the XIAO runs from USB.
+  *Done when:* the logic level, the frame period and the steering and throttle widths of each car on
+  the bench are in the per-car table of `docs/hardware.md`, inside the `RC_*` windows of `config.h`
+  or with those windows changed.
+- [ ] **1.6 Freeze the pin map.**
   *Done when:* `pins.h` holds no `UNRESOLVED`, and the wiring section of `docs/hardware.md` describes
   the bench build.
 

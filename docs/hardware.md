@@ -129,9 +129,13 @@ once. The receiver's logic level must be within what the front end of §2.5 acce
 voltage within the regulator's input range (§2.7). Note any car whose ESC sends telemetry back over
 the throttle wire, since those bursts must be filtered out of the throttle trace (§4.3).
 
+The logic level, widths and frame period come from `tools/rc-scope` (ROADMAP.md step 1.5): signal
+wire through 10 kΩ to D3, 10 kΩ from D3 to GND, receiver − to GND, receiver + not connected. Its
+readings are about 50 µs apart, so its widths are good to that, and to a few µs averaged.
+
 | Car | Receiver | Channel logic level | BEC voltage | Throttle-wire telemetry | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | — | — (Brainz 8 ESC) | — | Ports, top to bottom: VCC, CH3, CH2, CH1. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
+| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | — | **5.90 V** (Brainz 8 ESC; multimeter, red to black at the receiver, ESC on) | — | Ports, top to bottom: VCC, CH3, CH2, CH1. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
 
 ## Wiring
 
