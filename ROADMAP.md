@@ -216,9 +216,14 @@ ends on the screen §3.3 describes.
 ## Phase 8 — Track and laps
 
 - [ ] **8.1 Gate crossing.** `docs/algorithms.md` written first; then `lib/geo` gate crossing, with
-  host tests on a recorded lap.
-- [ ] **8.2 Track entries.** Track › Start line, with its overwrite confirmation; Track › Geometry.
-- [ ] **8.3 Live laps and sectors.** The session's laps page, and the last and best laps on Home.
+  host tests on a recorded lap — including a recorded off and a recorded cut (§7.5).
+- [ ] **8.2 The automatic start line.** The first lap found without a line, the gate at its fastest
+  point, saved with source `auto`, and the session's laps worked out again from it (§7.5).
+- [ ] **8.3 Lap flags.** `cut` and `off` against the median lap distance; flagged laps never become
+  the best lap.
+- [ ] **8.4 Track entries.** Track › Start line, with its overwrite confirmation; Track › Geometry;
+  both showing their source, and the source rules of §7.5 when files arrive from the desktop app.
+- [ ] **8.5 Live laps and sectors.** The session's laps page, and the last and best laps on Home.
 
 ## Phase 9 — Transfer
 

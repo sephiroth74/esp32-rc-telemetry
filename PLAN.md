@@ -40,6 +40,7 @@ binary log format and all track/lap math.
 | Local UI | **A five-way navigation switch and a 0.96" 128×64 I²C OLED** — the switch on one ADC pin, the display on the shared I²C bus, no status LED (PLAN-ESP32.md §3) |
 | Phone link | **BLE only in Transfer mode** — no live stream, no radio transmitting near the receiver while driving (PLAN-ESP32.md §7.4) |
 | Desktop transfer | **USB Mass Storage** — device mounts as a disk over USB-C |
+| Track data | **Start line and geometry optional.** Without a start line the gate goes at the fastest point of a lap; the desktop app builds the geometry from the sessions and refines the start line, and writes both back into the track folder, so the next session there has them. Laps that cut or leave the track are flagged, never best (PLAN-ESP32.md §7.5) |
 | Repos | **Single monorepo** |
 | Language | **Everything in English** (code, comments, docs, UI) |
 

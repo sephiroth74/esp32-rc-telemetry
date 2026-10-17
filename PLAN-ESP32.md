@@ -446,8 +446,8 @@ The menu, each list ending in Back:
 | Entry | Shows | Action |
 | --- | --- | --- |
 | **Session** | The resolved track, and the number the next session will get | Hold OK: start a session — the same as on Home |
-| **Track › Start line** | Whether the resolved track has a start line | Hold OK: record the current position and heading into `start_line.json` (§7.1), confirming first if one exists |
-| **Track › Geometry** | Whether the resolved track has a perimeter | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. Multiple laps improve the shape. Optional for lap timing |
+| **Track › Start line** | Whether the resolved track has a start line, and where it came from (§7.5) | Hold OK: record the current position and heading into `start_line.json` (§7.1), confirming first if one exists. **Optional**: without one, laps are timed from the fastest point of the lap |
+| **Track › Geometry** | Whether the resolved track has a geometry, and where it came from (§7.5) | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. **Optional**: the desktop app builds the geometry from the sessions anyway |
 | **Track › Info** | Cell id, the name in `track.json`, how many sessions were recorded there | — |
 | **GNSS** | Fix type, satellites, hAcc, pDOP, time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s | Hold OK: restart acquisition |
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
@@ -920,8 +920,8 @@ user having to type a name on a device with a five-way switch and a 21-column di
 
 ```text
 /tracks/N4512E00934/track.json               # human name, created, cell id, centre point
-/tracks/N4512E00934/start_line.json          # position + heading of the gate
-/tracks/N4512E00934/geometry.rcg             # recorded perimeter
+/tracks/N4512E00934/start_line.json          # position + heading of the gate, and its source (§7.5)
+/tracks/N4512E00934/geometry.rcg             # the track's shape, and its source (§7.5)
 /tracks/N4512E00934/session_001/session.rcl  # binary, high-rate records
 /tracks/N4512E00934/session_001/meta.json    # global session id, UTC start, fw version, POST result, car profile and its RC calibration, footer stats
 /tracks/N4512E00934/session_002/...
@@ -1021,6 +1021,56 @@ Negotiate MTU 517, 2M PHY, 15–30 ms connection interval. Be realistic about th
 notifications reach roughly 40–80 KB/s to a phone in practice, so a 12 MB hour-long session takes
 several minutes at best. **That is exactly why USB MSC exists** — BLE is for status, configuration
 and the odd session, not bulk transfer.
+
+### 7.5 Track data: start line and geometry
+
+**Both are optional.** A session is recorded, and its laps are timed, without anyone ever setting a
+start line or recording a geometry: what the user or the desktop app adds only makes the result
+better. The algorithms themselves are `docs/algorithms.md`'s; this section fixes what they must do.
+
+Each file records where it came from, and a better source is never overwritten by a worse one:
+
+| Source, best first | Start line (`start_line.json`) | Geometry (`geometry.rcg`) |
+| --- | --- | --- |
+| `desktop` | Placed accurately in the desktop app, written back into the track folder | Built by the desktop app from every session at the track, written back |
+| `device` | Track › Start line (§3.4) | Track › Geometry (§3.4) |
+| `auto` | The fastest point of a lap, below | None: the device needs no geometry to time laps |
+
+A device recording replaces an automatic one; a desktop one replaces both. On the device only an
+explicit Track › Start line, with its overwrite confirmation (§3.1), replaces a desktop start line.
+The desktop app writes back through USB MSC (§7.3), or the phone app through BLE (§7.4), and since
+the device resolves tracks by position (§7.1), the next session there finds the line already in
+place.
+
+**The automatic start line is the fastest point of a lap**, normally the main straight. On a track
+without one, the device:
+
+1. **Finds a first lap without a line:** the trace comes back within 10 m of an earlier point, heading
+   within 45° of it, at least 20 s later.
+2. **Takes the fastest point of that loop**, on the speed smoothed over 1 s so that a landing's
+   spike does not win.
+3. **Places the gate there,** across the direction of travel and 15 m wide; saves it with source
+   `auto`; and works out again the lap times of the session so far from it.
+
+Later sessions use that line as it is; the desktop app is where it is moved to the real line.
+
+**The geometry is built from the sessions**, not recorded on purpose: the desktop app derives it
+from every lap driven at the track (below), and refines it each time. The device uses one when
+present — for sectors and the s/d projection of phase 8 — and works without.
+
+**Buggies leave the track.** Off-track excursions, and parts of the track skipped by mistake, are
+normal, so neither the laps nor the geometry may trust any single trace:
+
+- **A gate crossing counts only within the gate's width.** One outside it is ignored: a car that
+  misses the start straight completes no lap, and the next lap comes out long — and flagged.
+- **A crossing within 5 s of the last one is ignored**, such as a car going back over the line.
+- **Laps are flagged against the median lap distance.** Under 85 % the car skipped part of the
+  track: the lap is `cut`. Over 130 % it went off: `off`. A flagged lap is kept and shown, and never
+  becomes the best lap, nor feeds the geometry.
+- **The geometry is the median path of the unflagged laps**, so an excursion driven once does not
+  bend the track.
+
+The thresholds are first guesses, to be tuned on track (§9, question 19).
 
 ---
 
@@ -1129,6 +1179,11 @@ Rules that keep it from compromising the logger:
     minutes of standstill? Tune them on track. (§3.6)
 18. How does the JS5208 survive on a car: carrier board, rubber boot, and do the ladder windows hold
     over temperature? Measure in Phase 1 and on track. (§3.1)
+19. Are the track-data thresholds right — a loop closed within 10 m and 45° after 20 s, a 15 m gate,
+    5 s between crossings, `cut` under 85 % and `off` over 130 % of the median lap distance? Tune them
+    on track. (§7.5)
+20. With the geometry built from the sessions, is the manual GEOMETRY recording of §3.4 still worth
+    keeping, or should it go? (§7.5)
 
 ## Final Notes
 
