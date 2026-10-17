@@ -131,7 +131,7 @@ the throttle wire, since those bursts must be filtered out of the throttle trace
 
 | Car | Receiver | Channel logic level | BEC voltage | Throttle-wire telemetry | Notes |
 | --- | --- | --- | --- | --- | --- |
-| — | — | — | — | — | — |
+| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | — | — (Brainz 8 ESC) | — | Ports, top to bottom: VCC, CH3, CH2, CH1. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
 
 ## Wiring
 
