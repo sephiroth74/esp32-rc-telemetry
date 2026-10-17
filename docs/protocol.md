@@ -4,8 +4,8 @@
 (`firmware/lib/rcl/`) and the Dart core (`packages/rct_core/`) are two implementations of what this
 file says, checked against the shared fixtures in [fixtures/](fixtures/).
 
-**Status: not written yet.** Blocks the logging core (PLAN-ESP32.md phase 3) and the BLE server
-(phase 7). Until it exists, `firmware/lib/rcl/rcl.h` holds only the file magic.
+**Status: not written yet.** Blocks the logging core (PLAN-ESP32.md phase 5) and the BLE server
+(phase 9). Until it exists, `firmware/lib/rcl/rcl.h` holds only the file magic.
 
 ## `.rcl` records
 
@@ -22,6 +22,6 @@ Constraints that come from the plan and are not negotiable here:
 
 ## BLE GATT
 
-To define: service and characteristic UUIDs, the notification payloads for **status** and **live**,
-the **control** command set, and the credit/ACK scheme for **download**. Roles are sketched in
-PLAN-ESP32.md §7.4.
+To define: service and characteristic UUIDs, the **status** notification payload, the **control**
+command set, and the credit/ACK scheme for **download**. Roles are sketched in PLAN-ESP32.md §7.4.
+There is no live stream: BLE runs only in Transfer mode.

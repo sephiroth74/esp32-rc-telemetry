@@ -4,7 +4,7 @@ Implemented twice against the fixtures in [fixtures/](fixtures/): `firmware/lib/
 and `packages/rct_core/` in Dart. Both must agree to the last decimal, because the phone shows a lap
 time the desktop app then has to reproduce.
 
-**Status: not written yet.** Blocks on-device lap detection (PLAN-ESP32.md phase 6).
+**Status: not written yet.** Blocks on-device lap detection (PLAN-ESP32.md phase 8).
 
 ## To define
 

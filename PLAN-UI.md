@@ -1,0 +1,104 @@
+# RC Telemetry — user interface overview
+
+A one-page summary of how the on-car device is driven: the decisions behind it, the keys, the board
+states and the screens. **[PLAN-ESP32.md](PLAN-ESP32.md) §3 is authoritative** — when the two
+disagree, §3 wins and this file is corrected. The steps that build it are Phases 2 and 3 of
+[ROADMAP.md](ROADMAP.md).
+
+## Decisions
+
+| Topic | Decision | Where |
+| --- | --- | --- |
+| Input | **E-Switch JS5208** five-way switch on one ADC pin (D0) through a resistor ladder; **two buttons** (OK, NAV) on the same ladder until it is fitted | §3.1 |
+| Structure | A **Home** screen and a **list menu** | §3.4 |
+| Settings | Only the **car profile** and the **display** are edited on the device; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
+| Sessions | **Automatic** start (moving, or throttle off neutral) and stop (car off, or 5 min standing still), plus **manual** start and stop | §3.6 |
+| Confirmations | Stopping a session by hand, overwriting a start line, overwriting a calibration, deleting sessions | §3.1 |
+| Errors | Stay on screen **until a key is pressed**; the warning mark stays while the condition lasts | §3.2 |
+| Calibration | A procedure under Settings, per **car profile** (up to 8); no boot gesture | §3.8 |
+| Wake | From deep sleep on **OK** or on the **RC signal**, so switching the car on wakes the device | §4.5 |
+| BLE | **Only in Transfer mode**: no live stream, no radio near the receiver while driving | §7.4 |
+
+## Keys
+
+| Key | Five-way switch | Two buttons (interim) |
+| --- | --- | --- |
+| Move the cursor, change page | UP / DOWN, repeating when held | NAV short (lists wrap around) |
+| Open, choose | OK short or RIGHT | OK short |
+| Back; cancel an editor | LEFT | NAV held 1 s |
+| Perform the screen's action, confirm | OK held 1.5 s, with a hold bar from 300 ms | Same |
+| Close a full-screen error | Any key | Any key |
+
+A confirmation dialog is always the same: hold OK = yes; any other key, or 10 s, = no. After 30 s
+without a key a menu falls back to Home and the display dims.
+
+## Board states
+
+| State | Entered | Left | Keys |
+| --- | --- | --- | --- |
+| **POST** | Power-on, or a wake from deep sleep | → IDLE; → FATAL when PSRAM or the card fails | Dead |
+| **FATAL** | Check 1 or 3 failed | Hold OK → POST | Hold OK only |
+| **IDLE** | End of the POST; a session closed; a mode left | → SESSION, GEOMETRY, CALIBRATION, TRANSFER, SLEEP | Navigation |
+| **SESSION** | Hold OK on Home or Session; the automatic start | Stop confirmed, 5 min still, card error → IDLE; car off → SAVING | OK = marker, hold OK = stop, UP/DOWN = page |
+| **GEOMETRY** | Hold OK on Track › Geometry | Hold OK = stop and save | Hold OK |
+| **CALIBRATION** | OK on Settings › Calibrate, with an RC signal | Saved, or cancelled at the first step | OK = capture, LEFT = back, DOWN = skip aux |
+| **TRANSFER** | OK on Menu › Transfer | LEFT, confirmed while a USB host is attached | LEFT |
+| **SAVING** | The car was switched off during a session | File closed → SLEEP | Dead |
+| **SLEEP** | After SAVING; car off while idle (10 s notice); 5 min idle with no RC, no USB, no key | OK or an RC signal → POST | OK wakes |
+
+The automatic start acts from IDLE only, never in GEOMETRY, CALIBRATION or TRANSFER. A USB host keeps
+the device out of SLEEP. BLE exists only inside TRANSFER.
+
+```mermaid
+stateDiagram-v2
+  [*] --> POST
+  POST --> FATAL: check 1 or 3 failed
+  FATAL --> POST: hold OK
+  POST --> IDLE
+  IDLE --> SESSION: hold OK / automatic start
+  SESSION --> IDLE: stop confirmed / 5 min still / card error
+  SESSION --> SAVING: car switched off
+  IDLE --> GEOMETRY: Track › Geometry
+  GEOMETRY --> IDLE: hold OK, saved
+  IDLE --> CALIBRATION: Settings › Calibrate
+  CALIBRATION --> IDLE: saved / cancelled
+  IDLE --> TRANSFER: Menu › Transfer
+  TRANSFER --> IDLE: exit
+  SAVING --> SLEEP
+  IDLE --> SLEEP: car off 10 s / 5 min inactive
+  SLEEP --> POST: OK / RC signal
+```
+
+## Screens
+
+Every screen after the POST has a two-line **status bar** in the yellow band — car profile, fix and
+satellites, free space; then the state and the warning, USB, BLE and LiPo marks — and a six-line
+**body** whose last line is the key hint. Toasts take that last line for 1.5 s.
+
+```text
+HOME (IDLE)              MENU                     SESSION, page 1
+Car 2    3D 14  58GB     Car 2    3D 14  58GB     Car 2    3D 14  58GB
+Ready             Li     Menu              Li     REC 12:34         Li
+Track N4512E00934        > Session                Lap 12
+Start line: set            Track                  Last   1:02.341
+Last  1:02.341  L12        GNSS                   Best   0:58.902
+Best  0:58.902             Transfer               Delta  +3.439
+Auto start: on             Settings               Markers 3
+OK menu  hold: start     < back   OK open         OK mark  hold: stop
+```
+
+| Screen | Content |
+| --- | --- |
+| **POST** | One check per line as they run; a fatal failure with `hold OK: retry` |
+| **Home** | Track, start line, last and best lap, automatic start on or off; hold OK starts a session |
+| **Menu** | Session · Track (Start line, Geometry, Info) · GNSS · Transfer · Settings (Car profile, Calibrate, Display, Delete sessions, About) |
+| **Session** | Three pages: laps · GNSS · steering and throttle inputs |
+| **Calibration** | Six steps — neutral, left, right, full throttle, full brake, aux — then a summary to save |
+| **Geometry** | Distance, laps, points; hold OK stops and saves |
+| **Transfer** | USB host and BLE state, `Eject on host first` |
+| **Dialog** | The question, `hold OK: yes`, `other key: no (10s)` |
+| **Error** | `Card lost`, `Write error` or `Card full`, with `any key: close` |
+| **Saving** | `Power lost`, `Saving session N`, `Saved`, then the display goes off |
+
+The full catalogue — every menu entry with what it shows and does, and the rest of the mockups — is
+§3.4 of PLAN-ESP32.md.

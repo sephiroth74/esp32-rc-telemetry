@@ -1,8 +1,8 @@
 # RC Telemetry
 
-GPS logger and analysis suite for an ARRMA Typhon 6S 1/8 buggy: a device on the car records position
-at 10 Hz plus driver inputs and chassis motion, detects laps on-device, streams live data to a phone
-and keeps full-resolution logs for offline analysis.
+GPS logger and analysis suite for RC cars: a device that moves between cars records position at
+10 Hz plus driver inputs and chassis motion, detects laps on-device, and keeps full-resolution logs
+that a phone app reviews and a desktop app analyses between runs.
 
 Three deliverables, one repository:
 
@@ -10,13 +10,15 @@ Three deliverables, one repository:
 | --- | --- |
 | [firmware/](firmware/) | pioarduino / ESP32-S3 firmware for the on-car device |
 | [packages/](packages/) | shared Dart core: `.rcl` format, geometry, lap math |
-| [apps/](apps/) | Flutter phone app (live) and macOS app (analysis) |
+| [apps/](apps/) | Flutter phone app (downloads, configuration, laps) and macOS app (analysis) |
 | [docs/](docs/) | the authoritative format, hardware and algorithm documents |
 
 ## Planning
 
 - [PLAN.md](PLAN.md) — system-level context, hardware, cross-project decisions, repository layout.
 - [PLAN-ESP32.md](PLAN-ESP32.md) — the on-car device in detail. Each project gets its own document.
+- [PLAN-UI.md](PLAN-UI.md) — one-page overview of the device's keys, board states and screens.
+- [ROADMAP.md](ROADMAP.md) — the firmware phases broken into small, testable steps.
 
 ## Building the firmware
 
@@ -31,5 +33,6 @@ make help      # everything else
 ```
 
 **Status: skeleton.** The tree and the build configuration are in place; the modules are empty and
-land phase by phase per PLAN-ESP32.md §8. Phase 1 is hardware bring-up, which has to settle the two
-open pin questions before the map in `firmware/include/pins.h` can be frozen.
+land phase by phase per PLAN-ESP32.md §8. Phase 1 is hardware bring-up: the microSD, display and
+button already work on the bench (`docs/hardware.md`), and the microSD DAT3 question still has to be
+settled before the map in `firmware/include/pins.h` can be frozen.

@@ -4,7 +4,7 @@ Not scaffolded yet — each arrives with its own planning document, as PLAN.md s
 
 | App | Platform | Role |
 | --- | --- | --- |
-| `mobile` | Flutter, iOS + Android | live view over BLE while the car is running |
+| `mobile` | Flutter, iOS + Android | downloads, configuration and lap review over BLE, between runs: the device's BLE is on only in Transfer mode, so there is no live view |
 | `desktop` | Flutter, macOS | analysis workbench over logs pulled off the card via USB MSC |
 
 Both consume `packages/rct_core`, so neither re-implements the log format or the lap math. The BLE

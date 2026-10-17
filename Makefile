@@ -19,7 +19,7 @@ upload: ## Flash the firmware over USB
 monitor: ## Open the serial monitor
 	$(PIO) device monitor -d $(FW)
 
-test: ## Run the host unit tests for lib/{ubx,rcl,geo}
+test: ## Run the host unit tests for lib/{ubx,rcl,geo,ui}
 	$(PIO) test -d $(FW) -e native_test
 
 check: ## Static analysis of the firmware sources
