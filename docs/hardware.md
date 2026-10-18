@@ -135,7 +135,7 @@ readings are about 50 µs apart, so its widths are good to that, and to a few µ
 
 | Car | Receiver | Channel logic level | BEC voltage | Throttle-wire telemetry | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | — | **5.90 V** (Brainz 8 ESC; multimeter, red to black at the receiver, ESC on) | — | Ports, top to bottom: VCC, CH3, CH2, CH1. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
+| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | **3.3 V** push-pull: high 3.25–3.27 V, low 0.00 V (CH3). Positive pulses, one every **16.6 ms (60 Hz)**; CH3 at rest 1,000 µs | **5.90 V** (Brainz 8 ESC; multimeter, red to black at the receiver, ESC on) | — | Ports, top to bottom: VCC, CH3, CH2, CH1. VCC is the power input, not a channel: its pins carry the rail and no pulses. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
 
 ## Wiring
 

@@ -25,7 +25,8 @@
 //      period_us and level_mV in the legend to see the width at full scale.
 //   z  zoom: one pulse, from 0.5 ms before its rising edge to 2.5 ms after, as 50 points of wire_V
 //   f  frame: one whole frame, from just before a rising edge, as 50 points of wire_V
-//   t  text, for the Serial Monitor: a summary every second, with min and max since the last r
+//   t  text, for the Serial Monitor: a summary every second, with min and max since the signal
+//      appeared, or since the last r
 //   r  reset the min and max
 // In the plot modes every line is data: the plotter would turn any other text into data sets.
 #include <Adafruit_SSD1306.h>
@@ -45,6 +46,8 @@ constexpr uint32_t kClippedMv = 3050 * (kTopK + kBottomK) / kBottomK;
 // A longer wait between two readings (the OLED, the serial port) loses the frame in progress.
 constexpr uint32_t kGapUs = 200;
 constexpr uint32_t kNoSignalUs = 100000;
+// After a silence, the first second of edges is a wire being plugged in, or a receiver starting.
+constexpr uint32_t kSettleUs = 1000000;
 
 constexpr uint32_t kPlotEveryMs = 50;  // 2.5 s in the plotter's 50 points
 constexpr uint32_t kTraceEveryMs = 500;
@@ -95,6 +98,8 @@ bool synced = false;       // a rising edge since the last gap: riseUs is real
 bool periodKnown = false;  // and one before it: periodUs is real
 uint32_t riseUs = 0, periodUs = 0;
 uint32_t lastEdgeUs = 0;
+bool settling = false;  // frames before settleUntilUs are not counted
+uint32_t settleUntilUs = 0;
 
 // The pulse in progress: its high readings less the first and the last, which may catch an edge.
 uint32_t pulseSum = 0, pulseCount = 0, pulsePending = 0;
@@ -155,8 +160,23 @@ void onRise(uint32_t edgeUs) {
   }
 }
 
+// The first edge after a silence starts the min and max afresh: they describe the signal, not the
+// rail the wire touched before, nor the bounces of plugging it in.
+void noteEdge(uint32_t nowUs) {
+  if (nowUs - lastEdgeUs >= kNoSignalUs) {
+    total = Stats();
+    settling = true;
+    settleUntilUs = nowUs + kSettleUs;
+  }
+  lastEdgeUs = nowUs;
+}
+
 void onFall(uint32_t edgeUs) {
   if (!synced) return;
+  if (settling) {
+    if (static_cast<int32_t>(edgeUs - settleUntilUs) < 0) return;
+    settling = false;
+  }
   uint32_t width = edgeUs - riseUs;
   uint32_t level = pulseCount ? pulseSum / pulseCount : pulseHasPending ? pulsePending : 0;
   for (Stats* s : {&second, &total}) {
@@ -195,7 +215,7 @@ void onReading(uint32_t nowUs, uint32_t mv) {
   if (!high) {
     if (mv >= kRiseMv) {
       high = true;
-      lastEdgeUs = nowUs;
+      noteEdge(nowUs);
       onRise(edgeUs);
     } else {
       second.low.add(mv);
@@ -203,7 +223,7 @@ void onReading(uint32_t nowUs, uint32_t mv) {
     }
   } else if (mv < kFallMv) {
     high = false;
-    lastEdgeUs = nowUs;
+    noteEdge(nowUs);
     onFall(edgeUs);
   } else {
     addPulseReading(mv);
@@ -288,6 +308,10 @@ void printText(const Stats& s) {
     Serial.printf("no edges: the wire stays at %.2f V\n", recentMv() / 1000.0f);
     return;
   }
+  if (!s.width.count || !total.width.count) {  // edges again, still within kSettleUs
+    Serial.println("edges: settling");
+    return;
+  }
   Serial.printf("high   %.2f V  min %.2f  max %.2f  %s\n", s.high.avg() / 1000.0f,
                 total.high.min / 1000.0f, total.high.max / 1000.0f,
                 levelName(s.high.avg(), total.clipped));
@@ -341,6 +365,9 @@ void draw() {
     oled.print("NO EDGES");
     oled.setCursor(0, 16);
     oled.printf("wire %.2f V", recentMv() / 1000.0f);
+  } else if (!shown.width.count || !total.width.count) {
+    oled.setCursor(0, 8);
+    oled.print("edges: settling");
   } else {
     oled.setCursor(0, 8);
     oled.printf("high %.2f V", shown.high.avg() / 1000.0f);
