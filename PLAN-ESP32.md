@@ -379,7 +379,7 @@ that a card with no room reports "full" rather than "not writable".
 | 7 | I²C and IMU | Bus scan, then the LSM6DSO32 `WHO_AM_I` | Degraded, continue without IMU |
 | 8 | GNSS link | The auto-baud scan of §5.2 — this **is** that scan, not a second one | Degraded, **logging refused**; Transfer mode still available |
 | 9 | GNSS config | VALSET applied and ACK received | Degraded, retried in the background |
-| 10 | RC input | Edges on both the steering and the throttle input within 500 ms | Degraded, continue — the receiver is legitimately off on the bench. Note this also disables power-loss detection (§4.5) |
+| 10 | RC input | Edges on the steering and on the throttle input within 500 ms, each on its own: the result names the inputs present | Degraded, continue — an input may be unwired, or the receiver off on the bench (§4.3). With neither present, power-loss detection waits for one (§4.5) |
 
 Everything except check 8 targets **under 1 s** in total; check 8 is bounded by the baud scan, up to
 about 6 s in the worst case.
@@ -648,6 +648,14 @@ the throttle wire (§2.8). We never decode it, and it must not end up in the thr
 pulses. Some radios' high-response modes may also shift the pulse-width range, so once a car is
 calibrated, the accepted window comes from its calibration rather than from these constants.
 
+**Each input is optional.** Steering and throttle are wired independently, and either may be missing:
+a car with only the throttle tapped, or a device logging GNSS alone. An input counts as **present**
+once it has delivered valid pulses, whenever that happens. The RC sample records carry the present
+inputs alongside the GNSS data, with 0 µs for an absent one, never a stale value, and `meta.json`
+lists which inputs were present. Nothing needs both: power-loss detection watches whichever is
+present (§4.5), only the throttle half of the automatic start needs the throttle (§3.6), and
+calibration skips the steps of an absent input.
+
 **Calibration** (Settings › Calibrate, §3.8) walks the user through neutral, full-lock left, full-lock
 right, full throttle, full brake and the aux channel, then persists the endpoints to NVS for the
 active **car profile**. PWM endpoints vary between radios, and with trims and end-point settings, so
@@ -689,9 +697,9 @@ about 12 MB per hour. Comfortable, but it only stays comfortable if the latency 
 - **Sleeping when idle.** From IDLE, a car switched off means 10 s of notice and then SLEEP — any key
   cancels it — and 5 minutes with no RC signal, no USB host and no key also means SLEEP. A USB host
   keeps the device awake (§3.7).
-- **If POST check 10 saw no RC edges, this detection is unavailable** for the whole session: there is no
-  baseline of edges whose disappearance could be noticed. The session then relies on the flush cadence
-  below, and the warning mark of §3.5 says so.
+- **Until an RC input has delivered pulses, this detection is unavailable**: there is no baseline of
+  edges whose disappearance could be noticed. Any present input will do (§4.3). Without one the
+  session relies on the flush cadence below, and the warning mark of §3.5 says so.
 - **The brownout detector is a corruption guard, not a save path.** Leave it enabled at its default
   threshold, but do **not** attach the emergency flush to it: by the time it trips the rail has already
   collapsed and the chip resets immediately, while a single SD write can take over 100 ms. Nothing can
