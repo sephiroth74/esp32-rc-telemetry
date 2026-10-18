@@ -54,8 +54,9 @@ step 2.3: see [Switching to the JS5208](#switching-to-the-js5208).
   *Done when:* the logic level, the frame period and the steering and throttle widths of each car on
   the bench are in the per-car table of `docs/hardware.md`, inside the `RC_*` windows of `config.h`
   or with those windows changed.
-  *So far:* the Inferno's KR-331 on CH3 — 3.3 V logic, 16.6 ms frames, inside both windows. Steering
-  (CH1) and throttle (CH2) still to measure.
+  *So far:* the Inferno's KR-331 — 3.3 V logic, 16.6 ms frames, steering 1,050–1,500–1,940 µs, all
+  inside the windows. Throttle (CH2) still to measure: the ESC powers the receiver, so it needs a
+  Y-cable.
 - [ ] **1.6 Freeze the pin map.**
   *Done when:* `pins.h` holds no `UNRESOLVED`, and the wiring section of `docs/hardware.md` describes
   the bench build.
