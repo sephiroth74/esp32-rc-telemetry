@@ -51,6 +51,7 @@ bool toastShown = false;
 uint32_t toastUntilMs = 0;
 uint8_t holdPercent = 0;
 bool inverted = false;
+int16_t contrast = -1;  // as last sent; -1 before the first
 uint32_t invertUntilMs = 0;
 uint8_t dirtyRows = 0;  // one bit per row of the current grid
 bool scrollDirty = false;
@@ -141,6 +142,15 @@ void displaySetTextSize(ui::TextSize size) {
   for (auto& line : text) line[0] = '\0';
   dirtyRows = (1u << rowCount) - 1;  // the rows cover every page: the whole panel is redrawn
   scrollDirty = true;
+}
+
+void displaySetContrast(uint8_t brightness, bool dimmed) {
+  constexpr uint8_t kLevels = sizeof DISPLAY_CONTRAST / sizeof DISPLAY_CONTRAST[0];
+  uint8_t value = dimmed ? DISPLAY_CONTRAST_DIMMED : DISPLAY_CONTRAST[brightness % kLevels];
+  if (!present || value == contrast) return;
+  I2cLock lock;
+  u8g2.setContrast(value);
+  contrast = value;
 }
 
 void displayShow(const ui::ScreenText& screen) {

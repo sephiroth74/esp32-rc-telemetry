@@ -68,8 +68,12 @@ constexpr uint16_t DISPLAY_REFRESH_MS = 200;
 constexpr uint16_t DISPLAY_TOAST_MS = 1500;
 constexpr uint16_t DISPLAY_ACK_INVERT_MS = 80;  // long press acknowledged by inverting the screen
 constexpr uint16_t DISPLAY_POST_DEGRADED_MS = 3000;  // degraded checks stay listed this long
-// The default of a display setting (§3.8). Dimmed, never blank.
-constexpr uint32_t DISPLAY_DIM_AFTER_MS = 30000;
+// The display settings of §3.8 as indices into lib/ui's label tables, and what they mean to the
+// panel: the SSD1306 contrast, 0–255. Dimmed is the lowest, still readable, never blank (§3.2).
+constexpr uint8_t DISPLAY_BRIGHTNESS_DEFAULT = 2;      // high
+constexpr uint8_t DISPLAY_CONTRAST[] = {16, 96, 255};  // low, medium, high
+constexpr uint8_t DISPLAY_CONTRAST_DIMMED = 0;
+constexpr uint8_t DISPLAY_DIM_DELAY_DEFAULT = 1;  // 30 s
 // Text size, a display setting too: 0 small (5x8, 21×8), 1 large (6x13B), picked on the bench.
 constexpr uint8_t DISPLAY_TEXT_SIZE_DEFAULT = 1;
 

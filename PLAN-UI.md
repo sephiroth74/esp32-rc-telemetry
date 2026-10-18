@@ -32,7 +32,8 @@ disagree, §3 wins and this file is corrected. The steps that build it are Phase
 | Close a full-screen error | Any key | Any key |
 
 A confirmation dialog is always the same: hold OK = yes; any other key, or 10 s, = no. After 30 s
-without a key a menu falls back to Home and the display dims.
+without a key a menu falls back to Home and the display dims; the press that brightens it does
+nothing else.
 
 ## Board states
 

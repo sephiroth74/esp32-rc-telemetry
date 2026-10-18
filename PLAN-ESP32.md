@@ -350,7 +350,9 @@ Rules that every screen follows:
 - **At most 5 Hz, dirty pages only** — the bus budget of §2.4. Elapsed times tick in whole seconds,
   which is all anyone can read anyway.
 - **Dim after 30 s without a key** (a display setting, §3.8), and return to full contrast on the next
-  key or on any error. Dimmed is not blank: the screen stays readable, and a key always acts.
+  key or on any error. Dimmed is not blank: the screen stays readable. **The press that brings it
+  back does only that**: the rest of its gesture is dropped, so a press on a dimmed screen never
+  opens, saves or starts anything, and the menu stays where it was.
 - **Short English words.** Both text sizes give 21 columns, so every message is written to fit them
   rather than truncated — a host test renders every screen at both sizes to prove it.
 - **Content longer than the body scrolls.** A list keeps its cursor in view. Any other screen turns

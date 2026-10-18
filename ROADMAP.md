@@ -113,10 +113,16 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   layouts and both text sizes and proves each line fits. On the bench the 5x8 text proved too small:
   `tools/font-test` compared seven fonts, the **6x13B** won, and text size became a setting of its
   own, small or large, with large the default and content that scrolls (§3.2).
-- [ ] **2.7 The on-device settings, for real.** Display brightness, dim delay and text size applied to
+- [x] **2.7 The on-device settings, for real.** Display brightness, dim delay and text size applied to
   the panel; the car profile selection stored. Kept in NVS for now — they move into `config.json` in
   step 3.6.
   *Test:* all of them survive a reset.
+  *Result:* `src/settings` keeps brightness, dim delay, text size, the profile count and the active
+  profile in NVS, checked against their ranges when read back, and writes only what a command
+  changed. Brightness is the SSD1306 contrast (16, 96, 255), dimmed is 0. On the bench, low, 15 s,
+  small and a New car came back after a reset as `settings: brightness low, dim after 15 s, text
+  small, profile 4 of 4`. The bench also asked for the press that brightens a dimmed display to do
+  nothing else: `Gestures::swallow()` now drops what the gesture has queued too, host-tested.
 - [x] **2.8 New car and New track** (§3.4, §3.8, §7.1). New car is the choice after the profiles in
   Settings › Car profile; New track an entry of Track, held to create. Both work for any car or
   track that was not set up from a computer, and the apps rename them.

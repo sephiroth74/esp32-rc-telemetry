@@ -90,6 +90,7 @@ const char* commandName(Command command) {
 
 const char* const kBrightnessLabels[3] = {"low", "medium", "high"};
 const char* const kDimDelayLabels[4] = {"15 s", "30 s", "60 s", "never"};
+const uint32_t kDimDelayMs[4] = {15000, 30000, 60000, 0};
 const char* const kTextSizeLabels[2] = {"small", "large"};
 
 const Entry* Menu::entries(ScreenId screen, uint8_t& count) {

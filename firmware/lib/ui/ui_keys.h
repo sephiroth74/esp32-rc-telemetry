@@ -57,7 +57,8 @@ class KeyReader {
 };
 
 // What the menu acts on (§3.1). Press opens every gesture, ahead of its other events: it is what
-// closes an error, brings a dimmed display back, or answers "no" to a dialog.
+// closes an error or brings a dimmed display back, both swallowing the rest of the gesture, and
+// what keeps the menu awake.
 enum class Event : uint8_t { Press, Up, Down, Back, Open, Hold };
 const char* eventName(Event event);
 
@@ -69,9 +70,14 @@ class Gestures {
   void update(Key held, uint32_t nowMs);
   // Drains the pending events in order; false when none are left.
   bool next(Event& event);
-  // The rest of the current gesture produces no events: the press was consumed, e.g. by closing an
-  // error. A new press starts afresh.
-  void swallow() { swallowed_ = true; }
+  // The rest of the current gesture produces no events, including any it has queued already — a
+  // five-way direction queues its event with its Press. For a press that was consumed, e.g. by
+  // closing an error or waking a dimmed display. Call it after draining that Press: a new press
+  // starts afresh.
+  void swallow() {
+    swallowed_ = true;
+    count_ = 0;
+  }
   // The hold bar: 0 until OK has been held holdBarFromMs, then up to 100 when the hold fires, and 0
   // again once it has.
   uint8_t holdPercent(uint32_t nowMs) const;

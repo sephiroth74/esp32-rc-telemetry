@@ -145,6 +145,7 @@ constexpr ScreenId kBackEntry = ScreenId::Count;
 
 extern const char* const kBrightnessLabels[3];  // low, medium, high
 extern const char* const kDimDelayLabels[4];    // 15 s, 30 s, 60 s, never
+extern const uint32_t kDimDelayMs[4];           // the same delays; 0 for never
 extern const char* const kTextSizeLabels[2];    // small, large
 
 struct MenuResult {

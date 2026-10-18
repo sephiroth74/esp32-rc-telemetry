@@ -3,6 +3,7 @@
 // The menu of PLAN-ESP32.md §3.4 walked with the events of §3.1, using the timeouts of config.h
 // (ui_config.h). Only DOWN, OK and back are needed to reach everything, as with the two buttons;
 // UP is checked on its own.
+#include <stdlib.h>
 #include <string.h>
 #include <unity.h>
 
@@ -456,6 +457,22 @@ static void every_entry_fits_and_knows_its_way_back() {
   }
 }
 
+// The dim delays are the labels' seconds, the defaults of config.h index real entries, and there is
+// a contrast for every brightness (step 2.7).
+static void the_display_settings_tables_agree() {
+  for (uint8_t i = 0; i < 4; ++i) {
+    const char* label = ui::kDimDelayLabels[i];
+    uint32_t expected = strcmp(label, "never") == 0 ? 0 : 1000u * atoi(label);
+    TEST_ASSERT_EQUAL_UINT32_MESSAGE(expected, ui::kDimDelayMs[i], label);
+  }
+  TEST_ASSERT_EQUAL_STRING("30 s", ui::kDimDelayLabels[DISPLAY_DIM_DELAY_DEFAULT]);
+  TEST_ASSERT_EQUAL_STRING("high", ui::kBrightnessLabels[DISPLAY_BRIGHTNESS_DEFAULT]);
+  TEST_ASSERT_EQUAL_STRING("large", ui::kTextSizeLabels[DISPLAY_TEXT_SIZE_DEFAULT]);
+  TEST_ASSERT_EQUAL_UINT(3, sizeof DISPLAY_CONTRAST / sizeof DISPLAY_CONTRAST[0]);
+  TEST_ASSERT_LESS_THAN_UINT8(DISPLAY_CONTRAST[0],
+                              DISPLAY_CONTRAST_DIMMED + 1);  // dimmed is lowest
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(ok_on_home_opens_the_menu_and_back_returns);
@@ -486,5 +503,6 @@ int main(int, char**) {
   RUN_TEST(the_menu_falls_back_home_and_forgets_its_cursors);
   RUN_TEST(a_press_counts_as_activity);
   RUN_TEST(every_entry_fits_and_knows_its_way_back);
+  RUN_TEST(the_display_settings_tables_agree);
   return UNITY_END();
 }

@@ -251,6 +251,23 @@ static void a_swallowed_gesture_says_nothing_more() {
   expectEvents(log, {Event::Press, Event::Press, Event::Open});
 }
 
+// Swallowed at its Press, a five-way direction loses the event it queued along with it, and holding
+// it does not repeat: the press that wakes a dimmed display does nothing else (§3.2).
+static void swallowing_at_the_press_drops_what_it_queued() {
+  Gestures g(keyConfig(KeyLayout::FiveWay));
+  g.update(Key::Down, 0);
+  Event e;
+  TEST_ASSERT_TRUE(g.next(e));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Event::Press), static_cast<int>(e));
+  g.swallow();
+  TEST_ASSERT_FALSE(g.next(e));
+  Log log;
+  feed(g, log, Key::Down, kTickMs, KEY_REPEAT_DELAY_MS + 3 * KEY_REPEAT_MS);
+  g.update(Key::None, KEY_REPEAT_DELAY_MS + 4 * KEY_REPEAT_MS);
+  log.drain(g);
+  expectEvents(log, {});
+}
+
 static void survives_the_millisecond_counter_wrapping() {
   const uint32_t start = 0xFFFFFFFFu - 700;  // wraps 700 ms into the hold
   Gestures g(keyConfig());
@@ -294,6 +311,7 @@ int main(int, char**) {
   RUN_TEST(up_and_down_repeat_when_held);
   RUN_TEST(left_and_right_do_not_repeat);
   RUN_TEST(a_swallowed_gesture_says_nothing_more);
+  RUN_TEST(swallowing_at_the_press_drops_what_it_queued);
   RUN_TEST(survives_the_millisecond_counter_wrapping);
   return UNITY_END();
 }

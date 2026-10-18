@@ -16,6 +16,9 @@
 bool displayBegin();  // false if nothing answers at DISPLAY_I2C_ADDR; after i2cBusBegin()
 
 void displaySetTextSize(ui::TextSize size);  // a change redraws the whole panel
+// The brightness setting (an index into ui::kBrightnessLabels), or the dimmed contrast over it.
+// A command on the bus only when the contrast changes.
+void displaySetContrast(uint8_t brightness, bool dimmed);
 void displayShow(const ui::ScreenText& text);
 // For DISPLAY_TOAST_MS: over the hint with small text, over the last body row with large text,
 // where it reads in the large font.
