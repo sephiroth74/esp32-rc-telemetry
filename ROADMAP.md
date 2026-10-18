@@ -210,8 +210,8 @@ ends on the screen §3.3 describes.
   level and the BEC voltage go into `docs/hardware.md`.
 - [ ] **6.2 RC capture.** MCPWM capture with pulse validation and reject counters; RC samples in the
   log; POST check 10 (§4.3).
-  `tools/rc-graph` already times one channel this way on the bench, with the `RC_*` windows, and
-  draws it on the OLED.
+  `tools/rc-live` already times one channel this way on the bench, with the `RC_*` windows, and
+  shows it on the OLED as a bar from the centre.
 - [ ] **6.3 Car profiles and calibration** (§3.8, §4.3).
   - Profiles read from `config.json` and chosen in Settings › Car profile.
   - New car: a `Car N` profile appended to both copies of `config.json`, the NVS calibration at its
