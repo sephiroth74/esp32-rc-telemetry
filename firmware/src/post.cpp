@@ -176,7 +176,7 @@ void writeLog(const ui::PostResult& r) {
   // The settings in force, and every key of the card's config.json that fell back to its default.
   const cfg::Problems& p = settingsProblems();
   f.printf("config: %s", settingsSourceName());
-  if (p.count) f.printf(", %u keys at their defaults:", p.count);
+  if (p.count) f.printf(", %u %s at the default:", p.count, p.count == 1 ? "key" : "keys");
   for (uint8_t i = 0; i < p.count; ++i) f.printf(" %s", p.keys[i]);
   f.printf("\n");
   f.close();

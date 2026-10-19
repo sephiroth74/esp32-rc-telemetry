@@ -209,7 +209,7 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   the card, needs the GNSS module or writes is refused up front (PLAN-ESP32.md §3.4, "What needs
   what"). Checked with the GM10 off: `No logging` at boot, the notice held 13 s until a key, which
   closed it and did nothing else, Track › Info and the start line refused with `no GNSS`.
-- [ ] **3.6 Results and settings.**
+- [x] **3.6 Results and settings.**
   - `/post.log` written on LittleFS.
   - Settings › About shows the result by check number.
   - `/config.json` read from the card, validated key by key and mirrored to LittleFS (§3.8, check 2).
@@ -217,9 +217,20 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
 
   *Test:* a `config.json` with a bad key → that key falls back to its default and is listed in
   `/post.log`. With the card removed, the LittleFS copy is used.
+  *Result:* `/post.log` holds the POST line by line with the reasons, and the source of the
+  settings; About lists the eleven checks. `lib/cfg` reads `config.json` key by key against the
+  defaults of `config.h` (8 host tests); check 2 loads the LittleFS copy and check 3 the card's,
+  which wins and is mirrored. The first boot moved step 2.7's NVS settings into a new file on the
+  card. On the bench, edited on a Mac: `"brightness": "bright"` → `config: card, 1 key at the
+  default: display.brightness`, the rest of the file in force; a file that is not JSON → `card
+  unread`, the LittleFS copy used and the file left alone. The card cannot be missing at this point
+  — check 3 is fatal — so "card removed" became "card's file unreadable".
 
 *Phase done when:* the board boots through the POST on the bench, and every card and GNSS failure
 ends on the screen §3.3 describes.
+*Done,* on the bench, for every failure there was a way to cause: no card, a card left in SPI mode,
+no GNSS module, a config.json wrong or unreadable. An exFAT, a GPT and a nearly full card remain to
+try when one is at hand; their logic is host-tested.
 
 ## Phase 4 — GNSS
 
