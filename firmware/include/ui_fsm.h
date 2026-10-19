@@ -6,4 +6,9 @@
 // screen are placeholders (ROADMAP.md step 2.6).
 #pragma once
 
-void uiStart();  // once, from setup(), after keysBegin()
+#include "ui_post.h"
+
+// Once, from setup(), after the POST, whose result decides what IDLE allows: a check that refuses
+// logging makes a session start a refusal naming it, and any failure or warning shows the warning
+// mark (§3.3).
+void uiStart(const ui::PostResult& post);

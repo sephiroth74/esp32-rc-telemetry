@@ -5,14 +5,15 @@
 // standing are then created (§4.1). loop() stays empty apart from watchdog feeding and
 // housekeeping.
 //
-// So far: the keys, the display, and the ui task with the menu on them (ROADMAP.md 2.3–2.6).
+// So far: the POST with check 0, and the ui task with the menu on the keys and the display
+// (ROADMAP.md phase 2, step 3.1).
 #include <Arduino.h>
 
 #include "config.h"
-#include "display.h"
 #include "i2c_bus.h"
 #include "keys.h"
 #include "pins.h"
+#include "post.h"
 #include "ui_fsm.h"
 
 void setup() {
@@ -22,10 +23,9 @@ void setup() {
   Serial.printf("\nRC Telemetry %s\n", FW_VERSION);
 
   i2cBusBegin();
-  // POST check 0 in all but name (ROADMAP.md step 3.2): a missing display must not stop the rest.
-  if (!displayBegin()) Serial.printf("no display at 0x%02X: running headless\n", DISPLAY_I2C_ADDR);
-  keysBegin();
-  uiStart();
+  keysBegin();                      // before the POST, whose fatal latch polls them
+  ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
+  uiStart(post);
 }
 
 void loop() {

@@ -139,10 +139,15 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
 
 ## Phase 3 — Power-on self-test: card and GNSS link (first priority)
 
-- [ ] **3.1 POST runner.** The ordered checks of §3.3, one line per check on the POST screen, the
+- [x] **3.1 POST runner.** The ordered checks of §3.3, one line per check on the POST screen, the
   result bitmask, the fatal latch with the hold-OK retry, the 3 s list of degraded checks, then
   IDLE. The keys are dead throughout. Ordering and severity logic in `lib/ui`.
   *Test:* host tests with fake checks — pass, degraded, fatal, fatal then passing on retry.
+  *Result:* `lib/ui/ui_post` — the eleven checks with their severities, the run, the latch and its
+  retry, the list worst first, the bitmask and the summary for About — and `renderPost` for its
+  screens; 11 host tests in `test/test_post`, every screen within 21 columns at both sizes. On the
+  device `src/post` runs it from `setup()` before the ui task, and swallows a key still held at the
+  end. Check 0 is the display; the others report `--` until their steps. It reaches Home in 0.8 s.
 - [ ] **3.2 Checks 0–2.**
   - Display: I²C bus recovery, address ACK, init. A missing display boots headless.
   - PSRAM: the 256 KB ring buffer allocated.

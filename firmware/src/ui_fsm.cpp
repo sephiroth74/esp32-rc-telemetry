@@ -167,7 +167,7 @@ void uiTask(void*) {
       if (out.command == ui::Command::Restart) {
         // Settings is reached from IDLE only, so nothing is open; the settings are in NVS already.
         // The toast goes out first, and stays long enough to be read.
-        displayRefresh(now + DISPLAY_REFRESH_MS);
+        displayFlush(now);
         vTaskDelay(pdMS_TO_TICKS(800));
         ESP.restart();
       }
@@ -193,6 +193,13 @@ void uiTask(void*) {
 
 }  // namespace
 
-void uiStart() {
+void uiStart(const ui::PostResult& post) {
+  static char summary[17];
+  ui::postSummary(post, summary);
+  int8_t refusing = post.refusingCheck();
+  facts.menu.loggingAllowed = refusing < 0;
+  facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
+  facts.warning = post.warning();
+  facts.postSummary = summary;
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);
 }

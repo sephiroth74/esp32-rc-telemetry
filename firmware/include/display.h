@@ -27,6 +27,9 @@ void displayHoldBar(uint8_t percent);     // the bottom pixel row, 0 = hidden
 void displayAcknowledge(uint32_t nowMs);  // inverts the panel DISPLAY_ACK_INVERT_MS
 
 void displayRefresh(uint32_t nowMs);  // call every tick; sends at most every DISPLAY_REFRESH_MS
+// Sends what changed at once, whatever the rate: for the POST, before a check that blocks, and
+// for a last toast before a restart. Nothing else is on the bus then.
+void displayFlush(uint32_t nowMs);
 
 // Bench figures for the bus budget of §2.4, measured once in displayBegin().
 uint32_t displayFullFrameUs();

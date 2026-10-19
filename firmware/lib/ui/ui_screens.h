@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "ui_board.h"
+#include "ui_post.h"
 
 namespace ui {
 
@@ -39,5 +40,9 @@ struct ScreenText {
 
 void render(const Board& board, const Facts& facts, Layout layout, TextSize size, uint32_t nowMs,
             ScreenText& out);
+
+// The POST screens of §3.3, on the same grids but without a status bar: a title on the first line,
+// the checks — as they run, the fatal one, or the ones that failed — and a hint on the last.
+void renderPost(const Post& post, TextSize size, ScreenText& out);
 
 }  // namespace ui

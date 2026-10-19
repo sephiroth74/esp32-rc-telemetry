@@ -190,7 +190,9 @@ void displayAcknowledge(uint32_t nowMs) {
   invertUntilMs = nowMs + DISPLAY_ACK_INVERT_MS;
 }
 
-void displayRefresh(uint32_t nowMs) {
+namespace {
+
+void refresh(uint32_t nowMs, bool now) {
   if (!present) return;
   if (toastShown && reached(nowMs, toastUntilMs)) {
     toastShown = false;
@@ -202,7 +204,8 @@ void displayRefresh(uint32_t nowMs) {
     u8g2.sendF("c", kCmdNormalDisplay);
     inverted = false;
   }
-  if ((!dirtyRows && !scrollDirty) || !reached(nowMs, lastSendMs + DISPLAY_REFRESH_MS)) return;
+  if (!dirtyRows && !scrollDirty) return;
+  if (!now && !reached(nowMs, lastSendMs + DISPLAY_REFRESH_MS)) return;
 
   // A large row can straddle two pages, so work in pages: clear the dirty ones, then redraw every
   // row that touches them, whether that row changed or not.
@@ -237,6 +240,12 @@ void displayRefresh(uint32_t nowMs) {
   scrollDirty = false;
   lastSendMs = nowMs;
 }
+
+}  // namespace
+
+void displayRefresh(uint32_t nowMs) { refresh(nowMs, /*now=*/false); }
+
+void displayFlush(uint32_t nowMs) { refresh(nowMs, /*now=*/true); }
 
 uint32_t displayFullFrameUs() { return fullFrameUs; }
 

@@ -493,7 +493,90 @@ void layOut(const Content& c, TextSize size, int16_t scroll, ScreenText& out) {
   out.overflow += c.overflow;
 }
 
+// --- The POST (§3.3) --------------------------------------------------------------
+
+// "ok", "FAIL", "--", or the detail a check gave; in the list of failures the detail of a failure
+// too, since that list is the only place it is seen before IDLE.
+const char* postResultText(const CheckReport& c, bool failDetail) {
+  switch (c.outcome) {
+    case Outcome::Running:
+      return "...";
+    case Outcome::Pass:
+      return c.detail[0] ? c.detail : "ok";
+    case Outcome::Warn:
+      return c.detail[0] ? c.detail : "warn";
+    case Outcome::Fail:
+      return failDetail && c.detail[0] ? c.detail : "FAIL";
+    case Outcome::Skipped:
+      return "--";
+    default:
+      return "";
+  }
+}
+
+void postLine(ScreenText& out, uint8_t row, const PostResult& r, uint8_t id, bool failDetail) {
+  put(out, row, "%2u %-7s %s", id, checkInfo(id).name, postResultText(r.checks[id], failDetail));
+}
+
+// What to do about each fatal check, two lines under its reason.
+void fatalAdvice(uint8_t id, const char*& first, const char*& second) {
+  if (id == 3) {
+    first = "Insert a FAT32 card,";
+    second = "then hold OK";
+  } else {
+    first = "The board's PSRAM";
+    second = "did not answer";
+  }
+}
+
 }  // namespace
+
+void renderPost(const Post& post, TextSize size, ScreenText& out) {
+  for (auto& line : out.lines) line[0] = '\0';
+  out.count = screenLines(size);
+  out.scrollTotal = out.scrollFirst = 0;
+  out.overflow = 0;
+  const uint8_t last = out.count - 1, body = out.count - 2;  // title, body rows, hint
+  const PostResult& r = post.result();
+
+  switch (post.phase()) {
+    case Post::Phase::Running: {
+      // The checks so far, the running one last.
+      uint8_t upTo = post.current() < kPostChecks ? post.current() : kPostChecks - 1;
+      uint8_t first = upTo + 1 > body ? upTo + 1 - body : 0;
+      put(out, 0, "Self-test");
+      for (uint8_t id = first, row = 1; id <= upTo; ++id, ++row) postLine(out, row, r, id, false);
+      put(out, last, "check %u of %u", upTo + 1, kPostChecks);
+      return;
+    }
+    case Post::Phase::Fatal: {
+      uint8_t id = r.fatalCheck() >= 0 ? r.fatalCheck() : post.current();
+      const char *first, *second;
+      fatalAdvice(id, first, second);
+      put(out, 0, "FATAL %u %s", id, checkInfo(id).name);
+      put(out, 1, "%s", r.checks[id].detail[0] ? r.checks[id].detail : "failed");
+      put(out, 2, "%s", first);
+      put(out, 3, "%s", second);
+      put(out, last, "hold OK: retry");
+      return;
+    }
+    case Post::Phase::Listing:
+    case Post::Phase::Done: {
+      uint8_t ids[kPostChecks];
+      uint8_t n = post.listed(ids);
+      put(out, 0, "Self-test: %u issue%s", n, n == 1 ? "" : "s");
+      for (uint8_t i = 0; i < n && i < body; ++i) {
+        if (i == body - 1 && n > body) {
+          put(out, 1 + i, "+%u more", n - i);
+          break;
+        }
+        postLine(out, 1 + i, r, ids[i], true);
+      }
+      put(out, last, "starting...");
+      return;
+    }
+  }
+}
 
 void render(const Board& board, const Facts& facts, Layout layout, TextSize size, uint32_t nowMs,
             ScreenText& out) {
