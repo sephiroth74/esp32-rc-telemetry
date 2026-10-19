@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include <stdio.h>
 
+#include "card.h"
 #include "config.h"
 #include "display.h"
 #include "i2c_bus.h"
@@ -51,6 +52,58 @@ ui::CheckReport checkLittleFs() {
   return ui::CheckReport::fail("no mount");
 }
 
+// 3: fatal, since a device that cannot log has nothing to do; the cause is named, as the fix
+// differs: insert a card, or reformat it FAT32 on MBR (§2.3).
+ui::CheckReport checkCard() {
+  switch (cardMount()) {
+    case CardMount::Ok:
+      break;
+    case CardMount::NoCard:
+      return ui::CheckReport::fail("no card");
+    case CardMount::Exfat:
+      return ui::CheckReport::fail("exFAT");
+    case CardMount::Gpt:
+      return ui::CheckReport::fail("GPT");
+    case CardMount::NoFat32:
+      return ui::CheckReport::fail("no FAT32");
+  }
+  char detail[ui::kCheckDetailMax + 1];
+  snprintf(detail, sizeof detail, "%luGB", (unsigned long)(cardTotalMb() / 1024));
+  return ui::CheckReport::pass(detail);
+}
+
+// 4: before the probe, so that a card with no room reports full rather than not writable.
+ui::CheckReport checkFreeSpace() {
+  uint32_t mb = cardFreeMb();
+  char detail[ui::kCheckDetailMax + 1];
+  if (mb < 1024) {
+    snprintf(detail, sizeof detail, "%luMB", (unsigned long)mb);
+  } else {
+    snprintf(detail, sizeof detail, "%lu.%luGB", (unsigned long)(mb / 1024),
+             (unsigned long)(mb % 1024 * 10 / 1024));
+  }
+  if (mb < POST_MIN_FREE_MB) return ui::CheckReport::fail(detail);
+  if (mb < POST_WARN_FREE_MB) return ui::CheckReport::warn(detail);
+  return ui::CheckReport::pass(detail);
+}
+
+// 5: the probe; skipped on a card too full to take it.
+ui::CheckReport checkWritable() {
+  if (cardFreeMb() < 1) return ui::CheckReport::skipped("full");
+  CardProbe probe = cardProbe(POST_PROBE_BYTES);
+  return probe.failure ? ui::CheckReport::fail(probe.failure) : ui::CheckReport::pass();
+}
+
+// 6: the same probe, timed — one write, two answers.
+ui::CheckReport checkSpeed() {
+  const CardProbe& probe = cardLastProbe();
+  if (probe.failure || !probe.writeKbps) return ui::CheckReport::skipped();
+  char detail[ui::kCheckDetailMax + 1];
+  snprintf(detail, sizeof detail, "%luKB/s", (unsigned long)probe.writeKbps);
+  if (probe.writeKbps < POST_SLOW_CARD_KBPS) return ui::CheckReport::fail(detail);
+  return ui::CheckReport::pass(detail);
+}
+
 ui::CheckReport runCheck(uint8_t id) {
   switch (id) {
     case 0:
@@ -59,6 +112,14 @@ ui::CheckReport runCheck(uint8_t id) {
       return checkPsram();
     case 2:
       return checkLittleFs();
+    case 3:
+      return checkCard();
+    case 4:
+      return checkFreeSpace();
+    case 5:
+      return checkWritable();
+    case 6:
+      return checkSpeed();
     default:
       return ui::CheckReport::skipped();
   }

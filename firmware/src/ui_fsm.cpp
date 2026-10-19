@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "card.h"
 #include "config.h"
 #include "display.h"
 #include "keys.h"
@@ -205,6 +206,11 @@ void uiStart(const ui::PostResult& post) {
   facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
   facts.warning = post.warning();
   facts.postSummary = summary;
+  // The card as the POST left it; the rest of the facts are still placeholders (step 2.6).
+  facts.menu.cardOk = cardMounted();
+  facts.freeMb = cardFreeMb();
+  facts.cardGb = cardTotalMb() / 1024;
+  facts.cardKbps = cardLastProbe().writeKbps;
   // Again, after the POST's own lines: those can come before a USB host has opened the port.
   Serial.printf("POST %s, failed mask 0x%03X\n", summary, post.failedMask());
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);

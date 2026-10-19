@@ -370,7 +370,7 @@ that a card with no room reports "full" rather than "not writable".
 | 0 | Display | I²C bus recovery (nine SCL clocks if SDA is held low), then the display's address must ACK; initialise it and show the POST screen | Degraded, **boot continues headless**: nothing can be shown locally, but the result reaches `/post.log` and BLE like any other. A dead display must not stop logging |
 | 1 | PSRAM | `ps_malloc()` the ring buffer of §4.4 | **Fatal** |
 | 2 | LittleFS | Mount, load config | Degraded, continue on built-in defaults |
-| 3 | Card present | `SD_MMC.begin()` in 1-bit mode (§2.3) | **Fatal** |
+| 3 | Card present | `SD_MMC.begin()` in 1-bit mode (§2.3). On failure the card is asked why, so the screen names the fix: `no card`, `exFAT`, `GPT` or `no FAT32` | **Fatal** |
 | 4 | Free space | ≥ `sd.min_free_mb`, default 64 MB | Degraded, **logging refused**. Above the floor but below `sd.warn_free_mb` (default 256 MB) it is a warning only |
 | 5 | Card writable | Write a 256 KB probe file, flush, close, read back the first and last sector, compare, delete | Degraded, **logging refused** — Transfer mode stays available to rescue whatever is still readable |
 | 6 | Card speed | Time that same probe — one write, two answers | Degraded, continue; the number goes into `meta.json` |

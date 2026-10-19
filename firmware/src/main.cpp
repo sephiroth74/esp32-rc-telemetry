@@ -17,8 +17,6 @@
 #include "ui_fsm.h"
 
 void setup() {
-  // TODO(phase 3): drive PIN_SD_D3 high before anything else — it must be high
-  // before SD_MMC.begin() or the card comes up in SPI mode (§2.3).
   Serial.begin(115200);
   Serial.printf("\nRC Telemetry %s\n", FW_VERSION);
 

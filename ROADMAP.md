@@ -162,7 +162,7 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   PSRAM once, and LittleFS mounts by its `littlefs` label, formatting a blank partition on the first
   boot. On the bench: `0 Display ok`, `1 PSRAM ok 8MB`, `2 Config ok 8K used`, Home at 0.8 s; with
   the display unplugged, `POST fail 0`, Home at 3.0 s after the list, and the keys still acted.
-- [ ] **3.3 Checks 3–6, the card.**
+- [x] **3.3 Checks 3–6, the card.**
   - Mount: SDMMC 1-bit at 40 MHz, with DAT3 held high.
   - Free space: against `sd.min_free_mb` and `sd.warn_free_mb`.
   - Probe: 256 KB written, read back, compared and deleted, timed to give the card speed.
@@ -173,6 +173,13 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   - exFAT card → fatal 3, naming the cause;
   - nearly full card → degraded 4, logging refused;
   - normal card → its speeds in the result.
+
+  *Result:* `src/card` mounts at 40 MHz with DAT3 high, and when the mount fails asks the card
+  itself why — no answer, or a first sector showing exFAT, GPT or no FAT32. On the bench: no card →
+  `3 Card FAIL no card`, the latch, the card back in and OK held → `3 Card ok 58GB`, `4 Free ok
+  58.2GB`, `5 Write ok`, `6 Speed ok 3276KB/s`. A card left in SPI mode by the DAT3 test was refused
+  the same way until unplugged. Not tried for want of the cards: an exFAT or GPT card, and a nearly
+  full one, whose thresholds the host tests cover.
 - [ ] **3.4 UBX frame scanner.**
   1. Capture raw GM10 traffic into `docs/fixtures/`, with a raw-dump mode in `tools/gps-test`
      that writes the UART bytes to the card.
