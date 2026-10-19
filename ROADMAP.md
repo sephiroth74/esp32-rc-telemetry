@@ -223,8 +223,9 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   which wins and is mirrored. The first boot moved step 2.7's NVS settings into a new file on the
   card. On the bench, edited on a Mac: `"brightness": "bright"` → `config: card, 1 key at the
   default: display.brightness`, the rest of the file in force; a file that is not JSON → `card
-  unread`, the LittleFS copy used and the file left alone. The card cannot be missing at this point
-  — check 3 is fatal — so "card removed" became "card's file unreadable".
+  unread`, the LittleFS copy used and the file left alone; the file deleted → `config: created`,
+  written back from the LittleFS copy with the settings unchanged. The card cannot be missing at
+  this point — check 3 is fatal — so "card removed" became "card's file unreadable".
 
 *Phase done when:* the board boots through the POST on the bench, and every card and GNSS failure
 ends on the screen §3.3 describes.
