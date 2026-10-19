@@ -180,7 +180,7 @@ static void every_list_and_editor_ends_in_back() {
   w.down(3);
   w.key(Event::Open);
   ASSERT_SCREEN(Settings, w.menu);
-  w.down(3);  // from Display to Back
+  w.down(4);  // from Display to Back
   w.key(Event::Open);
   ASSERT_SCREEN(Menu, w.menu);
   w.down(1);  // from Settings to Back
@@ -361,6 +361,19 @@ static void new_track_is_a_hold_and_needs_card_and_fix() {
   TEST_ASSERT_EQUAL_UINT8(3, w.menu.cursor());
 }
 
+static void restart_is_a_hold_on_its_own_screen() {
+  Walk w;
+  w.key(Event::Open);
+  w.down(4);
+  w.key(Event::Open);
+  w.down(5);
+  w.key(Event::Open);  // Settings › Restart
+  ASSERT_SCREEN(Restart, w.menu);
+  ASSERT_COMMAND(Restart, w.key(Event::Hold));
+  ASSERT_COMMAND(None, w.key(Event::Open));  // a leaf: OK goes back, restarting nothing
+  ASSERT_SCREEN(Settings, w.menu);
+}
+
 static void deleting_sessions_always_asks() {
   Walk w;
   w.key(Event::Open);
@@ -496,6 +509,7 @@ int main(int, char**) {
   RUN_TEST(any_other_key_answers_no);
   RUN_TEST(start_line_and_geometry_need_card_and_fix);
   RUN_TEST(new_track_is_a_hold_and_needs_card_and_fix);
+  RUN_TEST(restart_is_a_hold_on_its_own_screen);
   RUN_TEST(deleting_sessions_always_asks);
   RUN_TEST(calibrate_needs_an_rc_signal);
   RUN_TEST(gnss_hold_restarts_acquisition);

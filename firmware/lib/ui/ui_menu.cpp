@@ -30,6 +30,7 @@ const Entry kSettings[] = {
     {"Display", ScreenId::DisplaySettings, Command::None},
     {"Delete sessions", ScreenId::DeleteSessions, Command::None},
     {"About", ScreenId::About, Command::None},
+    {"Restart", ScreenId::Restart, Command::None},
     {"Back", kBackEntry, Command::None},
 };
 const Entry kDisplay[] = {
@@ -84,6 +85,7 @@ const char* commandName(Command command) {
       "calib capture",  "save calib",        "cancel calib",
       "select profile", "new profile",       "set brightness",
       "set dim delay",  "set text size",     "delete sessions",
+      "restart",
   };
   return kNames[static_cast<uint8_t>(command)];
 }
@@ -130,6 +132,7 @@ ScreenId Menu::parent(ScreenId screen) {
     case ScreenId::DisplaySettings:
     case ScreenId::DeleteSessions:
     case ScreenId::About:
+    case ScreenId::Restart:
       return ScreenId::Settings;
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
@@ -318,6 +321,8 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
     case ScreenId::Calibrate:
       if (!c.rcSignal) return refused(Refusal::NoRcSignal);
       return issue(Command::EnterCalibration);
+    case ScreenId::Restart:  // from IDLE only, so no session is open
+      return issue(Command::Restart);
     default:
       return {};
   }

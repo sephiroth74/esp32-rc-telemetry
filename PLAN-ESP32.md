@@ -459,6 +459,7 @@ The menu, each list ending in Back:
 | **Settings › Display** | Brightness (low, medium, high), dim delay (15, 30, 60 s, never) and text size (small, large — §3.2) | UP/DOWN change, OK saves, LEFT cancels |
 | **Settings › Delete sessions** | How many sessions the card holds | Hold OK, then confirm: deletes **every `session_*` folder**, keeping tracks, geometries and start lines (§7.1). `Deleting` while it runs, a toast on completion |
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
+| **Settings › Restart** | What it does | Hold OK: restart, and the POST runs again (§3.3), e.g. after a card goes in. Settings is reached from IDLE only, so no session is open. The ladder cannot read two keys at once — OK pulls D0 to ground whatever else is pressed — so there is no two-key reset, and a held-key gesture would sit too close to holding OK for a session |
 
 Entries that write to the card are refused while it is unavailable (§3.5), with a toast saying so.
 Start line, Geometry and New track additionally require a valid fix, since all three write a

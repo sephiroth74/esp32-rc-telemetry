@@ -137,6 +137,9 @@ BoardOutput Board::fromMenu(const MenuResult& r, const Facts& f, uint32_t nowMs)
     case Command::DeleteSessions:
       toast(o, "Sessions deleted");
       break;
+    case Command::Restart:
+      toast(o, "Restarting");
+      break;
     default:
       break;
   }

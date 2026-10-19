@@ -164,6 +164,13 @@ void uiTask(void*) {
         settingsSave(facts.menu);  // only what the command changed reaches NVS
       }
       if (out.toast[0]) displayToast(out.toast, now);
+      if (out.command == ui::Command::Restart) {
+        // Settings is reached from IDLE only, so nothing is open; the settings are in NVS already.
+        // The toast goes out first, and stays long enough to be read.
+        displayRefresh(now + DISPLAY_REFRESH_MS);
+        vTaskDelay(pdMS_TO_TICKS(800));
+        ESP.restart();
+      }
     }
     board.tick(now);
 

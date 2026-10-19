@@ -116,6 +116,8 @@ const char* screenTitle(ScreenId s) {
       return "Delete";
     case ScreenId::About:
       return "About";
+    case ScreenId::Restart:
+      return "Restart";
     case ScreenId::Dialog:
       return "Confirm";
     default:
@@ -377,6 +379,12 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.add("POST %s", f.postSummary);
       c.add("Card %uGB %uKB/s", f.cardGb, f.cardKbps);
       c.setHint("OK: back");
+      return;
+    case ScreenId::Restart:
+      c.add("Restarts the board");
+      c.add("and runs the POST");
+      c.add("again");
+      c.setHint("OK back hold: restart");
       return;
     default:
       return;

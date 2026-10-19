@@ -36,6 +36,7 @@ enum class ScreenId : uint8_t {
   TextSize,
   DeleteSessions,
   About,
+  Restart,
   Dialog,
   Count
 };
@@ -64,6 +65,7 @@ enum class Command : uint8_t {
   SetDimDelay,
   SetTextSize,
   DeleteSessions,
+  Restart,
 };
 
 const char* commandName(Command command);  // for logs

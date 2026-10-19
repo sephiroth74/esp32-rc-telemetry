@@ -130,6 +130,9 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   landing on Calibrate. Every screen is now tested with the longest track id, `N4512E00934-99`, which
   moved the start-line dialog onto new lines. The placeholder facts carry both out on the bench.
 
+- [x] **2.9 Restart from the menu** (§3.4). Settings › Restart, held: the toast, then a restart and
+  the POST. Asked on the bench in place of a key gesture, which the ladder cannot make safe.
+
 *Phase done when:* a walk through all of §3.4 on the bench, with the two buttons only.
 
 ## Phase 3 — Power-on self-test: card and GNSS link (first priority)
