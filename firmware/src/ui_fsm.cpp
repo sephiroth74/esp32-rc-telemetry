@@ -152,12 +152,14 @@ void uiTask(void*) {
 
     ui::Event event;
     while (keysNext(event)) {
+      lastKeyMs = now;
       if (event == ui::Event::Press && dimmed) {
         keysSwallow();
         dimmed = false;
+        board.wake(now);  // a timer restart only: a notice on screen stays to be read
         Serial.printf("[%7lu] woken\n", (unsigned long)now);
+        continue;
       }
-      lastKeyMs = now;
       if (event == ui::Event::Hold) displayAcknowledge(now);
       ui::BoardOutput out = board.handle(event, facts, now);
       if (event != ui::Event::Press) {
@@ -168,6 +170,12 @@ void uiTask(void*) {
                       out.arg);
         runPlaceholder(out);
         settingsSave(facts.menu);  // only what the command changed reaches NVS
+      }
+      if (out.swallow) keysSwallow();  // the press closed a notice and does nothing else
+      if (out.refused != ui::Refusal::None) {
+        char why[22];
+        ui::refusalText(out.refused, out.arg, why);
+        Serial.printf("[%7lu] refused: %s\n", (unsigned long)now, why);
       }
       if (out.toast[0]) {
         displayToast(out.toast, now);
@@ -212,12 +220,14 @@ void uiStart(const ui::PostResult& post) {
   facts.postSummary = summary;
   // The card as the POST left it; the rest of the facts are still placeholders (step 2.6).
   facts.menu.cardOk = cardMounted();
+  facts.menu.cardWritable = post.checks[5].outcome != ui::Outcome::Fail;
   facts.freeMb = cardFreeMb();
   facts.cardGb = cardTotalMb() / 1024;
   facts.cardKbps = cardLastProbe().writeKbps;
   // The GNSS link as check 8 found it. Without one there is no fix either: the sample fix of the
   // placeholders would be a lie on the GNSS screen.
   facts.gnssLink = gnssLinkBaud() != 0;
+  facts.menu.gnssOk = facts.gnssLink;
   facts.gnssBaud = gnssLinkBaud();
   if (!facts.gnssLink) {
     facts.fixType = 0;

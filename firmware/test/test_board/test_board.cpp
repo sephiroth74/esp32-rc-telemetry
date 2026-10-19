@@ -295,13 +295,133 @@ static void ok_leaves_transfer_as_well() {
   ASSERT_DIALOG(LeaveTransfer, w.board);
 }
 
-static void refusals_and_settings_come_back_as_toasts() {
+// A refusal takes the body until a key closes it, and that key does nothing else (§3.5).
+static void a_refusal_is_a_notice_that_a_key_closes() {
   Walk w;
   w.facts.menu.loggingAllowed = false;
   w.facts.menu.refusingCheck = 8;
   BoardOutput o = w.key(Event::Hold);
   ASSERT_MODE(Idle, w.board);
-  TEST_ASSERT_EQUAL_STRING("Logging refused: 8", o.toast);
+  TEST_ASSERT_EQUAL_STRING("", o.toast);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::LoggingRefused), static_cast<int>(o.refused));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::LoggingRefused),
+                        static_cast<int>(w.board.notice()));
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("Refused", t.lines[0], 7);
+  TEST_ASSERT_EQUAL_STRING("No logging:", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("GNSS not found", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("POST check 8", t.lines[3]);
+  TEST_ASSERT_EQUAL_STRING("any key: close", t.lines[4]);
+
+  o = w.key(Event::Open);  // not a press: the rest of the gesture that opened it
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::LoggingRefused),
+                        static_cast<int>(w.board.notice()));
+  o = w.key(Event::Press);
+  TEST_ASSERT_TRUE(o.swallow);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::None), static_cast<int>(w.board.notice()));
+  ASSERT_SCREEN(Home, w.board);  // closed, nothing opened
+}
+
+static void home_says_why_a_session_cannot_start() {
+  Walk w;
+  w.facts.menu.loggingAllowed = false;
+  w.facts.menu.refusingCheck = 8;
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("No logging", t.lines[0], 10);
+  TEST_ASSERT_EQUAL_STRING("GNSS not found", t.lines[1]);  // the first page, no scrolling
+  TEST_ASSERT_EQUAL_STRING("No logging (check 8)", t.lines[2]);
+  w.facts.menu.cardOk = false;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("No card: no logging", t.lines[1]);
+  w.facts.menu.cardOk = true;
+  w.facts.menu.loggingAllowed = true;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("Ready", t.lines[0], 5);
+}
+
+static void expectFits(const Walk& w, Layout layout, TextSize size, const char* where);
+
+// Every notice, and Home with each reason, at both sizes and in both layouts.
+static void notices_and_the_blocked_home_fit_in_21_columns() {
+  struct Case {
+    const char* name;
+    void (*setup)(Walk&);
+  };
+  const Case cases[] = {
+      {"no card",
+       [](Walk& w) {
+         w.facts.menu.cardOk = false;
+         w.key(Event::Hold);
+       }},
+      {"logging refused 5",
+       [](Walk& w) {
+         w.facts.menu.loggingAllowed = false;
+         w.facts.menu.refusingCheck = 5;
+         w.key(Event::Hold);
+       }},
+      {"logging refused 10",
+       [](Walk& w) {
+         w.facts.menu.loggingAllowed = false;
+         w.facts.menu.refusingCheck = 10;
+         w.key(Event::Hold);
+       }},
+      {"no fix",
+       [](Walk& w) {
+         w.facts.menu.hasFix = false;
+         w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
+       }},
+      {"no rc",
+       [](Walk& w) {
+         w.facts.menu.rcSignal = false;
+         w.toSettings();
+         w.keys({Event::Down, Event::Open, Event::Hold});
+       }},
+      {"profiles full",
+       [](Walk& w) {
+         w.facts.menu.profileCount = w.facts.menu.profileMax;
+         w.toSettings();
+         w.key(Event::Open);
+         w.down(w.facts.menu.profileMax);
+         w.key(Event::Open);
+       }},
+      {"no gnss",
+       [](Walk& w) {
+         w.facts.menu.gnssOk = false;
+         w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
+       }},
+      {"card not writable",
+       [](Walk& w) {
+         w.facts.menu.cardWritable = false;
+         w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
+       }},
+      {"home, card", [](Walk& w) { w.facts.menu.cardOk = false; }},
+      {"home, check 4",
+       [](Walk& w) {
+         w.facts.menu.loggingAllowed = false;
+         w.facts.menu.refusingCheck = 4;
+       }},
+      {"home, check 10",
+       [](Walk& w) {
+         w.facts.menu.loggingAllowed = false;
+         w.facts.menu.refusingCheck = 10;
+       }},
+  };
+  for (const Case& c : cases) {
+    for (Layout layout : {Layout::TwoButtons, Layout::FiveWay}) {
+      for (TextSize size : {TextSize::Small, TextSize::Large}) {
+        Walk w;
+        c.setup(w);
+        expectFits(w, layout, size, c.name);
+      }
+    }
+  }
+}
+
+static void settings_still_come_back_as_toasts() {
+  Walk w;
+  BoardOutput o;
 
   w.toSettings();
   w.key(Event::Open);  // Car profile
@@ -523,7 +643,10 @@ int main(int, char**) {
   RUN_TEST(an_uncalibrated_profile_saves_without_asking);
   RUN_TEST(transfer_asks_before_leaving_a_host);
   RUN_TEST(ok_leaves_transfer_as_well);
-  RUN_TEST(refusals_and_settings_come_back_as_toasts);
+  RUN_TEST(a_refusal_is_a_notice_that_a_key_closes);
+  RUN_TEST(home_says_why_a_session_cannot_start);
+  RUN_TEST(notices_and_the_blocked_home_fit_in_21_columns);
+  RUN_TEST(settings_still_come_back_as_toasts);
   RUN_TEST(the_menu_timeout_counts_from_the_end_of_a_mode);
   RUN_TEST(every_screen_fits_in_21_columns);
   RUN_TEST(the_home_screen_reads_as_designed);

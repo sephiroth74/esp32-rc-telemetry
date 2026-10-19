@@ -71,7 +71,16 @@ enum class Command : uint8_t {
 const char* commandName(Command command);  // for logs
 
 // Why an entry was refused; the screen shows it as a toast (§3.4).
-enum class Refusal : uint8_t { None, NoCard, NoFix, LoggingRefused, NoRcSignal, ProfilesFull };
+enum class Refusal : uint8_t {
+  None,
+  NoCard,
+  CardNotWritable,  // POST check 5: the write probe failed
+  NoGnss,           // POST check 8: no module answered
+  NoFix,
+  LoggingRefused,  // the POST refused logging: arg is the check
+  NoRcSignal,
+  ProfilesFull,
+};
 
 // The four confirmations of §3.1, plus leaving Transfer while a host has the card (§7.3).
 enum class DialogKind : uint8_t {
@@ -115,7 +124,9 @@ class Confirm {
 
 // The facts the menu reads. The caller keeps them current; the menu never changes them.
 struct MenuContext {
-  bool cardOk = true;          // false: entries that write to the card are refused
+  bool cardOk = true;          // false: entries that read or write the card are refused
+  bool cardWritable = true;    // false: POST check 5 failed, and every write is refused
+  bool gnssOk = true;          // false: POST check 8 found no module, so no position at all
   bool loggingAllowed = true;  // false: the POST refused logging...
   uint8_t refusingCheck = 0;   // ...and this is the check that did, for the toast
   bool hasFix = false;

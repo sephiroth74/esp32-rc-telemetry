@@ -75,7 +75,9 @@ constexpr uint8_t kCalibrationSteps = 6;
 struct BoardOutput {
   Command command = Command::None;
   uint8_t arg = 0;
-  char toast[22] = "";  // empty: none; 21 columns
+  char toast[22] = "";              // empty: none; 21 columns
+  Refusal refused = Refusal::None;  // an action refused: its notice is open now (notice())
+  bool swallow = false;  // the press closed a notice: the rest of its gesture is not ours
 };
 
 class Board {
@@ -84,6 +86,9 @@ class Board {
 
   BoardOutput handle(Event event, const Facts& facts, uint32_t nowMs);
   void tick(uint32_t nowMs);
+  // A key that only woke the dimmed display (§3.2): activity for the menu's timeout, nothing more,
+  // so that it does not close a notice before it was read.
+  void wake(uint32_t nowMs) { menu_.restartTimer(nowMs); }
 
   Mode mode() const { return mode_; }
   const Menu& menu() const { return menu_; }
@@ -95,6 +100,10 @@ class Board {
   uint16_t markers() const { return markers_; }
   uint32_t sessionElapsedMs(uint32_t nowMs) const { return nowMs - sessionStartMs_; }
   uint8_t calibrationStep() const { return step_; }  // kCalibrationSteps is the summary
+  // The refusal on screen, until the next key closes it (§3.5): an action that cannot happen says
+  // why on the whole body, not in a toast that is gone before it is read.
+  Refusal notice() const { return notice_; }
+  uint8_t noticeArg() const { return noticeArg_; }
 
  private:
   BoardOutput fromMenu(const MenuResult& result, const Facts& facts, uint32_t nowMs);
@@ -114,10 +123,16 @@ class Board {
   uint16_t markers_ = 0;
   int16_t scroll_ = 0;
   uint8_t step_ = 0;
+  Refusal notice_ = Refusal::None;
+  uint8_t noticeArg_ = 0;
 };
 
-// The toast for a refusal of §3.4, in 21 columns.
+// A refusal of §3.4 in one line of 21 columns, for the serial log.
 void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]);
+// What a failed POST check that refuses logging means, in a few words; nullptr for any other check.
+const char* checkReason(uint8_t check);
+// Whether a session cannot start now, and so Home says why (§3.4).
+inline bool loggingBlocked(const MenuContext& m) { return !m.cardOk || !m.loggingAllowed; }
 const char* profileName(const Facts& facts, uint8_t index);  // "?" if there is no such profile
 // The name New car gives profile `index`, "Car 4" for index 3, until an app renames it (§3.8).
 void newProfileName(uint8_t index, char (&out)[9]);

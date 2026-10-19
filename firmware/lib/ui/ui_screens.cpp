@@ -142,7 +142,11 @@ const char* screenTitle(ScreenId s) {
 // --- The status bar -------------------------------------------------------------
 
 // The state word: 11 columns at most, which both grids leave for it.
-void stateText(const Board& b, uint32_t nowMs, char (&out)[24]) {
+void stateText(const Board& b, const Facts& f, uint32_t nowMs, char (&out)[24]) {
+  if (b.notice() != Refusal::None) {
+    snprintf(out, sizeof out, "Refused");
+    return;
+  }
   if (b.dialog() != DialogKind::None) {
     snprintf(out, sizeof out, "Confirm");
     return;
@@ -173,7 +177,12 @@ void stateText(const Board& b, uint32_t nowMs, char (&out)[24]) {
       snprintf(out, sizeof out, "Transfer");
       return;
     case Mode::Idle:
-      snprintf(out, sizeof out, "%s", screenTitle(b.menu().screen()));
+      // Home says at once when a session cannot start: the status line is the first thing read.
+      if (b.menu().screen() == ScreenId::Home && loggingBlocked(f.menu)) {
+        snprintf(out, sizeof out, "No logging");
+      } else {
+        snprintf(out, sizeof out, "%s", screenTitle(b.menu().screen()));
+      }
       return;
   }
 }
@@ -183,7 +192,7 @@ void stateText(const Board& b, uint32_t nowMs, char (&out)[24]) {
 // free space move to the Home screen's content instead.
 void statusBar(const Board& b, const Facts& f, TextSize size, uint32_t nowMs, ScreenText& out) {
   char state[24], free[16];
-  stateText(b, nowMs, state);
+  stateText(b, f, nowMs, state);
   bool ble = b.mode() == Mode::Transfer;  // BLE exists only in Transfer (§7.4)
 
   if (size == TextSize::Small) {
@@ -299,8 +308,67 @@ void dialog(DialogKind kind, const Facts& f, Content& c) {
   c.setHint("other key: no (10s)");
 }
 
+// Why a session cannot start, on Home's first lines, so that the large grid shows it without
+// scrolling (§3.4).
+void blocker(const Facts& f, Content& c) {
+  if (!f.menu.cardOk) {
+    c.add("No card: no logging");
+    return;
+  }
+  const char* why = checkReason(f.menu.refusingCheck);
+  if (why) {
+    c.add("%s", why);
+  } else {
+    c.add("POST check %u failed", f.menu.refusingCheck);
+  }
+  c.add("No logging (check %u)", f.menu.refusingCheck);
+}
+
+// A refusal, on the whole body until a key closes it: what is missing, and what to do about it.
+void notice(const Board& b, Content& c) {
+  switch (b.notice()) {
+    case Refusal::NoCard:
+      c.add("No card");
+      c.add("Insert a FAT32 card");
+      break;
+    case Refusal::CardNotWritable:
+      c.add("Card write failed");
+      c.add("Use another card");
+      c.add("POST check 5");
+      break;
+    case Refusal::NoGnss:
+      c.add("GNSS not found");
+      c.add("Check its wiring:");
+      c.add("TX to D7, RX to D6");
+      break;
+    case Refusal::NoFix:
+      c.add("No GNSS fix yet");
+      c.add("See Menu > GNSS");
+      break;
+    case Refusal::LoggingRefused: {
+      const char* why = checkReason(b.noticeArg());
+      c.add("No logging:");
+      c.add("%s", why ? why : "a POST check failed");
+      c.add("POST check %u", b.noticeArg());
+      break;
+    }
+    case Refusal::NoRcSignal:
+      c.add("No RC signal");
+      c.add("Switch the car on");
+      break;
+    case Refusal::ProfilesFull:
+      c.add("%u profiles: full", b.noticeArg());
+      c.add("Delete one in an app");
+      break;
+    default:
+      break;
+  }
+  c.setHint("any key: close");
+}
+
 void home(const Facts& f, TextSize size, Content& c) {
   char a[16];
+  if (loggingBlocked(f.menu)) blocker(f, c);
   c.add("Track %s", trackText(f));
   c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
   lapText(f.lastLapMs, a);
@@ -474,6 +542,10 @@ void calibration(const Board& b, const Facts& f, Layout layout, Content& c) {
 }
 
 void content(const Board& b, const Facts& f, Layout layout, TextSize size, Content& c) {
+  if (b.notice() != Refusal::None) {
+    notice(b, c);
+    return;
+  }
   if (b.dialog() != DialogKind::None) {
     dialog(b.dialog(), f, c);
     return;

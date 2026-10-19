@@ -76,7 +76,8 @@ stateDiagram-v2
 
 With **large** text, the default, every screen after the POST has a one-line **status bar** in the
 yellow band — the state, the fix, and the warning, USB, BLE and LiPo marks — then **three body rows**
-in the large font and the **key hint** in the small one. Toasts take the last body row for 1.5 s, and
+in the large font and the **key hint** in the small one. Toasts — confirmations only, never a refusal,
+which takes the body until a key — take the last body row for 1.5 s, and
 a thin scroll bar on the right edge shows when there is more: NAV turns the page. **Small** text
 gives two status lines (adding the car profile and free space) and five body rows.
 

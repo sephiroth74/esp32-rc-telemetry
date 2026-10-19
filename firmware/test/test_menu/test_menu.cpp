@@ -334,13 +334,81 @@ static void start_line_and_geometry_need_card_and_fix() {
   w.keys({Event::Open, Event::Down, Event::Open, Event::Open});  // Start line
   ASSERT_REFUSAL(NoFix, w.key(Event::Hold));
   w.context.hasFix = true;
-  w.context.cardOk = false;
-  ASSERT_REFUSAL(NoCard, w.key(Event::Hold));
-  w.keys({Event::Back, Event::Down, Event::Open});  // Geometry
-  ASSERT_SCREEN(Geometry, w.menu);
+  w.context.cardOk = false;  // the card goes while the screen is open
   ASSERT_REFUSAL(NoCard, w.key(Event::Hold));
   w.context.cardOk = true;
+  w.keys({Event::Back, Event::Down, Event::Open});  // Geometry
+  ASSERT_SCREEN(Geometry, w.menu);
+  w.context.cardWritable = false;
+  ASSERT_REFUSAL(CardNotWritable, w.key(Event::Hold));
+  w.context.cardWritable = true;
+  w.context.gnssOk = false;
+  ASSERT_REFUSAL(NoGnss, w.key(Event::Hold));  // before the fix: there is no module to ask
+  w.context.gnssOk = true;
   ASSERT_COMMAND(EnterGeometry, w.key(Event::Hold));
+}
+
+// Without the card, the screens that read it do not open; the notice says why and the list stays.
+static void screens_that_read_the_card_need_it_to_open() {
+  const std::initializer_list<Event> paths[] = {
+      {Event::Open, Event::Down, Event::Open, Event::Open},                            // Start line
+      {Event::Open, Event::Down, Event::Open, Event::Down, Event::Open},               // Geometry
+      {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Open},  // Info
+      {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Open},
+      {Event::Open, Event::Down, Event::Down, Event::Down, Event::Open},  // Transfer
+  };
+  for (const auto& path : paths) {
+    Walk w;
+    w.context.cardOk = false;
+    for (Event e : path) w.key(e);
+    ASSERT_REFUSAL(NoCard, w.last);
+    ASSERT_COMMAND(None, w.last);
+    TEST_ASSERT_TRUE(w.menu.screen() == ScreenId::Track || w.menu.screen() == ScreenId::Menu);
+  }
+  Walk w;  // Settings › Delete sessions
+  w.context.cardOk = false;
+  w.key(Event::Open);
+  w.down(4);
+  w.key(Event::Open);
+  w.down(3);
+  ASSERT_REFUSAL(NoCard, w.key(Event::Open));
+  ASSERT_SCREEN(Settings, w.menu);
+}
+
+// Without the module, the screens about the track the position names do not open either.
+static void track_info_and_new_track_need_the_gnss() {
+  for (int down : {2, 3}) {
+    Walk w;
+    w.context.gnssOk = false;
+    w.keys({Event::Open, Event::Down, Event::Open});
+    w.down(down);
+    ASSERT_REFUSAL(NoGnss, w.key(Event::Open));
+    ASSERT_SCREEN(Track, w.menu);
+  }
+  Walk w;  // the start line opens, to show the one there is; recording it is what needs the module
+  w.context.gnssOk = false;
+  w.keys({Event::Open, Event::Down, Event::Open, Event::Open});
+  ASSERT_SCREEN(StartLine, w.menu);
+  ASSERT_REFUSAL(NoGnss, w.key(Event::Hold));
+}
+
+static void writes_need_a_card_that_took_the_probe() {
+  Walk w;
+  w.context.cardWritable = false;
+  w.context.hasFix = true;
+  w.key(Event::Open);
+  w.down(4);
+  w.keys({Event::Open, Event::Open, Event::Down});  // Settings › Car profile › New car
+  ASSERT_REFUSAL(CardNotWritable, w.key(Event::Open));
+  Walk d;  // Delete sessions opens, to show what the card holds, but does not delete
+  d.context.cardWritable = false;
+  d.key(Event::Open);
+  d.down(4);
+  d.key(Event::Open);
+  d.down(3);
+  d.key(Event::Open);
+  ASSERT_SCREEN(DeleteSessions, d.menu);
+  ASSERT_REFUSAL(CardNotWritable, d.key(Event::Hold));
 }
 
 static void new_track_is_a_hold_and_needs_card_and_fix() {
@@ -508,6 +576,9 @@ int main(int, char**) {
   RUN_TEST(overwriting_a_start_line_asks_first);
   RUN_TEST(any_other_key_answers_no);
   RUN_TEST(start_line_and_geometry_need_card_and_fix);
+  RUN_TEST(screens_that_read_the_card_need_it_to_open);
+  RUN_TEST(track_info_and_new_track_need_the_gnss);
+  RUN_TEST(writes_need_a_card_that_took_the_probe);
   RUN_TEST(new_track_is_a_hold_and_needs_card_and_fix);
   RUN_TEST(restart_is_a_hold_on_its_own_screen);
   RUN_TEST(deleting_sessions_always_asks);

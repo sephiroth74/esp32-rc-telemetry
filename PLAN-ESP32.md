@@ -384,9 +384,10 @@ about 6 s in the worst case.
 
 Only checks 1 and 3 are fatal, and deliberately so: every other failure boots into IDLE (§3.7) in a
 degraded state rather than latching, because a latched device is one whose card you cannot offload.
-"Logging refused" means a session start — manual or automatic — is answered with a refusal toast
-naming the failed check, while Transfer and Delete sessions stay reachable so the user can rescue the
-data or free space.
+"Logging refused" means a session start — manual or automatic — is refused with a notice naming the
+failed check (§3.4), while Transfer and Delete sessions stay reachable so the user can rescue the data
+or free space. Home says so before anyone tries: its status line reads `No logging`, and its first
+lines name the reason.
 
 #### Reporting failures on the display
 
@@ -438,6 +439,9 @@ cursor scrolls the menu, and the session's laps, GNSS and inputs are pages of on
 **Home** shows the resolved track, whether it has a start line, the last session's best lap and lap
 count, and whether the automatic start is on (§3.6) — with large text also the car profile and the
 free space, which its status line has no room for. Holding OK on Home starts a session by hand.
+When a session cannot start — no card, or the POST refused logging — Home opens on the reason
+instead (`GNSS not found`, then `No logging (check 8)`), on the first page even with large text, and
+its status line reads `No logging` rather than `Ready`.
 
 The menu, each list ending in Back:
 
@@ -457,9 +461,20 @@ The menu, each list ending in Back:
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
 | **Settings › Restart** | What it does | Hold OK: restart, and the POST runs again (§3.3), e.g. after a card goes in. Settings is reached from IDLE only, so no session is open. The ladder cannot read two keys at once — OK pulls D0 to ground whatever else is pressed — so there is no two-key reset, and a held-key gesture would sit too close to holding OK for a session |
 
-Entries that write to the card are refused while it is unavailable (§3.5), with a toast saying so.
-Start line, Geometry and New track additionally require a valid fix, since all three write a
-position; a session does not (§7.1).
+**What needs what.** An entry that cannot work without the card or the GNSS module refuses with a
+**notice**: the reason and what to do, on the whole body, until a key closes it — that key does
+nothing else. A refusal is never a toast, which is gone before it is read.
+
+| To | Needs |
+| --- | --- |
+| Open Track › Start line, Geometry, Info or New track, Settings › Delete sessions, or Transfer | The card: they read what is on it |
+| Open Track › Info or New track | The GNSS module too: they are about the track the position names |
+| Start a session | The card, and logging allowed by the POST: checks 4, 5 and 8 |
+| Record a start line, a geometry or a new track | A card that took the write probe (check 5), the GNSS module, and a fix: each writes a position; a session does not (§7.1) |
+| Add a car, delete sessions | A card that took the write probe |
+
+Car profiles are read from the copy of `config.json` on LittleFS (§3.8), so choosing one needs no
+card; only adding one does.
 
 The screens outside the menu:
 
@@ -481,7 +496,7 @@ matters. Errors take the body until a key is pressed; warnings stay in the statu
 
 | Condition | On screen | Behaviour |
 | --- | --- | --- |
-| Capability withdrawn by the POST (§3.3) | Warning mark | The affected entries are refused with a toast naming the failed check; details under Settings › About, in `/post.log` and over BLE |
+| Capability withdrawn by the POST (§3.3) | Warning mark; Home names the reason when logging is refused | The affected entries are refused with a notice naming what is missing (§3.4); details under Settings › About, in `/post.log` and over BLE |
 | Card lost **after** boot (removed, or mount dropped) | Error `Card lost` | Entries that write to the card are refused. A card missing **at** boot is instead the fatal check 3 of §3.3 — there is nothing on it to rescue, so refusing to start is the honest answer |
 | Write error or card full | Error `Write error` or `Card full` | Session closed as cleanly as possible |
 | Fix lost during a session | Status bar shows `no fix`; the session screen carries on | Logging **continues** — invalid epochs are still recorded (§5.3) |
@@ -501,7 +516,7 @@ without a key press; the keys remain for doing either by hand.
     (§3.8) — so a session also starts without a fix.
 
   A dialog that is open is cancelled. If the POST refused logging, the trigger shows the reason once,
-  as a toast.
+  as the notice of §3.4.
 - **Automatic stop**: the car is switched off (§4.5, through SAVING), or it has stood still — below
   2 km/h with the throttle within ±5 % of neutral — for 5 minutes (`session.auto_stop_min`). The
   device returns to Home with `Session N saved`, and the next run starts a new session.
@@ -1030,8 +1045,8 @@ Reachable only from Menu › Transfer (§3.4), which the session lock (§3.6) ma
 session open.
 
 - The firmware and the host **cannot both own the FAT volume**. Entering MSC unmounts `SD_MMC` and
-  hands raw sector read/write callbacks to `USBMSC`; while attached, logging is refused with a toast
-  (§3.2).
+  hands raw sector read/write callbacks to `USBMSC`; while attached, logging is refused with a notice
+  (§3.4).
 - Exiting: LEFT, confirmed by holding OK while a host is attached, detaches MSC and remounts the
   card. The display tells the user to eject on the host first (§3.4) — pulling a volume out from
   under macOS is how filesystems get damaged.

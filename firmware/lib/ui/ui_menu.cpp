@@ -67,6 +67,42 @@ MenuResult issue(Command command, uint8_t arg = 0) {
   return r;
 }
 
+// What opening a screen needs (§3.4): the screens that read the card, and the ones about the track
+// the position names.
+Refusal openRefusal(ScreenId screen, const MenuContext& c) {
+  switch (screen) {
+    case ScreenId::StartLine:
+    case ScreenId::Geometry:
+    case ScreenId::TrackInfo:
+    case ScreenId::NewTrack:
+    case ScreenId::DeleteSessions:
+      if (!c.cardOk) return Refusal::NoCard;
+      break;
+    default:
+      return Refusal::None;
+  }
+  if ((screen == ScreenId::TrackInfo || screen == ScreenId::NewTrack) && !c.gnssOk) {
+    return Refusal::NoGnss;
+  }
+  return Refusal::None;
+}
+
+// What a write needs: a card that took the POST's write probe.
+Refusal writeRefusal(const MenuContext& c) {
+  if (!c.cardOk) return Refusal::NoCard;
+  if (!c.cardWritable) return Refusal::CardNotWritable;
+  return Refusal::None;
+}
+
+// What recording a position needs: the card, the module, and a fix.
+Refusal positionRefusal(const MenuContext& c) {
+  Refusal r = writeRefusal(c);
+  if (r != Refusal::None) return r;
+  if (!c.gnssOk) return Refusal::NoGnss;
+  if (!c.hasFix) return Refusal::NoFix;
+  return Refusal::None;
+}
+
 // A session needs a card it may write to; the POST can have refused logging for other reasons too.
 MenuResult startSession(const MenuContext& c) {
   if (!c.cardOk) return refused(Refusal::NoCard);
@@ -237,7 +273,8 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       uint8_t values = valueCount(current, c);
       if (hasNewChoice(current) && choice == values) {
         // New car. Profiles live in the card's config.json (§3.8); a refusal keeps the editor open.
-        if (!c.cardOk) return refused(Refusal::NoCard);
+        Refusal r = writeRefusal(c);
+        if (r != Refusal::None) return refused(r);
         if (values >= c.profileMax) return refused(Refusal::ProfilesFull, c.profileMax);
         // Back on Settings, on Calibrate: the new car has no calibration yet.
         screen_ = parent(current);
@@ -268,7 +305,10 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
     screen_ = parent(current);
     return {};
   }
+  if (entry.command == Command::EnterTransfer && !c.cardOk) return refused(Refusal::NoCard);
   if (entry.command != Command::None) return issue(entry.command);
+  Refusal r = openRefusal(entry.screen, c);
+  if (r != Refusal::None) return refused(r);  // the list stays, the notice says why
 
   // An editor opens on the value in force, so OK without a change saves nothing new.
   switch (entry.screen) {
@@ -297,25 +337,22 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
     case ScreenId::Session:
       return startSession(c);
     case ScreenId::StartLine:
-      if (!c.cardOk) return refused(Refusal::NoCard);
-      if (!c.hasFix) return refused(Refusal::NoFix);
+      if (Refusal r = positionRefusal(c); r != Refusal::None) return refused(r);
       if (c.hasStartLine) {
         openDialog(DialogKind::OverwriteStartLine, nowMs);
         return {};
       }
       return issue(Command::RecordStartLine);
     case ScreenId::Geometry:
-      if (!c.cardOk) return refused(Refusal::NoCard);
-      if (!c.hasFix) return refused(Refusal::NoFix);
+      if (Refusal r = positionRefusal(c); r != Refusal::None) return refused(r);
       return issue(Command::EnterGeometry);
     case ScreenId::NewTrack:
-      if (!c.cardOk) return refused(Refusal::NoCard);
-      if (!c.hasFix) return refused(Refusal::NoFix);
+      if (Refusal r = positionRefusal(c); r != Refusal::None) return refused(r);
       return issue(Command::NewTrack);
     case ScreenId::Gnss:
       return issue(Command::RestartGnss);
     case ScreenId::DeleteSessions:
-      if (!c.cardOk) return refused(Refusal::NoCard);
+      if (Refusal r = writeRefusal(c); r != Refusal::None) return refused(r);
       openDialog(DialogKind::DeleteSessions, nowMs);
       return {};
     case ScreenId::Calibrate:

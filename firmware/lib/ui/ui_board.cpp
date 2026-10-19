@@ -31,6 +31,19 @@ void newProfileName(uint8_t index, char (&out)[9]) {
   snprintf(out, sizeof out, "Car %u", index + 1);
 }
 
+const char* checkReason(uint8_t check) {
+  switch (check) {
+    case 4:
+      return "Card nearly full";
+    case 5:
+      return "Card write failed";
+    case 8:
+      return "GNSS not found";
+    default:
+      return nullptr;
+  }
+}
+
 void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
   switch (refusal) {
     case Refusal::NoCard:
@@ -38,6 +51,12 @@ void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
       break;
     case Refusal::NoFix:
       snprintf(out, sizeof out, "Refused: no fix");
+      break;
+    case Refusal::CardNotWritable:
+      snprintf(out, sizeof out, "Refused: card writes");
+      break;
+    case Refusal::NoGnss:
+      snprintf(out, sizeof out, "Refused: no GNSS");
       break;
     case Refusal::LoggingRefused:
       snprintf(out, sizeof out, "Logging refused: %u", arg);  // the POST check that refused it
@@ -55,6 +74,14 @@ void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
 }
 
 BoardOutput Board::handle(Event event, const Facts& facts, uint32_t nowMs) {
+  if (notice_ != Refusal::None) {
+    if (event != Event::Press) return {};  // the rest of the gesture that opened it
+    notice_ = Refusal::None;
+    menu_.restartTimer(nowMs);
+    BoardOutput o;
+    o.swallow = true;
+    return o;
+  }
   if (confirm_.isOpen()) {
     DialogKind kind = confirm_.kind();
     Confirm::Answer a = confirm_.handle(event);
@@ -88,7 +115,10 @@ BoardOutput Board::handle(Event event, const Facts& facts, uint32_t nowMs) {
 BoardOutput Board::fromMenu(const MenuResult& r, const Facts& f, uint32_t nowMs) {
   BoardOutput o;
   if (r.refusal != Refusal::None) {
-    refusalText(r.refusal, r.arg, o.toast);
+    notice_ = r.refusal;
+    noticeArg_ = r.arg;
+    o.refused = r.refusal;
+    o.arg = r.arg;
     return o;
   }
   o.command = r.command;
