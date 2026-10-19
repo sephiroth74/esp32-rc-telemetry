@@ -180,12 +180,18 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   58.2GB`, `5 Write ok`, `6 Speed ok 3276KB/s`. A card left in SPI mode by the DAT3 test was refused
   the same way until unplugged. Not tried for want of the cards: an exFAT or GPT card, and a nearly
   full one, whose thresholds the host tests cover.
-- [ ] **3.4 UBX frame scanner.**
+- [x] **3.4 UBX frame scanner.**
   1. Capture raw GM10 traffic into `docs/fixtures/`, with a raw-dump mode in `tools/gps-test`
      that writes the UART bytes to the card.
   2. Write `lib/ubx`: frame sync, length, Fletcher checksum, the raw frame out (§5.4).
 
   *Test:* host tests against the captured fixtures, including truncated and corrupted frames.
+  *Result:* the raw dump of `tools/gps-test` (`d`) prints six seconds of the UART as hex while
+  polling NAV-PVT, NAV-SAT and MON-VER; the module, as delivered, sends NMEA and NAV-PVT at 10 Hz.
+  The first 1,691 bytes are `docs/fixtures/gm10-indoor-115200.hex`. `lib/ubx`'s scanner returns
+  frames whole and unchanged, and after a failed one searches again from the next byte, so a false
+  sync or a cut frame costs nothing after it; 10 host tests in `test/test_ubx`. The bench had the
+  GPS's TX and RX swapped, which reads as no data at any baud (`docs/hardware.md`).
 - [ ] **3.5 Check 8, the GNSS link.** The auto-baud scan of §5.2: 230400, 115200, 38400 and 9600
   baud, looking for `0xB5 0x62` or `$G` within 1.5 s per rate. It runs as POST check 8.
   *Test, on the bench:* the link is found at 115200, as the module was delivered. With the GPS

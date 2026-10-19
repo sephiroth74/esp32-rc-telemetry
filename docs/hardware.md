@@ -95,10 +95,16 @@ with `analogReadMilliVolts()` at 100 Hz.
 | --- | --- |
 | Wiring | GPS TX → D7 (GPIO44), GPS RX → D6 (GPIO43), 5V → 5V, GND → GND; UART1 |
 | Baud rate as found | 115200 |
-| Output as found | NMEA and UBX together |
+| Output as found | NMEA and UBX together, both at **10 Hz**: NAV-PVT and nine NMEA sentence types each tenth of a second (captured into `docs/fixtures/gm10-indoor-115200.hex`, 2026-10-19) |
 | Both UART directions | **Work**: the UBX-MON-VER poll is answered |
 | UBX-MON-VER | sw `ROM SPG 5.10 (7b202e)`, hw `000A0000`; `FWVER=SPG 5.10`, `PROTVER=34.10`; `GPS;GLO;GAL;BDS`, `SBAS;QZSS` |
 | Fix | Not yet — indoors, 0 satellites. To repeat with a view of the sky |
+
+**TX and RX swapped give no byte at all**, at any baud rate, which looks like a dead module. Found
+on 2026-10-19 after the bench was rewired for the RC tests: the multimeter read 3.28 V on the line
+from the XIAO, idle, and 2.50 V on the module's TX, which landed on D6 against the XIAO's own TX —
+two outputs fighting, averaged by the meter. A software swap of the pins did not bring the link up,
+so put the wires right rather than the pins: GPS TX to D7, GPS RX to D6.
 
 `PROTVER=34.10` confirms the configuration-database interface that §5.2 relies on (`CFG-VALSET`).
 The `ROM` prefix says the firmware runs from the chip's ROM. That hints the module carries no flash

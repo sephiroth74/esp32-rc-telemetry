@@ -4,13 +4,15 @@
 //   seeed_xiao_esp32s3  GPS TX -> D7 (GPIO44)  GPS RX -> D6 (GPIO43)  GPS 5V -> 5V  GND -> GND
 //                       — the UART1 pins of firmware/include/pins.h — plus the status on the OLED
 //                       of tools/oled-sd-test (SDA D4, SCL D5), if one is connected.
-//   esp32dev            GPS TX -> GPIO16 (RX2)  GPS RX -> GPIO17 (TX2)  GPS 5V -> 5V/VIN  GND -> GND
+//   esp32dev            GPS TX -> GPIO16 (RX2)  GPS RX -> GPIO17 (TX2)  GPS 5V -> 5V/VIN  GND ->
+//   GND
 //
 // The link itself — baud scan, NMEA and UBX decoding, the MON-VER poll that proves the ESP32 -> GPS
-// direction is wired too — lives in tools/lib/gm10, shared with tools/oled-sd-test. This sketch adds
-// a status line every second and the serial commands.
+// direction is wired too — lives in tools/lib/gm10, shared with tools/oled-sd-test. This sketch
+// adds a status line every second and the serial commands.
 //
-// Serial monitor commands: r = toggle raw echo, v = poll MON-VER again, b = rescan baud rate.
+// Serial monitor commands: r = toggle raw echo, v = poll MON-VER again, b = rescan baud rate,
+// d = dump six seconds of the raw UART stream as hex, for docs/fixtures (ROADMAP.md step 3.4).
 #include <Arduino.h>
 #include <gm10.h>
 #ifdef HAS_OLED
@@ -106,6 +108,49 @@ void oledBegin() {}
 void oledDraw() {}
 #endif
 
+// --- Raw dump, for docs/fixtures (ROADMAP.md step 3.4) ------------------------
+// Six seconds of the UART exactly as it arrives, as hex lines between two markers, while NAV-PVT,
+// NAV-SAT and MON-VER are polled once a second: whatever the module's own output, the dump then
+// holds the frames lib/ubx is tested on. The link's own parsing pauses meanwhile, so it takes no
+// byte away from the dump.
+void dumpRaw() {
+  if (!gps.baud) {
+    Serial.println("dump: no link yet, wait for the baud scan");
+    return;
+  }
+  // Polls carry no payload: the checksum covers class, id and the zero length only.
+  static const uint8_t kPolls[][8] = {
+      {0xB5, 0x62, 0x01, 0x07, 0x00, 0x00, 0x08, 0x19},  // NAV-PVT
+      {0xB5, 0x62, 0x01, 0x35, 0x00, 0x00, 0x36, 0xA3},  // NAV-SAT
+      {0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34},  // MON-VER
+  };
+  constexpr unsigned long kDumpMs = 6000;
+  Serial.printf("-- dump begin, %lu baud --\n", gps.baud);
+  unsigned long start = millis(), lastPollMs = 0;
+  bool polled = false;
+  size_t total = 0;
+  int column = 0;
+  while (millis() - start < kDumpMs) {
+    if (!polled || millis() - lastPollMs >= 1000) {
+      for (const auto& poll : kPolls) gpsPort.write(poll, sizeof poll);
+      lastPollMs = millis();
+      polled = true;
+    }
+    while (gpsPort.available()) {
+      Serial.printf("%02X", gpsPort.read());
+      ++total;
+      if (++column == 32) {
+        Serial.println();
+        column = 0;
+      } else {
+        Serial.print(' ');
+      }
+    }
+  }
+  if (column) Serial.println();
+  Serial.printf("-- dump end, %u bytes --\n", (unsigned)total);
+}
+
 void handleCommands() {
   while (Serial.available()) {
     switch (Serial.read()) {
@@ -119,6 +164,9 @@ void handleCommands() {
       case 'b':
         gps.rescan();
         break;
+      case 'd':
+        dumpRaw();
+        break;
     }
   }
 }
@@ -126,8 +174,9 @@ void handleCommands() {
 void setup() {
   Serial.begin(115200);
   delay(500);
+  gpsPort.setRxBufferSize(4096);  // before begin(): the dump prints while the module keeps talking
   gps.begin(GPS_RX_PIN, GPS_TX_PIN);
-  Serial.println("\nGM10 GPS test — r: raw echo, v: MON-VER, b: rescan baud");
+  Serial.println("\nGM10 GPS test — r: raw echo, v: MON-VER, b: rescan baud, d: raw dump");
   oledBegin();
 }
 
