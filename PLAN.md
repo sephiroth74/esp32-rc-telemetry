@@ -41,6 +41,7 @@ binary log format and all track/lap math.
 | Phone link | **BLE only in Transfer mode** — no live stream, no radio transmitting near the receiver while driving (PLAN-ESP32.md §7.4) |
 | Desktop transfer | **USB Mass Storage** — device mounts as a disk over USB-C |
 | Track data | **Start line and geometry optional.** Without a start line the gate goes at the fastest point of a lap; the desktop app builds the geometry from the sessions and refines the start line, and writes both back into the track folder, so the next session there has them. Laps that cut or leave the track are flagged, never best (PLAN-ESP32.md §7.5) |
+| Track recognition | **By position, never by hand.** Inside a geo-fence drawn in the apps, otherwise within 300 m of the start line or centre; the most recently used wins a tie. The track recognised is every session's default, and the GNSS screen names it (PLAN-ESP32.md §7.1) |
 | Names | **Given in the apps, never typed on the device.** A track found on its own, or made with Track › New track, is named by its cell id, and a profile made with New car is `Car N`; the apps rename them in `track.json` and `config.json` (PLAN-ESP32.md §3.8, §7.1) |
 | Repos | **Single monorepo** |
 | Language | **Everything in English** (code, comments, docs, UI) |

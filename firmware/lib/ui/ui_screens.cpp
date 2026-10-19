@@ -42,8 +42,22 @@ void put(ScreenText& out, uint8_t row, const char* fmt, ...) {
   if (n > kScreenCols) ++out.overflow;
 }
 
+// The resolved track as the screens name it: its name from the apps, cut to the 14 columns its cell
+// id can take (N4512E00934-99) so that every screen tested with the id still fits, else the id.
 const char* trackText(const Facts& f) {
+  static char name[15];
+  if (f.trackName && *f.trackName) {
+    snprintf(name, sizeof name, "%s", f.trackName);
+    return name;
+  }
   return f.trackId && *f.trackId ? f.trackId : "none, no fix";
+}
+
+// Six decimals of a degree, a tenth of a metre, from degrees × 1e7; the hemisphere last.
+void coordText(int32_t e7, char positive, char negative, char (&out)[16]) {
+  uint32_t a = e7 < 0 ? static_cast<uint32_t>(-static_cast<int64_t>(e7)) : e7;
+  snprintf(out, sizeof out, "%lu.%06lu %c", (unsigned long)(a / 10000000),
+           (unsigned long)(a % 10000000 / 10), e7 < 0 ? negative : positive);
 }
 
 const char* fixName(uint8_t fixType) { return fixType >= 3 ? "3D" : fixType == 2 ? "2D" : "--"; }
@@ -343,7 +357,8 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.setHint("OK back  hold: record");
       return;
     case ScreenId::TrackInfo:
-      c.add("Cell %s", trackText(f));
+      c.add("Cell %s", f.trackId && *f.trackId ? f.trackId : "none, no fix");
+      c.add("Name %s", f.trackName && *f.trackName ? trackText(f) : "set in the app");
       c.add("Sessions here %u", f.trackSessions);
       c.setHint("OK: back");
       return;
@@ -355,13 +370,35 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       if (!f.menu.hasFix) c.add("Needs a fix");
       c.setHint("OK back  hold: create");
       return;
-    case ScreenId::Gnss:
-      c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);
+    case ScreenId::Gnss: {
+      // The link, the fix and the track first: what a glance in the pits wants (§3.4).
+      char a[16];
+      if (f.gnssLink) {
+        c.add("Link ok, %lu bd", (unsigned long)f.gnssBaud);
+      } else {
+        c.add("Link: no GNSS");
+      }
+      if (f.fixType >= 2) {
+        c.add("Fix %s, %u sats", fixName(f.fixType), f.sats);
+      } else {
+        c.add("No fix, %u sats", f.sats);
+      }
+      c.add("Track %s", trackText(f));
+      if (f.fixType >= 2) {
+        coordText(f.latE7, 'N', 'S', a);
+        c.add("Lat %s", a);
+        coordText(f.lonE7, 'E', 'W', a);
+        c.add("Lon %s", a);
+      } else {
+        c.add("Lat --");
+        c.add("Lon --");
+      }
       c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
       c.add("pDOP %u.%02u", f.pdopX100 / 100, f.pdopX100 % 100);
       c.add("First fix %u s", f.ttffS);
       c.setHint("OK back hold:restart");
       return;
+    }
     case ScreenId::Calibrate:
       c.add("Profile %s", profileName(f, f.menu.activeProfile));
       c.add("Calibrated: %s", f.profileCalibrated ? "yes" : "no");

@@ -39,7 +39,11 @@ ui::Facts sampleFacts() {
     profileNamePtrs[i] = profileNames[i];
   }
   f.profileNames = profileNamePtrs;
+  f.gnssLink = true;
+  f.gnssBaud = 115200;
   f.fixType = 3;
+  f.latE7 = 451234560;  // inside the sample cell, N4512E00934
+  f.lonE7 = 93456780;
   f.sats = 14;
   f.hAccCm = 120;
   f.pdopX100 = 132;

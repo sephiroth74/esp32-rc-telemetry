@@ -24,7 +24,10 @@ struct Facts {
   const char* const* profileNames = nullptr;  // menu.profileCount of them, up to 8 characters each
   bool profileCalibrated = false;             // the active profile
 
-  uint8_t fixType = 0;  // UBX fixType: 0 none, 2 2D, 3 3D
+  bool gnssLink = false;  // the module answered POST check 8, and its messages keep coming
+  uint32_t gnssBaud = 0;
+  uint8_t fixType = 0;           // UBX fixType: 0 none, 2 2D, 3 3D
+  int32_t latE7 = 0, lonE7 = 0;  // degrees × 1e7, as NAV-PVT gives them; meaningful with a fix
   uint8_t sats = 0;
   uint16_t hAccCm = 0;
   uint16_t pdopX100 = 0;
@@ -36,7 +39,8 @@ struct Facts {
   uint16_t cardGb = 0;
   uint16_t cardKbps = 0;
 
-  const char* trackId = "";  // the resolved track's cell id, empty without a fix
+  const char* trackId = "";    // the resolved track's cell id, empty without a fix
+  const char* trackName = "";  // its name in track.json, given in the apps; empty until then
   bool hasGeometry = false;
   uint16_t trackSessions = 0;  // recorded at this track
   uint16_t cardSessions = 0;   // on the card, for Delete sessions

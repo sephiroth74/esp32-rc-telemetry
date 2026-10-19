@@ -452,7 +452,7 @@ The menu, each list ending in Back:
 | **Track › Geometry** | Whether the resolved track has a geometry, and where it came from (§7.5) | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. **Optional**: the desktop app builds the geometry from the sessions anyway |
 | **Track › Info** | Cell id, the name in `track.json`, how many sessions were recorded there | — |
 | **Track › New track** | The resolved track, and what a new one is for | Hold OK: create a track at the current position although one is resolved there — for a new layout at a known venue. It starts with no start line and no geometry, its folder takes the cell id with the next suffix, and the apps name it (§7.1) |
-| **GNSS** | Fix type, satellites, hAcc, pDOP, time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s | Hold OK: restart acquisition |
+| **GNSS** | First page: whether the module is linked — found by POST check 8 and still sending — and at what baud; the fix and the satellites; the **track recognised** (§7.1), by its name from the apps or else its cell id. Then the coordinates, hAcc, pDOP, and the time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s. A **3D fix** has latitude, longitude and altitude, from four satellites or more; a **2D** one lacks the altitude, from three, and is not trusted for laps | Hold OK: restart acquisition |
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
 | **Settings › Car profile** | The profiles in `config.json`, the active one marked, then **New car** | OK: make the highlighted one active. New car adds a profile named `Car N`, makes it active and lands on Calibrate; the apps rename it (§3.8) |
 | **Settings › Calibrate** | Whether the active profile is calibrated | Hold OK: enter CALIBRATION (§3.7, §3.8) |
@@ -938,7 +938,7 @@ derived from the first valid fix**, so the device files each session under the r
 user having to type a name on a device with a five-way switch and a 21-column display.
 
 ```text
-/tracks/N4512E00934/track.json               # human name, created, last used, cell id, centre point
+/tracks/N4512E00934/track.json               # human name, created, last used, cell id, centre point, geo-fence
 /tracks/N4512E00934/start_line.json          # position + heading of the gate, and its source (§7.5)
 /tracks/N4512E00934/geometry.rcg             # the track's shape, and its source (§7.5)
 /tracks/N4512E00934/session_001/session.rcl  # binary, high-rate records
@@ -965,13 +965,21 @@ folders**, depending on where the car happened to be parked when the first fix l
 track could split across two days. So the cell id *names* the folder but does not *define* identity:
 
 1. Take the first valid fix (3D, hAcc ≤ 5 m).
-2. Scan `/tracks/*/track.json` and reuse the folder whose `start_line` — or `centre`, if no start line
-   is set yet — lies within `track.match_radius_m` (default **300 m**) of that fix. If several do,
-   take the one used most recently: `last_used` is updated whenever a session is filed there.
+2. Scan `/tracks/*/track.json`. A track whose **geo-fence** contains the fix is the one. Otherwise,
+   reuse the folder whose `start_line` — or `centre`, if no start line is set yet — lies within
+   `track.match_radius_m` (default **300 m**) of that fix. If several match either way, take the one
+   used most recently: `last_used` is updated whenever a session is filed there.
 3. Otherwise create a new folder named from the cell id and write `track.json` with the fix as
    `centre`. If that name exists but belongs to a different track — two circuits inside one kilometre
    cell — append `-2`, `-3`, … up to `-99`. The longest id is therefore 14 characters,
    `N4512E00934-99`, and every screen is tested with it.
+
+**Geo-fences** are drawn in the apps around a track's layout, a polygon of a few dozen vertices,
+and written into its `track.json` with its name. They are optional, like the start line and the
+geometry (§7.5): they make recognition exact where the radius is coarse — two clubs a few hundred
+metres apart, or two layouts at one venue — and the point-in-polygon test is `lib/geo`'s,
+host-tested like the rest of it. The track recognised, by fence or by radius, is the default for every
+session and shows on the GNSS screen and on Home (§3.4).
 
 A track never has to be registered beforehand: a new venue gets its folder from step 3 on its own.
 What step 2 cannot tell is a **new layout at a known venue**, which matches the old track by position.

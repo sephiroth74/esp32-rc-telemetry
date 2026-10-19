@@ -203,8 +203,9 @@ ends on the screen §3.3 describes.
   *Test:* host tests against fixtures captured after 4.1.
 - [ ] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
   counters (§4.2, §5.3).
-- [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT. Measure
-  the time to first fix, cold and warm, into `docs/hardware.md`.
+- [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
+  and its baud, the fix and satellites, the coordinates, hAcc and pDOP (§3.4). Measure the time to
+  first fix, cold and warm, into `docs/hardware.md`.
 
 ## Phase 5 — Logging core and manual sessions
 
@@ -214,8 +215,9 @@ ends on the screen §3.3 describes.
 - [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.
-  Among several matching tracks the one used most recently wins, and Track › New track creates a
-  folder at the fix with the next suffix.
+  A track whose geo-fence contains the fix comes first, then the 300 m radius; among several the one
+  used most recently wins, and Track › New track creates a folder at the fix with the next suffix.
+  The point-in-polygon test lives in `lib/geo`, host-tested; the GNSS screen names the track.
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.

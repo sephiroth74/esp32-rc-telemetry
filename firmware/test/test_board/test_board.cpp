@@ -46,7 +46,11 @@ static Facts worstCase() {
   f.menu.activeProfile = 0;
   f.profileNames = kLongNames;
   f.profileCalibrated = true;
+  f.gnssLink = true;
+  f.gnssBaud = 230400;
   f.fixType = 3;
+  f.latE7 = -899999999;  // the widest coordinates there are
+  f.lonE7 = -1799999999;
   f.sats = 32;
   f.hAccCm = 9999;
   f.pdopX100 = 9999;
@@ -403,12 +407,16 @@ static void every_screen_fits_in_21_columns() {
       {"Leave transfer",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Open, Event::Back}},
   };
-  for (const Path& p : paths) {
-    for (Layout layout : {Layout::TwoButtons, Layout::FiveWay}) {
-      for (TextSize size : {TextSize::Small, TextSize::Large}) {
-        Walk w;
-        for (Event e : p.keys) w.key(e);
-        expectFits(w, layout, size, p.name);
+  // With the cell id, and with a name from the apps longer than any screen has room for.
+  for (const char* name : {"", "Pista Internazionale Ambrosiana"}) {
+    for (const Path& p : paths) {
+      for (Layout layout : {Layout::TwoButtons, Layout::FiveWay}) {
+        for (TextSize size : {TextSize::Small, TextSize::Large}) {
+          Walk w;
+          w.facts.trackName = name;
+          for (Event e : p.keys) w.key(e);
+          expectFits(w, layout, size, p.name);
+        }
       }
     }
   }
@@ -431,6 +439,33 @@ static void the_home_screen_reads_as_designed() {
   TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[3]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[4]);
   TEST_ASSERT_EQUAL_UINT8(7, t.scrollTotal);  // the profile and free space join the content
+}
+
+static void the_gnss_screen_reads_as_designed() {
+  Walk w;
+  w.keys({Event::Open, Event::Down, Event::Down, Event::Open});  // Menu › GNSS
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Link ok, 230400 bd", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("Fix 3D, 32 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[3]);
+  w.key(Event::Down);  // the next page: the coordinates
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Lat 89.999999 S", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("Lon 179.999999 W", t.lines[2]);
+
+  // A name from the apps takes the cell id's place; without a link or a fix, no coordinates.
+  w.facts.trackName = "Ambrosiana";
+  w.facts.gnssLink = false;
+  w.facts.fixType = 0;
+  w.key(Event::Up);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Link: no GNSS", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("No fix, 32 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("Track Ambrosiana", t.lines[3]);
+  w.key(Event::Down);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Lat --", t.lines[1]);
 }
 
 static void hints_follow_the_layout() {
@@ -474,6 +509,7 @@ int main(int, char**) {
   RUN_TEST(the_menu_timeout_counts_from_the_end_of_a_mode);
   RUN_TEST(every_screen_fits_in_21_columns);
   RUN_TEST(the_home_screen_reads_as_designed);
+  RUN_TEST(the_gnss_screen_reads_as_designed);
   RUN_TEST(hints_follow_the_layout);
   RUN_TEST(a_list_keeps_its_cursor_in_view);
   return UNITY_END();
