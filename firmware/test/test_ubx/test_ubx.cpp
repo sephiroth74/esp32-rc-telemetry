@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <vector>
 
+#include "link_probe.h"
 #include "ubx.h"
 
 #ifndef FIXTURES_DIR
@@ -211,6 +212,65 @@ static void an_encoded_frame_scans_back_the_same() {
   TEST_ASSERT_EQUAL_UINT8_ARRAY(original.data(), out, size);  // the module's own checksum
 }
 
+// --- The link probe of POST check 8 ----------------------------------------------
+
+static ubx::LinkProbe probeOf(const Bytes& data) {
+  ubx::LinkProbe probe;
+  probe.push(data.data(), data.size());
+  return probe;
+}
+
+// The first NMEA sentence of the capture, "$" to the line ending. A "$" alone could be a byte of a
+// UBX payload, so it takes "$G" and four capitals: "$GNRMC".
+static Bytes firstSentence() {
+  const Bytes& b = capture();
+  for (size_t i = 0; i + 6 < b.size(); ++i) {
+    bool start = b[i] == '$' && b[i + 1] == 'G';
+    for (size_t k = 2; k < 6 && start; ++k) start = b[i + k] >= 'A' && b[i + k] <= 'Z';
+    if (!start) continue;
+    size_t end = i;
+    while (end < b.size() && b[end] != '\n') ++end;
+    return Bytes(b.begin() + i, b.begin() + end + 1);
+  }
+  return {};
+}
+
+static void the_capture_shows_a_link_both_ways() {
+  ubx::LinkProbe probe = probeOf(capture());
+  TEST_ASSERT_TRUE(probe.found());
+  TEST_ASSERT_TRUE(probe.sawUbx());
+  TEST_ASSERT_TRUE(probe.sawNmea());
+}
+
+static void one_frame_of_either_kind_is_enough() {
+  TEST_ASSERT_TRUE(probeOf(fixtureFrame(1)).sawUbx());
+  Bytes sentence = firstSentence();
+  TEST_ASSERT_EQUAL_CHAR('$', sentence[0]);
+  ubx::LinkProbe nmea = probeOf(sentence);
+  TEST_ASSERT_TRUE(nmea.sawNmea());
+  TEST_ASSERT_FALSE(nmea.sawUbx());
+}
+
+static void a_sentence_with_a_wrong_checksum_is_not() {
+  Bytes sentence = firstSentence();
+  sentence[3] ^= 0x01;  // a letter of the talker's sentence id
+  TEST_ASSERT_FALSE(probeOf(sentence).found());
+}
+
+// What a rate that is not the module's makes of its bytes: noise, with a sync or a "$G" in it now
+// and then — not enough without the frame and its checksum.
+static void noise_with_syncs_in_it_is_not_a_link() {
+  Bytes noise;
+  uint32_t state = 12345;
+  for (int i = 0; i < 20000; ++i) {
+    state = state * 1103515245u + 12345u;
+    noise.push_back(static_cast<uint8_t>(state >> 16));
+    if (i % 997 == 0) noise.insert(noise.end(), {ubx::kSync1, ubx::kSync2, 0x01, 0x07});
+    if (i % 1009 == 0) noise.insert(noise.end(), {'$', 'G', 'N', 'R', 'M', 'C', ','});
+  }
+  TEST_ASSERT_FALSE(probeOf(noise).found());
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(the_capture_yields_its_six_frames_unchanged);
@@ -223,5 +283,9 @@ int main(int, char**) {
   RUN_TEST(a_stream_of_false_syncs_never_fills_it_up);
   RUN_TEST(encode_builds_the_polls_of_gps_test);
   RUN_TEST(an_encoded_frame_scans_back_the_same);
+  RUN_TEST(the_capture_shows_a_link_both_ways);
+  RUN_TEST(one_frame_of_either_kind_is_enough);
+  RUN_TEST(a_sentence_with_a_wrong_checksum_is_not);
+  RUN_TEST(noise_with_syncs_in_it_is_not_a_link);
   return UNITY_END();
 }

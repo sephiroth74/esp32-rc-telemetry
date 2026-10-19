@@ -194,10 +194,16 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   frames whole and unchanged, and after a failed one searches again from the next byte, so a false
   sync or a cut frame costs nothing after it; 10 host tests in `test/test_ubx`. The bench had the
   GPS's TX and RX swapped, which reads as no data at any baud (`docs/hardware.md`).
-- [ ] **3.5 Check 8, the GNSS link.** The auto-baud scan of §5.2: 230400, 115200, 38400 and 9600
+- [x] **3.5 Check 8, the GNSS link.** The auto-baud scan of §5.2: 230400, 115200, 38400 and 9600
   baud, looking for `0xB5 0x62` or `$G` within 1.5 s per rate. It runs as POST check 8.
   *Test, on the bench:* the link is found at 115200, as the module was delivered. With the GPS
   unplugged: degraded 8, logging refused, Transfer still reachable.
+  *Result:* `src/gnss_link` scans with `ubx::LinkProbe`, which takes a whole checksummed frame, UBX
+  or NMEA, as the evidence, and tries the rate found last first; 4 host tests, noise included. On the
+  bench: `8 GNSS ok 115200 bd` and Home in 1.2 s; with the GM10's 5 V off, `8 GNSS FAIL no reply`
+  after the 6 s scan, Home at 10 s, a session start refused with `Logging refused: 8`, Transfer
+  entered and left. The bench also showed Transfer could only be left with NAV held: OK leaves it
+  now, as it leaves every screen that only informs.
 - [ ] **3.6 Results and settings.**
   - `/post.log` written on LittleFS.
   - Settings › About shows the result by check number.

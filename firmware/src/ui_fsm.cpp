@@ -7,6 +7,7 @@
 #include "card.h"
 #include "config.h"
 #include "display.h"
+#include "gnss_link.h"
 #include "keys.h"
 #include "settings.h"
 #include "ui_board.h"
@@ -168,7 +169,10 @@ void uiTask(void*) {
         runPlaceholder(out);
         settingsSave(facts.menu);  // only what the command changed reaches NVS
       }
-      if (out.toast[0]) displayToast(out.toast, now);
+      if (out.toast[0]) {
+        displayToast(out.toast, now);
+        Serial.printf("[%7lu] toast %s\n", (unsigned long)now, out.toast);
+      }
       if (out.command == ui::Command::Restart) {
         // Settings is reached from IDLE only, so nothing is open; the settings are in NVS already.
         // The toast goes out first, and stays long enough to be read.
@@ -211,6 +215,15 @@ void uiStart(const ui::PostResult& post) {
   facts.freeMb = cardFreeMb();
   facts.cardGb = cardTotalMb() / 1024;
   facts.cardKbps = cardLastProbe().writeKbps;
+  // The GNSS link as check 8 found it. Without one there is no fix either: the sample fix of the
+  // placeholders would be a lie on the GNSS screen.
+  facts.gnssLink = gnssLinkBaud() != 0;
+  facts.gnssBaud = gnssLinkBaud();
+  if (!facts.gnssLink) {
+    facts.fixType = 0;
+    facts.sats = 0;
+    facts.menu.hasFix = false;
+  }
   // Again, after the POST's own lines: those can come before a USB host has opened the port.
   Serial.printf("POST %s, failed mask 0x%03X\n", summary, post.failedMask());
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);

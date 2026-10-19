@@ -429,7 +429,7 @@ Confirm     3D14         Calib 2/6   3D14         Transfer    3D14   UB
 Overwrite start line     Steer full LEFT          USB host attached
 of N4512E00934?          and hold it              BLE advertising
 hold OK: yes             St 1012us  Th 1500us     Eject on host first
-other key: no (10s)      OK capture  < back       < exit
+other key: no (10s)      OK capture  < back       OK or <: exit
 ```
 
 Home, the menu and the session all go on below the three rows shown: NAV turns Home's pages, the
@@ -526,7 +526,7 @@ driving.
 | **SESSION** | Three session pages, the stop dialog | Hold OK on Home or on Session; the automatic start (§3.6) | Stop confirmed, 5 min standing still, or a card error → IDLE; car switched off → SAVING | OK = marker, hold OK = stop dialog, UP/DOWN = page |
 | **GEOMETRY** | The geometry screen | Hold OK on Track › Geometry | Hold OK = stop and save → IDLE | Hold OK only |
 | **CALIBRATION** | Six steps, the summary, the overwrite dialog | Hold OK on Settings › Calibrate, with an RC signal present | Saved, or LEFT at the first step → IDLE | OK = capture, LEFT = step back, DOWN = skip the aux step |
-| **TRANSFER** | The transfer screen | OK on Menu › Transfer | LEFT → IDLE, confirmed with hold OK while a USB host is attached (§7.3) | LEFT |
+| **TRANSFER** | The transfer screen | OK on Menu › Transfer | OK or LEFT → IDLE, confirmed with hold OK while a USB host is attached (§7.3) | OK, LEFT |
 | **SAVING** | `Power lost`, `Saving session N`, `Saved` | The car was switched off during a session (§4.5) | File closed → SLEEP | Dead |
 | **SLEEP** | Display off | After SAVING; from IDLE when the car is switched off (10 s notice, any key cancels); after 5 min with no RC signal, no USB host and no key | OK, or an RC signal → POST | OK wakes |
 
@@ -739,7 +739,11 @@ Two robustness rules:
 
 - **Auto-detect the current baud rate on boot** by trying 230400 / 115200 / 38400 / 9600 and looking
   for `0xB5 0x62` or `$G` within 1.5 s per attempt, then reconfigure. This removes the
-  unverified-default-baud risk entirely.
+  unverified-default-baud risk entirely. Two refinements from the bench (step 3.5): the evidence is a
+  whole frame with its checksum, UBX or a `$G…*hh` sentence, since those two bytes turn up in the
+  noise of a wrong rate; and the rate found last, kept in NVS, is tried first, so a boot does not
+  spend 1.5 s on 230400 with a module still at 115200. A MON-VER poll goes out at each rate, for a
+  module whose periodic output is off.
 - **Re-apply the whole configuration on every boot.** Write to RAM+BBR, and to FLASH only
   opportunistically: it is not established that this module has config flash, so a VALSET to FLASH may
   simply fail. BBR is an optimisation, never an assumption — and the ROM boot banner on GPIO43 (§2.2)

@@ -498,7 +498,7 @@ void content(const Board& b, const Facts& f, Layout layout, TextSize size, Conte
       c.add("USB %s", f.usbHost ? "host attached" : "no host");
       c.add("BLE %s", f.bleConnected ? "phone connected" : "advertising");
       if (f.usbHost) c.add("Eject on host first");
-      c.setHint(layout == Layout::TwoButtons ? "hold NAV: exit" : "< exit");
+      c.setHint(layout == Layout::TwoButtons ? "OK: exit" : "OK or <: exit");
       return;
   }
 }

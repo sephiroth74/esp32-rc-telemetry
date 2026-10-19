@@ -7,6 +7,7 @@
 #include "card.h"
 #include "config.h"
 #include "display.h"
+#include "gnss_link.h"
 #include "i2c_bus.h"
 #include "keys.h"
 #include "log_ring.h"
@@ -104,6 +105,16 @@ ui::CheckReport checkSpeed() {
   return ui::CheckReport::pass(detail);
 }
 
+// 8: the auto-baud scan of §5.2 — this is that scan, not a second one. Without a link a session
+// would hold no position, so logging is refused, while Transfer stays reachable.
+ui::CheckReport checkGnssLink() {
+  uint32_t baud = gnssLinkScan();
+  if (!baud) return ui::CheckReport::fail("no reply");
+  char detail[ui::kCheckDetailMax + 1];
+  snprintf(detail, sizeof detail, "%lu bd", (unsigned long)baud);
+  return ui::CheckReport::pass(detail);
+}
+
 ui::CheckReport runCheck(uint8_t id) {
   switch (id) {
     case 0:
@@ -120,6 +131,8 @@ ui::CheckReport runCheck(uint8_t id) {
       return checkWritable();
     case 6:
       return checkSpeed();
+    case 8:
+      return checkGnssLink();
     default:
       return ui::CheckReport::skipped();
   }

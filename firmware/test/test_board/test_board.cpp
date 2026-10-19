@@ -278,6 +278,23 @@ static void transfer_asks_before_leaving_a_host() {
   ASSERT_MODE(Idle, w.board);
 }
 
+// OK gets out of Transfer too, so that the two buttons never need NAV held; with a host attached it
+// asks first, like back.
+static void ok_leaves_transfer_as_well() {
+  Walk w;
+  w.facts.usbHost = false;
+  w.key(Event::Open);
+  w.down(3);
+  ASSERT_COMMAND(EnterTransfer, w.key(Event::Open));
+  ASSERT_COMMAND(LeaveTransfer, w.key(Event::Open));
+  ASSERT_MODE(Idle, w.board);
+  ASSERT_SCREEN(Menu, w.board);  // back where Transfer was chosen
+  w.facts.usbHost = true;
+  ASSERT_COMMAND(EnterTransfer, w.key(Event::Open));
+  w.key(Event::Open);
+  ASSERT_DIALOG(LeaveTransfer, w.board);
+}
+
 static void refusals_and_settings_come_back_as_toasts() {
   Walk w;
   w.facts.menu.loggingAllowed = false;
@@ -505,6 +522,7 @@ int main(int, char**) {
   RUN_TEST(calibration_cancels_at_its_first_step);
   RUN_TEST(an_uncalibrated_profile_saves_without_asking);
   RUN_TEST(transfer_asks_before_leaving_a_host);
+  RUN_TEST(ok_leaves_transfer_as_well);
   RUN_TEST(refusals_and_settings_come_back_as_toasts);
   RUN_TEST(the_menu_timeout_counts_from_the_end_of_a_mode);
   RUN_TEST(every_screen_fits_in_21_columns);

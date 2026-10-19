@@ -45,7 +45,7 @@ nothing else.
 | **SESSION** | Hold OK on Home or Session; the automatic start | Stop confirmed, 5 min still, card error → IDLE; car off → SAVING | OK = marker, hold OK = stop, UP/DOWN = page |
 | **GEOMETRY** | Hold OK on Track › Geometry | Hold OK = stop and save | Hold OK |
 | **CALIBRATION** | Hold OK on Settings › Calibrate, with an RC signal | Saved, or cancelled at the first step | OK = capture, LEFT = back, DOWN = skip aux |
-| **TRANSFER** | OK on Menu › Transfer | LEFT, confirmed while a USB host is attached | LEFT |
+| **TRANSFER** | OK on Menu › Transfer | OK or LEFT, confirmed while a USB host is attached | OK, LEFT |
 | **SAVING** | The car was switched off during a session | File closed → SLEEP | Dead |
 | **SLEEP** | After SAVING; car off while idle (10 s notice); 5 min idle with no RC, no USB, no key | OK or an RC signal → POST | OK wakes |
 

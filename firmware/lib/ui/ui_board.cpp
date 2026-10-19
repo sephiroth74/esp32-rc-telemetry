@@ -249,8 +249,10 @@ BoardOutput Board::inCalibration(Event event, const Facts& f, uint32_t nowMs) {
 }
 
 // Leaving while a host still has the card is how filesystems get damaged (§7.3): it asks first.
+// OK leaves, as it leaves every screen that only informs (§3.4), and so does back: the two-button
+// layout must not need NAV held to get out.
 BoardOutput Board::inTransfer(Event event, const Facts& f, uint32_t nowMs) {
-  if (event != Event::Back) return {};
+  if (event != Event::Back && event != Event::Open) return {};
   if (f.usbHost) {
     confirm_.open(DialogKind::LeaveTransfer, nowMs);
     return {};
