@@ -80,6 +80,7 @@ static Facts worstCase() {
   f.warning = true;
   f.firmware = "0.1.0-dev";
   f.postSummary = "all checks ok";
+  f.configNote = "LittleFS copy";  // the longest settings.cpp writes
   // A POST with the longest detail every check can show.
   static ui::PostResult post;
   for (auto& c : post.checks) c = ui::CheckReport::fail("1234567890");
@@ -624,12 +625,13 @@ static void about_lists_the_post_check_by_check() {
   ScreenText t;
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Firmware 0.1.0-dev", t.lines[2]);
-  TEST_ASSERT_EQUAL_STRING(" 0 Display ok", t.lines[5]);
-  TEST_ASSERT_EQUAL_UINT8(14, t.scrollTotal);  // three lines, then the eleven checks
+  TEST_ASSERT_EQUAL_STRING("Config LittleFS copy", t.lines[5]);
+  TEST_ASSERT_EQUAL_STRING(" 0 Display ok", t.lines[6]);
+  TEST_ASSERT_EQUAL_UINT8(15, t.scrollTotal);  // four lines, then the eleven checks
   for (int page = 0; page < 2; ++page) w.key(Event::Down);
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
-  TEST_ASSERT_EQUAL_STRING(" 8 GNSS    no reply", t.lines[3]);  // the reason, as /post.log has it
-  TEST_ASSERT_EQUAL_STRING(" 9 GNSScfg --", t.lines[4]);
+  TEST_ASSERT_EQUAL_STRING(" 8 GNSS    no reply", t.lines[4]);  // the reason, as /post.log has it
+  TEST_ASSERT_EQUAL_STRING(" 9 GNSScfg --", t.lines[5]);
 }
 
 static void hints_follow_the_layout() {

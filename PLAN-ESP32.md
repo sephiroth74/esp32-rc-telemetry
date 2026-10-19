@@ -369,7 +369,7 @@ that a card with no room reports "full" rather than "not writable".
 | --- | --- | --- | --- |
 | 0 | Display | I²C bus recovery (nine SCL clocks if SDA is held low), then the display's address must ACK; initialise it and show the POST screen | Degraded, **boot continues headless**: nothing can be shown locally, but the result reaches `/post.log` and BLE like any other. A dead display must not stop logging |
 | 1 | PSRAM | `ps_malloc()` the ring buffer of §4.4 | **Fatal** |
-| 2 | LittleFS | Mount, load config | Degraded, continue on built-in defaults |
+| 2 | LittleFS | Mount, load its copy of `config.json`, so that the rest of the POST runs on the last settings | Degraded, continue on built-in defaults |
 | 3 | Card present | `SD_MMC.begin()` in 1-bit mode (§2.3). On failure the card is asked why, so the screen names the fix: `no card`, `exFAT`, `GPT` or `no FAT32` | **Fatal** |
 | 4 | Free space | ≥ `sd.min_free_mb`, default 64 MB | Degraded, **logging refused**. Above the floor but below `sd.warn_free_mb` (default 256 MB) it is a warning only |
 | 5 | Card writable | Write a 256 KB probe file, flush, close, read back the first and last sector, compare, delete | Degraded, **logging refused** — Transfer mode stays available to rescue whatever is still readable |
@@ -576,6 +576,10 @@ Rules across the states:
 ### 3.8 Settings and car profiles
 
 - **Two copies, one source.** `/config.json` on the **card** is the editable source of every setting,
+  read as soon as check 3 has mounted the card — check 2 comes first and has only the LittleFS copy.
+  A card without the file gets one, written from whatever is in force; a file that is not JSON at
+  all is left alone, for a person to fix, and the LittleFS copy is used. The device never rewrites
+  the card's file on its own, only when a setting is changed on it.
   written from a computer over USB (§7.3) and later by the phone app. At boot it is read and
   validated, and a valid copy is mirrored to `/config.json` on LittleFS, which is what the device
   runs on when the card is missing or the file is invalid (POST check 2). An invalid key falls back

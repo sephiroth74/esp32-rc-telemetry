@@ -7,9 +7,14 @@
 
 #include <stdint.h>
 
+#include "config.h"
 #include "ui_keys.h"
 
-void keysBegin();               // once, from setup()
+void keysBegin();  // once, from setup()
+// keys.layout of config.json, known only after the POST (§3.8); until then KEY_LAYOUT_DEFAULT,
+// which holds OK, the one key the POST listens to, in the same place in both.
+void keysSetLayout(KeyLayout layout);
+ui::Layout keysLayout();
 void keysTick(uint32_t nowMs);  // one sample: every 1000 / KEY_SAMPLE_HZ ms
 bool keysNext(ui::Event& event);
 void keysSwallow();

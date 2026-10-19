@@ -486,6 +486,7 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.add("Firmware %s", f.firmware);
       c.add("Card %uGB %uKB/s", f.cardGb, f.cardKbps);
       c.add("POST %s", f.postSummary);
+      if (*f.configNote) c.add("Config %s", f.configNote);
       if (f.post) {
         for (uint8_t id = 0; id < kPostChecks; ++id) {
           c.add("%2u %-7s %s", id, checkInfo(id).name, postResultText(f.post->checks[id], true));

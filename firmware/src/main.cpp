@@ -14,6 +14,7 @@
 #include "keys.h"
 #include "pins.h"
 #include "post.h"
+#include "settings.h"
 #include "ui_fsm.h"
 
 void setup() {
@@ -24,6 +25,7 @@ void setup() {
   keysBegin();                      // before the POST, whose fatal latch polls them
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
   postEchoLog();
+  keysSetLayout(settings().keysLayout == 1 ? KeyLayout::FiveWay : KeyLayout::TwoButtons);
   uiStart(post);
 }
 

@@ -69,6 +69,7 @@ struct Facts {
   const char* firmware = "";
   const char* postSummary = "";
   const PostResult* post = nullptr;  // check by check, for Settings › About; null before the POST
+  const char* configNote = "";       // where config.json came from, and its keys at their defaults
 };
 
 // Neutral, left, right, throttle, brake, aux; then the summary.

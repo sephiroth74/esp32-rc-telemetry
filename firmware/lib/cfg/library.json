@@ -1,0 +1,7 @@
+{
+  "name": "cfg",
+  "version": "0.1.0",
+  "description": "config.json: every setting, read key by key against defaults and written back whole. Framework-free, host-testable.",
+  "frameworks": "*",
+  "platforms": "*"
+}

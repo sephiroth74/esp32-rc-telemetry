@@ -22,9 +22,7 @@ constexpr uint32_t kStackBytes = 6144;
 // Every screen shows plausible values until the modules that own them arrive: the card in phase 3,
 // GNSS in phase 4, sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
 
-// Writable, so that New car and New track show their result. Every profile is named the way New car
-// names it, so a profile count read back from NVS (step 2.7) needs no names of its own.
-char profileNames[CAR_PROFILES_MAX][CAR_PROFILE_NAME_MAX + 1];
+// The profiles' names are config.json's (settings.h); the track id is writable for New track.
 const char* profileNamePtrs[CAR_PROFILES_MAX];
 char trackId[16] = "N4512E00934";
 uint8_t trackSuffix = 1;
@@ -33,13 +31,8 @@ ui::Facts sampleFacts() {
   ui::Facts f;
   f.menu.hasFix = true;
   f.menu.rcSignal = true;
-  f.menu.profileCount = 3;
   f.menu.profileMax = CAR_PROFILES_MAX;
   f.menu.textSize = DISPLAY_TEXT_SIZE_DEFAULT;
-  for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) {
-    ui::newProfileName(i, profileNames[i]);
-    profileNamePtrs[i] = profileNames[i];
-  }
   f.profileNames = profileNamePtrs;
   f.gnssLink = true;
   f.gnssBaud = 115200;
@@ -133,11 +126,11 @@ ui::TextSize textSize() {
 void uiTask(void*) {
   const TickType_t period = pdMS_TO_TICKS(1000 / KEY_SAMPLE_HZ);
   TickType_t wake = xTaskGetTickCount();
-  const ui::Layout layout = keyConfig().layout;
+  const ui::Layout layout = keysLayout();
   ui::Board board(menuTiming());
   ui::ScreenText text;
   char shownState[ui::kScreenCols + 1] = "";
-  settingsLoad(facts.menu);
+  settingsFill(facts.menu);
   uint32_t lastKeyMs = millis();
 
   for (;;) {
@@ -219,9 +212,22 @@ void uiStart(const ui::PostResult& post) {
   int8_t refusing = post.refusingCheck();
   facts.menu.loggingAllowed = refusing < 0;
   facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
-  facts.warning = post.warning();
+  // A failed check, or a config.json that is not all it should be: the warning mark (§3.2).
+  facts.warning = post.warning() || settingsProblems().count ||
+                  settingsSource() == SettingsSource::CardUnreadable;
   facts.postSummary = summary;
   // The card as the POST left it; the rest of the facts are still placeholders (step 2.6).
+  // The settings of config.json, and where they came from (§3.8).
+  for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) profileNamePtrs[i] = settingsProfileName(i);
+  facts.autoStart = settings().autoStart;
+  static char configNote[22];
+  if (settingsProblems().count) {
+    snprintf(configNote, sizeof configNote, "%s, %u bad", settingsSourceName(),
+             settingsProblems().count);
+  } else {
+    snprintf(configNote, sizeof configNote, "%s", settingsSourceName());
+  }
+  facts.configNote = configNote;
   facts.menu.cardOk = cardMounted();
   facts.menu.cardWritable = post.checks[5].outcome != ui::Outcome::Fail;
   facts.freeMb = cardFreeMb();

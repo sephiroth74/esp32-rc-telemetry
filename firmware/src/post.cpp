@@ -11,6 +11,7 @@
 #include "i2c_bus.h"
 #include "keys.h"
 #include "log_ring.h"
+#include "settings.h"
 #include "ui_screens.h"
 
 namespace {
@@ -42,6 +43,10 @@ ui::CheckReport checkPsram() {
 // 2: LittleFS, for the copy of config.json that step 3.6 loads here. The first boot finds the
 // partition blank and formats it; nothing on it is the only copy of anything (§3.8, §6.3).
 ui::CheckReport checkLittleFs() {
+  // The settings come with it either way: from its copy of config.json, or from the defaults.
+  struct Load {
+    ~Load() { settingsLoadLocal(); }
+  } load;
   if (LittleFS.begin(/*formatOnFail=*/false, "/littlefs", 10, kLittleFsLabel)) {
     char detail[ui::kCheckDetailMax + 1];
     snprintf(detail, sizeof detail, "%luK used", (unsigned long)(LittleFS.usedBytes() / 1024));
@@ -68,6 +73,7 @@ ui::CheckReport checkCard() {
     case CardMount::NoFat32:
       return ui::CheckReport::fail("no FAT32");
   }
+  settingsLoadCard();  // the card's config.json, applied and mirrored (§3.8)
   char detail[ui::kCheckDetailMax + 1];
   snprintf(detail, sizeof detail, "%luGB", (unsigned long)(cardTotalMb() / 1024));
   return ui::CheckReport::pass(detail);
@@ -83,8 +89,8 @@ ui::CheckReport checkFreeSpace() {
     snprintf(detail, sizeof detail, "%lu.%luGB", (unsigned long)(mb / 1024),
              (unsigned long)(mb % 1024 * 10 / 1024));
   }
-  if (mb < POST_MIN_FREE_MB) return ui::CheckReport::fail(detail);
-  if (mb < POST_WARN_FREE_MB) return ui::CheckReport::warn(detail);
+  if (mb < settings().minFreeMb) return ui::CheckReport::fail(detail);  // sd.min_free_mb
+  if (mb < settings().warnFreeMb) return ui::CheckReport::warn(detail);
   return ui::CheckReport::pass(detail);
 }
 
@@ -167,6 +173,12 @@ void writeLog(const ui::PostResult& r) {
     const ui::CheckReport& c = r.checks[id];
     f.printf("%2u %-7s %-4s %s\n", id, ui::checkInfo(id).name, outcomeName(c.outcome), c.detail);
   }
+  // The settings in force, and every key of the card's config.json that fell back to its default.
+  const cfg::Problems& p = settingsProblems();
+  f.printf("config: %s", settingsSourceName());
+  if (p.count) f.printf(", %u keys at their defaults:", p.count);
+  for (uint8_t i = 0; i < p.count; ++i) f.printf(" %s", p.keys[i]);
+  f.printf("\n");
   f.close();
 }
 

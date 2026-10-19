@@ -7,8 +7,8 @@
 
 namespace {
 
-// The layout comes from KEY_LAYOUT_DEFAULT until config.json is read (ROADMAP.md step 3.6).
-const ui::KeyConfig config = keyConfig();
+// KEY_LAYOUT_DEFAULT until keysSetLayout() brings keys.layout from config.json.
+ui::KeyConfig config = keyConfig();
 ui::KeyReader reader(config);
 ui::Gestures gestures(config);
 uint16_t lastMv = 0;
@@ -27,6 +27,14 @@ void keysTick(uint32_t nowMs) {
   reader.sample(lastMv);
   gestures.update(reader.key(), nowMs);
 }
+
+void keysSetLayout(KeyLayout layout) {
+  config = keyConfig(layout);
+  reader = ui::KeyReader(config);
+  gestures = ui::Gestures(config);
+}
+
+ui::Layout keysLayout() { return config.layout; }
 
 bool keysNext(ui::Event& event) { return gestures.next(event); }
 
