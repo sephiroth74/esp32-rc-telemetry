@@ -122,7 +122,8 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   changed. Brightness is the SSD1306 contrast (16, 96, 255), dimmed is 0. On the bench, low, 15 s,
   small and a New car came back after a reset as `settings: brightness low, dim after 15 s, text
   small, profile 4 of 4`. The bench also asked for the press that brightens a dimmed display to do
-  nothing else: `Gestures::swallow()` now drops what the gesture has queued too, host-tested.
+  nothing else: `Gestures::swallow()` now drops what the gesture has queued too, host-tested, and
+  checked on the bench with OK, OK held and NAV on a dimmed display.
 - [x] **2.8 New car and New track** (§3.4, §3.8, §7.1). New car is the choice after the profiles in
   Settings › Car profile; New track an entry of Track, held to create. Both work for any car or
   track that was not set up from a computer, and the apps rename them.
@@ -132,6 +133,7 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
 
 - [x] **2.9 Restart from the menu** (§3.4). Settings › Restart, held: the toast, then a restart and
   the POST. Asked on the bench in place of a key gesture, which the ladder cannot make safe.
+  *Result:* works on the bench.
 
 *Phase done when:* a walk through all of §3.4 on the bench, with the two buttons only.
 
