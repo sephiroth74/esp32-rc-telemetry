@@ -60,9 +60,11 @@ step 2.3: see [Switching to the JS5208](#switching-to-the-js5208).
   *Result:* the Inferno's KR-331 — 3.3 V logic, positive pulses every 16.6 ms (60 Hz), steering
   1,050–1,500–1,940 µs, throttle 1,005–1,500–≈1,940 µs, no telemetry on the throttle wire: all inside
   the `RC_*` windows, which stay as they are. Repeat for each new car.
-- [ ] **1.6 Freeze the pin map.**
+- [x] **1.6 Freeze the pin map.**
   *Done when:* `pins.h` holds no `UNRESOLVED`, and the wiring section of `docs/hardware.md` describes
   the bench build.
+  *Result:* DAT3 was the last open pin (step 1.2). The bench build and the car are KiCad schematics
+  in `hardware/`, with the nets of `pins.h`, checked by the ERC and net by net.
 
 ## Phase 2 — Keys, display and menu navigation (first priority)
 

@@ -145,6 +145,12 @@ readings are about 50 µs apart, so its widths are good to that, and to a few µ
 
 ## Wiring
 
-To document once built: the BEC → regulator → 5V pad path with the 1S backup LiPo on the BAT pads
-(§2.7), the 74LVC2G17 level-shifter for the steering and throttle channels (§2.5), and the I²C bus
-shared by the display and the IMU (§2.4, §2.6).
+The KiCad schematics in [`hardware/`](../hardware/README.md):
+
+- [`bench.kicad_sch`](../hardware/bench.pdf) — **the bench build, as wired on 2026-10-19**: the
+  display on I²C, the two-button ladder on D0, the GM10 on UART1, and the receiver's CH1 and CH2
+  through 10 kΩ to D3 and D2, ground common, the receiver's + rail off the XIAO.
+- [`car.kicad_sch`](../hardware/car.pdf) — **in the car, planned**: the BEC → reverse-polarity
+  diode → bulk capacitors → 5 V buck → Schottky → 5V pad path, the 1S backup LiPo on the BAT pads
+  (§2.7), the 74LVC2G17 with its pull-downs on the RC inputs (§2.5), the JS5208 ladder (§3.1), and
+  the IMU sharing the I²C bus with the display (§2.4, §2.6).

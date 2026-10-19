@@ -84,6 +84,7 @@ rc-telemetry/
     hardware.md              # measured voltages, logic levels, wiring, pin map
     algorithms.md            # gate crossing, s/d projection, cut detection
     fixtures/                # golden .rcl + expected JSON, shared by C++ and Dart tests
+  hardware/                  # KiCad schematics: the bench build and the car
   firmware/                  # pioarduino project
     platformio.ini
     partitions.csv
