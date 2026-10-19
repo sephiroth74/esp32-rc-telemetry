@@ -204,6 +204,11 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   after the 6 s scan, Home at 10 s, a session start refused with `Logging refused: 8`, Transfer
   entered and left. The bench also showed Transfer could only be left with NAV held: OK leaves it
   now, as it leaves every screen that only informs.
+  The bench then asked for more than a toast. A refusal is a notice now, on the whole body until a
+  key; Home opens on the reason logging is refused, under a `No logging` status line; and what reads
+  the card, needs the GNSS module or writes is refused up front (PLAN-ESP32.md §3.4, "What needs
+  what"). Checked with the GM10 off: `No logging` at boot, the notice held 13 s until a key, which
+  closed it and did nothing else, Track › Info and the start line refused with `no GNSS`.
 - [ ] **3.6 Results and settings.**
   - `/post.log` written on LittleFS.
   - Settings › About shows the result by check number.
