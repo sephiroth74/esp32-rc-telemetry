@@ -59,9 +59,9 @@ Verified during planning:
 - **XIAO ESP32S3 pinout**: D0–D10 → GPIO 1,2,3,4,5,6,43,44,7,8,9. All of D0–D10 are ADC-capable.
   Default I²C = D4/D5, SPI = D8/D9/D10, UART = D6/D7. User LED = GPIO21.
 - **Sense expansion board microSD**: CLK GPIO7, DAT0 GPIO8, CMD GPIO9 (the SPI SCK/MISO/MOSI pads),
-  **DAT3/CS GPIO21** per Seeed's official code examples (`#define SD_CS 21`). ⚠️ The same Seeed wiki
-  page *also* states the slot "occupies GPIO3 (CS)" — the docs contradict themselves, and the bench
-  has not settled it yet (PLAN-ESP32.md §2.2). It decides whether D2 is free.
+  **DAT3/CS GPIO21**, as Seeed's official code examples have it (`#define SD_CS 21`) and as the bench
+  confirmed; the same wiki page's "occupies GPIO3 (CS)" is wrong (PLAN-ESP32.md §2.2). D2 stays free
+  for the throttle input.
 - **Verified on the bench** (`docs/hardware.md`): SDMMC 1-bit runs at **40 MHz** with no external
   pull-ups, at 3.5 MB/s write and 2.9 MB/s read. Cards must be **FAT32 on an MBR partition table**,
   at any capacity — a 64 GB card works — while exFAT and GPT are not supported by the core's FatFs.

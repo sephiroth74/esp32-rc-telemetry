@@ -35,11 +35,14 @@ step 2.3: see [Switching to the JS5208](#switching-to-the-js5208).
   `config.h` is derived from them.
   *Result:* OK 0 mV, NAV 1,623 mV, no key 3,120 mV — the ADC saturates there — with no phantom
   presses; the RIGHT/none bound moved to 2,695 mV.
-- [ ] **1.2 Which GPIO is DAT3** (§2.2). Hold the candidate GPIO low while calling
+- [x] **1.2 Which GPIO is DAT3** (§2.2). Hold the candidate GPIO low while calling
   `SD_MMC.begin()`. A card that sees DAT3 low at CMD0 enters SPI mode, so the SD-mode init fails:
   failing with GPIO21 low means DAT3 is 21, failing with GPIO3 low means it is 3.
   *Done when:* the answer is in `docs/hardware.md`, and `PIN_SD_D3` and `PIN_RC_THROTTLE` are final
   in `pins.h` — throttle moves to D1 if DAT3 is GPIO3.
+  *Result:* **GPIO21**, with `tools/sd-dat3-test`: one candidate low per power-up, since a card
+  picks its mode once and ignores DAT3 after that. GPIO3 low mounted, GPIO21 low failed. Throttle
+  stays on D2, and D1 stays spare.
 - [ ] **1.3 GM10 supply** (§9 question 16). Check the module's input range. If it accepts 3.3 V,
   power it from 3V3 and repeat the `tools/gps-test` link check.
   *Done when:* the answer is in `docs/hardware.md`, and §2.7 says which rail powers the GM10.

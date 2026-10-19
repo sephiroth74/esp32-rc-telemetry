@@ -20,6 +20,7 @@ B08XZ2KS1F).
 | Quantity | Value |
 | --- | --- |
 | Bus | SDMMC 1-bit: CLK GPIO7, CMD GPIO9, DAT0 GPIO8, with GPIO21 (DAT3) driven high before `SD_MMC.begin()` |
+| DAT3 | **GPIO21**, settled by `tools/sd-dat3-test`: held low at the first CMD0 after power-up, GPIO21 sends the card to SPI mode and the mount fails, while with GPIO3 low the card mounts (59,700 MB). Seeed's wiki, which says GPIO3, is wrong. A card picks its mode once per power-up and ignores DAT3 afterwards, so each try needs the USB unplugged: a first version that tried all three in one boot found every one mounting |
 | External pull-ups on CMD/DAT0 | **Not needed.** Init and data transfers are clean at 20 MHz and 40 MHz (§2.3) |
 | 40 MHz (`SDMMC_FREQ_HIGHSPEED`) | **Works.** 256 KB written in 32 KB chunks, read back and compared: no mismatch |
 | Write / read, 32 KB clusters | **3,495 KB/s / 2,912 KB/s** — 256 KB, the close and flush included in the write time |
@@ -114,7 +115,6 @@ soldered. Every bench result above is from soldered headers.
 
 | Quantity | Why it matters | Value |
 | --- | --- | --- |
-| Which GPIO is the microSD DAT3 line — 21 or 3 | Seeed's docs contradict themselves; decides whether D2 stays the throttle input or throttle moves to D1 (§2.2). Session 1 did not settle it: the card's internal pull-up on DAT3 makes SD mode work either way | — |
 | Whether this GM10 V3.1 carries a magnetometer, and whether it has config flash | Decides whether VALSET to FLASH is worth attempting (§5.2). Firmware runs from ROM, see above | — |
 | Time to first fix, cold and with the backup LiPo | Sets expectations for the GNSS screen (§3.4) and confirms the value of the BBR backup (§2.7) | — |
 | Whether the GM10 runs from 3V3 | On battery the 5V pad is dead, so a GM10 on 5 V loses its BBR in SLEEP and every run starts cold (§2.7, §9 question 16) | — |

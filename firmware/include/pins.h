@@ -25,9 +25,10 @@ constexpr uint8_t PIN_SD_CMD = 9;  // D10, the SPI MOSI pad
 // SD_MMC.begin() or the card comes up in SPI mode instead of SD mode. That is
 // also why the onboard LED cannot serve as a status indicator; the display does.
 //
-// UNRESOLVED (§2.2): Seeed's examples say GPIO21, their wiki says GPIO3. If it
-// turns out to be GPIO3, PIN_RC_THROTTLE below moves to D1 (GPIO2), the spare.
-// Settle this on hardware before freezing the map.
+// GPIO21, as Seeed's examples have it; their wiki's GPIO3 is wrong. Settled on
+// the bench (§2.2, tools/sd-dat3-test): held low at the first CMD0 after
+// power-up, GPIO21 sends the card to SPI mode and the mount fails; GPIO3 does
+// not.
 constexpr uint8_t PIN_SD_D3 = 21;
 
 // --- I²C: display, IMU, GNSS magnetometer if present, future ADS1115 --------
@@ -46,8 +47,8 @@ constexpr uint8_t PIN_KEYS = 1;  // D0
 
 // --- RC inputs, level-shifted through a 74LVC2G17 (§2.5) --------------------
 // Both RTC-capable: an RC pulse wakes the chip from deep sleep (ext1, §4.5).
-constexpr uint8_t PIN_RC_THROTTLE = 3;  // D2. At risk, see PIN_SD_D3 above.
+constexpr uint8_t PIN_RC_THROTTLE = 3;  // D2
 constexpr uint8_t PIN_RC_STEERING = 4;  // D3
 
-// D1 (GPIO2) is spare. Claims on it, in order: throttle capture if §2.2 goes
-// against GPIO3, otherwise the aux-channel remote trigger (§8, deferred).
+// D1 (GPIO2) is spare, kept for the aux-channel remote trigger (§8, deferred
+// and optional).

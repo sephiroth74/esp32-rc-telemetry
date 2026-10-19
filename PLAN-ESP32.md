@@ -60,24 +60,20 @@ Out of scope: OTA updates, WiFi.
 | D5 | 6 | I²C SCL | |
 | D0 | 1 | Five-way switch, resistor ladder on ADC1_CH0 | OK shorts it to GND; RTC-capable, so OK wakes the chip from deep sleep (§3.1, §4.5) |
 | D1 | 2 | **spare** | freed by the display, which sits on the I²C bus — see 2.4 |
-| D2 | 3 | RC throttle PWM in | **at risk** — see 2.2 |
+| D2 | 3 | RC throttle PWM in | GPIO3 is not the card's DAT3 — settled on the bench, see 2.2 |
 | D3 | 4 | RC steering PWM in | |
 
-Ten of the 11 pads are allocated. **D1 is the only spare GPIO**, and it has two claims on it, in this
-order: throttle capture, if §2.2 goes against GPIO3; otherwise the aux channel (§8, deferred).
+Ten of the 11 pads are allocated. **D1 is the only spare GPIO**, kept for the aux channel (§8,
+deferred and optional).
 
 ### 2.2 Unresolved hardware questions — Phase 1 blockers
 
-**Which GPIO is the microSD chip-select / DAT3 line?** Seeed's own documentation contradicts itself:
-the official code examples use `#define SD_CS 21`, while the same wiki page states the slot "occupies
-GPIO3". This decides whether D2/GPIO3 is free for throttle capture, so it must be settled on real
-hardware before the pin map is frozen.
-
-The first bench session did not settle it: the card works in SD mode with GPIO21 driven high, but the
-card's own pull-up on DAT3 would let it work either way (`docs/hardware.md`).
-
-*Fallback if GPIO3 turns out to be the SD line:* move **throttle capture to D1**, which the display
-freed (§2.4). Nothing else has to move.
+~~**Which GPIO is the microSD chip-select / DAT3 line?**~~ **Resolved on the bench: GPIO21**, as
+Seeed's code examples have it (`#define SD_CS 21`); the wiki page that says the slot "occupies GPIO3"
+is wrong. A card picks SD or SPI mode at the first CMD0 after power-up, from DAT3, and ignores it
+after that, so `tools/sd-dat3-test` held one candidate low per power-up: with GPIO3 low the card
+mounted, with GPIO21 low it went to SPI mode and the mount failed (`docs/hardware.md`). D2/GPIO3 stays
+the throttle input.
 
 **Boot log on the GPS TX line.** GPIO43/44 are U0TXD/U0RXD. With `ARDUINO_USB_MODE=0` the
 application console goes to USB CDC, but the **ROM bootloader still prints its startup banner on
@@ -1135,8 +1131,7 @@ and GNSS checks of the POST come before everything else. Each ends with somethin
 - **Aux channel as a remote trigger — blocked only on §2.2.** Most surface radios have at least a
   third channel, a switch or a knob, which a two-channel car leaves unused. Reading it would let the
   driver start/stop a session or mark a lap from the transmitter without touching the car, which beats
-  reaching for the switch between runs by a wide margin. It goes on **D1**, the spare GPIO, unless
-  §2.2 needs D1 for throttle. Design the config key now (`rc.aux_channel`, mapping PWM bands to
+  reaching for the switch between runs by a wide margin. It goes on **D1**, the spare GPIO. Design the config key now (`rc.aux_channel`, mapping PWM bands to
   commands) and pick this up in Phase 6. How the aux channel is actuated — 2-position, 3-position or
   proportional — varies by radio and decides how many commands it can carry, so the band mapping is
   part of each car profile (§3.8).
@@ -1179,8 +1174,8 @@ Rules that keep it from compromising the logger:
 
 ## 9. Open questions
 
-1. Which GPIO carries the microSD CS/DAT3 line — 21 or 3? Decides whether throttle stays on D2 or
-   moves to D1 (§2.2). Not settled by the first bench session (`docs/hardware.md`).
+1. ~~Which GPIO carries the microSD CS/DAT3 line — 21 or 3?~~ **Resolved:** GPIO21, so throttle
+   stays on D2 (§2.2).
 2. ~~Receiver logic level and BEC voltage, as inputs to the RC front end~~ **Resolved by design:** the
    front end of §2.5 and the regulator of §2.7 cover the whole range, so neither blocks anything. Each
    car is still measured once and recorded in `docs/hardware.md`.
