@@ -9,6 +9,8 @@ namespace {
 
 constexpr uint8_t kMaxContent = 16;
 
+const char* postResultText(const CheckReport& c, bool failDetail);  // with the POST's screens
+
 // A screen before it is laid out on a grid: all its lines, the cursor of a list, its hint.
 struct Content {
   char lines[kMaxContent][kScreenCols + 1];
@@ -480,9 +482,15 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.setHint("OK back  hold: delete");
       return;
     case ScreenId::About:
+      // The firmware and the card, then the POST of this boot check by check, as /post.log has it.
       c.add("Firmware %s", f.firmware);
-      c.add("POST %s", f.postSummary);
       c.add("Card %uGB %uKB/s", f.cardGb, f.cardKbps);
+      c.add("POST %s", f.postSummary);
+      if (f.post) {
+        for (uint8_t id = 0; id < kPostChecks; ++id) {
+          c.add("%2u %-7s %s", id, checkInfo(id).name, postResultText(f.post->checks[id], true));
+        }
+      }
       c.setHint("OK: back");
       return;
     case ScreenId::Restart:

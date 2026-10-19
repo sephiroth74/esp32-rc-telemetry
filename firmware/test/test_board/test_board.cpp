@@ -80,6 +80,10 @@ static Facts worstCase() {
   f.warning = true;
   f.firmware = "0.1.0-dev";
   f.postSummary = "all checks ok";
+  // A POST with the longest detail every check can show.
+  static ui::PostResult post;
+  for (auto& c : post.checks) c = ui::CheckReport::fail("1234567890");
+  f.post = &post;
   return f;
 }
 
@@ -605,6 +609,29 @@ static void the_gnss_screen_reads_as_designed() {
   TEST_ASSERT_EQUAL_STRING("Lat --", t.lines[1]);
 }
 
+static void about_lists_the_post_check_by_check() {
+  Walk w;
+  ui::PostResult post;
+  for (auto& c : post.checks) c = ui::CheckReport::pass();
+  post.checks[6] = ui::CheckReport::pass("3276KB/s");
+  post.checks[8] = ui::CheckReport::fail("no reply");
+  post.checks[9] = ui::CheckReport::skipped();
+  w.facts.post = &post;
+  w.toSettings();
+  w.down(4);
+  w.key(Event::Open);  // About
+  ASSERT_SCREEN(About, w.board);
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Firmware 0.1.0-dev", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING(" 0 Display ok", t.lines[5]);
+  TEST_ASSERT_EQUAL_UINT8(14, t.scrollTotal);  // three lines, then the eleven checks
+  for (int page = 0; page < 2; ++page) w.key(Event::Down);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING(" 8 GNSS    no reply", t.lines[3]);  // the reason, as /post.log has it
+  TEST_ASSERT_EQUAL_STRING(" 9 GNSScfg --", t.lines[4]);
+}
+
 static void hints_follow_the_layout() {
   Walk w;
   w.key(Event::Open);
@@ -651,6 +678,7 @@ int main(int, char**) {
   RUN_TEST(every_screen_fits_in_21_columns);
   RUN_TEST(the_home_screen_reads_as_designed);
   RUN_TEST(the_gnss_screen_reads_as_designed);
+  RUN_TEST(about_lists_the_post_check_by_check);
   RUN_TEST(hints_follow_the_layout);
   RUN_TEST(a_list_keeps_its_cursor_in_view);
   return UNITY_END();

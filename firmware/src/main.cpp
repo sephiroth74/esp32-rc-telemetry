@@ -23,6 +23,7 @@ void setup() {
   i2cBusBegin();
   keysBegin();                      // before the POST, whose fatal latch polls them
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
+  postEchoLog();
   uiStart(post);
 }
 

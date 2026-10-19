@@ -13,6 +13,7 @@
 
 #include "ui_keys.h"
 #include "ui_menu.h"
+#include "ui_post.h"
 
 namespace ui {
 
@@ -67,6 +68,7 @@ struct Facts {
 
   const char* firmware = "";
   const char* postSummary = "";
+  const PostResult* post = nullptr;  // check by check, for Settings › About; null before the POST
 };
 
 // Neutral, left, right, throttle, brake, aux; then the summary.

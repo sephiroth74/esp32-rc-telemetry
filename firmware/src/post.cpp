@@ -153,6 +153,23 @@ const char* outcomeName(ui::Outcome outcome) {
   }
 }
 
+// /post.log on LittleFS, rewritten every boot: the same lines as the POST screen, with the reasons,
+// for a phone or a computer to read later (§3.3, "Where the result goes"). Nothing without check 2.
+void writeLog(const ui::PostResult& r) {
+  if (r.checks[2].outcome != ui::Outcome::Pass) return;
+  File f = LittleFS.open("/post.log", FILE_WRITE);
+  if (!f) return;
+  char summary[17];
+  ui::postSummary(r, summary);
+  f.printf("POST of firmware %s, %lu ms after boot\n", FW_VERSION, (unsigned long)millis());
+  f.printf("result: %s, failed mask 0x%03X\n", summary, r.failedMask());
+  for (uint8_t id = 0; id < ui::kPostChecks; ++id) {
+    const ui::CheckReport& c = r.checks[id];
+    f.printf("%2u %-7s %-4s %s\n", id, ui::checkInfo(id).name, outcomeName(c.outcome), c.detail);
+  }
+  f.close();
+}
+
 void show(const ui::Post& post, uint32_t nowMs) {
   ui::ScreenText text;
   ui::renderPost(post, kTextSize, text);
@@ -169,6 +186,19 @@ void pollKeys(ui::Post& post, uint32_t nowMs) {
 }
 
 }  // namespace
+
+void postEchoLog() {
+  File f = LittleFS.open("/post.log", FILE_READ);
+  if (!f) {
+    Serial.println("post.log: none");
+    return;
+  }
+  while (f.available()) {
+    String line = f.readStringUntil('\n');
+    Serial.printf("post.log: %s\n", line.c_str());
+  }
+  f.close();
+}
 
 ui::PostResult postRun() {
   ui::Post post(DISPLAY_POST_DEGRADED_MS);
@@ -201,6 +231,7 @@ ui::PostResult postRun() {
         break;
       case ui::Post::Phase::Done:
         keysSwallow();
+        writeLog(post.result());
         return post.result();
     }
     if (post.phase() == ui::Post::Phase::Running) shown = ui::Post::Phase::Done;  // a retry

@@ -212,6 +212,9 @@ void uiTask(void*) {
 
 void uiStart(const ui::PostResult& post) {
   static char summary[17];
+  static ui::PostResult result;  // for About, which shows it check by check
+  result = post;
+  facts.post = &result;
   ui::postSummary(post, summary);
   int8_t refusing = post.refusingCheck();
   facts.menu.loggingAllowed = refusing < 0;
@@ -234,7 +237,5 @@ void uiStart(const ui::PostResult& post) {
     facts.sats = 0;
     facts.menu.hasFix = false;
   }
-  // Again, after the POST's own lines: those can come before a USB host has opened the port.
-  Serial.printf("POST %s, failed mask 0x%03X\n", summary, post.failedMask());
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);
 }
