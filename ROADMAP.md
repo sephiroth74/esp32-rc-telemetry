@@ -148,13 +148,17 @@ lives in `lib/ui`, free of `Arduino.h` and host-tested (§6.1); `src/` only adap
   screens; 11 host tests in `test/test_post`, every screen within 21 columns at both sizes. On the
   device `src/post` runs it from `setup()` before the ui task, and swallows a key still held at the
   end. Check 0 is the display; the others report `--` until their steps. It reaches Home in 0.8 s.
-- [ ] **3.2 Checks 0–2.**
+- [x] **3.2 Checks 0–2.**
   - Display: I²C bus recovery, address ACK, init. A missing display boots headless.
   - PSRAM: the 256 KB ring buffer allocated.
   - LittleFS: mounted with the `littlefs` label (§6.3).
 
   *Test:* on the bench, with the display unplugged the board still boots, and the serial console
   shows the result.
+  *Result:* `i2cBusBegin()` clocks a held SDA free before Wire starts, `log_ring` takes the 256 KB in
+  PSRAM once, and LittleFS mounts by its `littlefs` label, formatting a blank partition on the first
+  boot. On the bench: `0 Display ok`, `1 PSRAM ok 8MB`, `2 Config ok 8K used`, Home at 0.8 s; with
+  the display unplugged, `POST fail 0`, Home at 3.0 s after the list, and the keys still acted.
 - [ ] **3.3 Checks 3–6, the card.**
   - Mount: SDMMC 1-bit at 40 MHz, with DAT3 held high.
   - Free space: against `sd.min_free_mb` and `sd.warn_free_mb`.

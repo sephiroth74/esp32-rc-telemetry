@@ -5,8 +5,8 @@
 // the device may enter IDLE, with a key that is still held swallowed, so that a press made during
 // the POST does nothing afterwards either.
 //
-// So far check 0 is real; the others report "--" until their steps bring them: 1–2 in 3.2, 3–6 in
-// 3.3, 8 in 3.5, 7 and 9 in phase 4, 10 in phase 6.
+// So far checks 0–2 are real; the others report "--" until their steps bring them: 3–6 in 3.3, 8 in
+// 3.5, 7 and 9 in phase 4, 10 in phase 6.
 #pragma once
 
 #include "ui_post.h"

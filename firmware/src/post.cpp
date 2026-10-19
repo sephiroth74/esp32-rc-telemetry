@@ -1,10 +1,14 @@
 #include "post.h"
 
 #include <Arduino.h>
+#include <LittleFS.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "display.h"
+#include "i2c_bus.h"
 #include "keys.h"
+#include "log_ring.h"
 #include "ui_screens.h"
 
 namespace {
@@ -13,10 +17,48 @@ namespace {
 constexpr ui::TextSize kTextSize =
     DISPLAY_TEXT_SIZE_DEFAULT == 0 ? ui::TextSize::Small : ui::TextSize::Large;
 
+// partitions.csv names it littlefs (§6.3); the Arduino default would look for "spiffs".
+constexpr const char* kLittleFsLabel = "littlefs";
+
+// 0: first, since the display is the only way to report anything on the device itself. The bus was
+// recovered, if it needed to be, before the POST began (i2c_bus.h).
+ui::CheckReport checkDisplay() {
+  if (i2cBusState() == I2cBusState::Stuck) return ui::CheckReport::fail("SDA stuck");
+  if (!displayBegin()) return ui::CheckReport::fail("absent");
+  return ui::CheckReport::pass(i2cBusState() == I2cBusState::Freed ? "bus freed" : "");
+}
+
+// 1: the ring buffer of §4.4, without which a stalling card would drop samples.
+ui::CheckReport checkPsram() {
+  if (!psramFound()) return ui::CheckReport::fail("not found");
+  if (!logRingBegin()) return ui::CheckReport::fail("no 256K");
+  char detail[ui::kCheckDetailMax + 1];
+  snprintf(detail, sizeof detail, "%luMB", (unsigned long)(ESP.getPsramSize() >> 20));
+  return ui::CheckReport::pass(detail);
+}
+
+// 2: LittleFS, for the copy of config.json that step 3.6 loads here. The first boot finds the
+// partition blank and formats it; nothing on it is the only copy of anything (§3.8, §6.3).
+ui::CheckReport checkLittleFs() {
+  if (LittleFS.begin(/*formatOnFail=*/false, "/littlefs", 10, kLittleFsLabel)) {
+    char detail[ui::kCheckDetailMax + 1];
+    snprintf(detail, sizeof detail, "%luK used", (unsigned long)(LittleFS.usedBytes() / 1024));
+    return ui::CheckReport::pass(detail);
+  }
+  if (LittleFS.begin(/*formatOnFail=*/true, "/littlefs", 10, kLittleFsLabel)) {
+    return ui::CheckReport::pass("formatted");
+  }
+  return ui::CheckReport::fail("no mount");
+}
+
 ui::CheckReport runCheck(uint8_t id) {
   switch (id) {
-    case 0:  // first, since it is the only way to report anything on the device itself
-      return displayBegin() ? ui::CheckReport::pass() : ui::CheckReport::fail("absent");
+    case 0:
+      return checkDisplay();
+    case 1:
+      return checkPsram();
+    case 2:
+      return checkLittleFs();
     default:
       return ui::CheckReport::skipped();
   }
