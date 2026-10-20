@@ -12,3 +12,7 @@
 // logging makes a session start a refusal naming it, and any failure or warning shows the warning
 // mark (§3.3).
 void uiStart(const ui::PostResult& post);
+
+// A check retried after the POST, from another task: its new report replaces the POST's, and the
+// warning mark, the refusal and About follow it on the next tick.
+void uiPostUpdate(uint8_t id, const ui::CheckReport& report);

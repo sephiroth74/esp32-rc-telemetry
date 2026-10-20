@@ -16,6 +16,8 @@ constexpr uint32_t GNSS_BAUD_SCAN_TIMEOUT_MS = 1500;  // per attempt
 constexpr uint16_t GNSS_NAV_PERIOD_MS = 100;          // CFG-RATE-MEAS → 10 Hz, the M10 maximum
 constexpr uint8_t GNSS_SAT_RATE_DIVISOR = 10;         // NAV-SAT at 1 Hz, logged not just debugged
 constexpr uint8_t GNSS_DYNMODEL = 4;                  // automotive; A/B against 8 on track
+constexpr uint32_t GNSS_CFG_ANSWER_MS = 1000;         // VALGET's response, VALSET's ACK (check 9)
+constexpr uint32_t GNSS_CFG_RETRY_MS = 10000;         // check 9 unanswered: tried again this often
 constexpr size_t GNSS_UART_RX_BUFFER = 2048;
 constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;  // >3 s of headroom at 10 Hz (§4.2)
 

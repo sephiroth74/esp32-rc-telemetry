@@ -1,7 +1,7 @@
 {
   "name": "ubx",
   "version": "0.1.0",
-  "description": "Minimal u-blox UBX frame scanner and NAV decoder. Framework-free, host-testable.",
+  "description": "Minimal u-blox UBX frame scanner, configuration messages and NAV decoder. Framework-free, host-testable.",
   "frameworks": "*",
   "platforms": "*"
 }

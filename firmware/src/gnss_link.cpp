@@ -4,6 +4,7 @@
 #include <Preferences.h>
 
 #include "config.h"
+#include "config_db.h"
 #include "link_probe.h"
 #include "pins.h"
 #include "ubx.h"
@@ -27,7 +28,7 @@ bool tryBaud(uint32_t baud) {
   while (port.available()) port.read();
 
   uint8_t poll[ubx::kHeaderBytes + ubx::kChecksumBytes];
-  port.write(poll, ubx::encode(0x0A, 0x04, nullptr, 0, poll, sizeof poll));  // MON-VER
+  port.write(poll, ubx::encode(ubx::kClsMon, ubx::kIdMonVer, nullptr, 0, poll, sizeof poll));
 
   ubx::LinkProbe probe;
   uint8_t buf[256];
@@ -45,20 +46,39 @@ bool tryBaud(uint32_t baud) {
   return false;
 }
 
+void remember(uint32_t baud) {
+  Preferences nvs;
+  nvs.begin("gnss", /*readOnly=*/false);
+  if (nvs.getUInt("baud", 0) != baud) nvs.putUInt("baud", baud);
+  nvs.end();
+}
+
 }  // namespace
+
+bool gnssLinkSwitch(uint32_t baud) {
+  if (!found) return false;
+  port.flush();  // the module's new rate applies to what comes after the VALSET, not to the VALSET
+  if (tryBaud(baud)) {
+    found = baud;
+    remember(baud);
+    return true;
+  }
+  if (!tryBaud(found)) found = 0;
+  return false;
+}
 
 uint32_t gnssLinkScan() {
   Preferences nvs;
-  nvs.begin("gnss", /*readOnly=*/false);
+  nvs.begin("gnss", /*readOnly=*/false);  // read-write: a first boot has no namespace to open yet
   uint32_t last = nvs.getUInt("baud", 0);
+  nvs.end();
   found = 0;
   if (last && tryBaud(last)) found = last;
   for (uint32_t baud : GNSS_BAUD_SCAN) {
     if (found) break;
     if (baud != last && tryBaud(baud)) found = baud;
   }
-  if (found && found != last) nvs.putUInt("baud", found);
-  nvs.end();
+  if (found && found != last) remember(found);
   return found;
 }
 

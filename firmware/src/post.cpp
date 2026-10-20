@@ -7,6 +7,7 @@
 #include "card.h"
 #include "config.h"
 #include "display.h"
+#include "gnss_config.h"
 #include "gnss_link.h"
 #include "i2c_bus.h"
 #include "keys.h"
@@ -121,6 +122,11 @@ ui::CheckReport checkGnssLink() {
   return ui::CheckReport::pass(detail);
 }
 
+// 9: the module set up as §5.2 wants it (gnss_config.h). Without it the module still sends a
+// position, at its own rates and with NMEA in between, so the boot goes on; the attempt is repeated
+// in the background.
+ui::CheckReport checkGnssConfig() { return gnssConfigure(); }
+
 ui::CheckReport runCheck(uint8_t id) {
   switch (id) {
     case 0:
@@ -139,6 +145,8 @@ ui::CheckReport runCheck(uint8_t id) {
       return checkSpeed();
     case 8:
       return checkGnssLink();
+    case 9:
+      return checkGnssConfig();
     default:
       return ui::CheckReport::skipped();
   }
@@ -179,6 +187,7 @@ void writeLog(const ui::PostResult& r) {
   if (p.count) f.printf(", %u %s at the default:", p.count, p.count == 1 ? "key" : "keys");
   for (uint8_t i = 0; i < p.count; ++i) f.printf(" %s", p.keys[i]);
   f.printf("\n");
+  gnssConfigLog(f);  // what check 9 found on the module, and what it changed
   f.close();
 }
 

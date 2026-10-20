@@ -235,7 +235,7 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 4 — GNSS
 
-- [ ] **4.1 Configuration.** UBX-CFG-VALSET for:
+- [x] **4.1 Configuration.** UBX-CFG-VALSET for:
   - NAV-PVT at 10 Hz and NAV-SAT at 1 Hz;
   - NMEA off;
   - 230400 baud;
@@ -244,6 +244,15 @@ try when one is at hand; their logic is host-tested.
 
   It is applied to RAM+BBR and must be acknowledged: that is POST check 9, retried in the
   background. Also try the FLASH layer, and record whether the module accepts it (§9 question 4).
+  *Result:* `gnss_config.cpp`, on VALSET, VALGET and the ACKs of `lib/ubx/config_db` (7 host tests).
+  Check 9 reads the RAM layer back and writes only what differs, so a module already set is left
+  alone (`as set`), then reads the BBR and FLASH layers back into `/post.log`. On the GM10 as Flywoo
+  delivered it, the first boot changed four keys — NAV-SAT on, NMEA off, `DYNMODEL` 4, 230400 baud —
+  and the module has config flash: it took the VALSET to FLASH and holds all eleven keys there, so it
+  now comes up set without its BBR. The BBR itself outlived 15 s unpowered. That first boot's log
+  was lost, since TinyUSB drops what is printed before a host opens the port; the firmware now
+  echoes `/post.log` each time a host opens it. Not seen on the bench yet: a module that does not
+  answer (the background retry) and one at the u-blox defaults, 9600 baud with NMEA only.
 - [ ] **4.2 NAV-PVT and NAV-SAT decode** in `lib/ubx`.
   *Test:* host tests against fixtures captured after 4.1.
 - [ ] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss

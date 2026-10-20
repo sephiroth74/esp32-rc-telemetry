@@ -8,8 +8,8 @@
 // sync, so a false sync — 0xB5 0x62 inside a payload, or a length mangled by a lost byte — costs no
 // frame that follows it.
 //
-// The decode of NAV-PVT and NAV-SAT arrives in phase 4 (step 4.2); encode() is here already, for
-// the polls and, later, VALSET.
+// The decode of NAV-PVT and NAV-SAT arrives in phase 4 (step 4.2); encode() builds the polls, and
+// the configuration messages of config_db.h.
 //
 // Framework-free by design: nothing under lib/ may include Arduino.h (§6.1), which is what lets
 // this be tested on the host against the frames captured in docs/fixtures/.
@@ -58,6 +58,8 @@ class Scanner {
   // The next whole frame, or false when the bytes so far hold none yet. The frame points into the
   // scanner and stays valid until the next push() or next().
   bool next(Frame& frame);
+  // Forgets the bytes so far, for an exchange that wants only what answers it.
+  void reset() { count_ = consumed_ = 0; }
 
   const Stats& stats() const { return stats_; }
   size_t buffered() const { return count_ - consumed_; }

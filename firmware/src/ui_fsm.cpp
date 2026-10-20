@@ -65,6 +65,28 @@ ui::Facts sampleFacts() {
 
 ui::Facts facts = sampleFacts();
 
+// The POST's result, kept for About, and the checks retried since (uiPostUpdate).
+ui::PostResult postResult;
+char postSummaryText[17];
+struct PostUpdate {
+  uint8_t id;
+  ui::CheckReport report;
+};
+QueueHandle_t postUpdates = nullptr;
+
+// What IDLE takes from the POST's result: the refusal, the warning mark, the summary of About.
+void applyPost() {
+  ui::postSummary(postResult, postSummaryText);
+  facts.postSummary = postSummaryText;
+  int8_t refusing = postResult.refusingCheck();
+  facts.menu.loggingAllowed = refusing < 0;
+  facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
+  // A failed check, or a config.json that is not all it should be: the warning mark (§3.2).
+  facts.warning = postResult.warning() || settingsProblems().count ||
+                  settingsSource() == SettingsSource::CardUnreadable;
+  facts.gnssBaud = gnssLinkBaud();  // check 9 moves it
+}
+
 // Stand-ins for the modules that will carry the commands out. Each only updates the sample facts,
 // so the screens react as they will once the real thing is behind them.
 void runPlaceholder(const ui::BoardOutput& o) {
@@ -184,6 +206,14 @@ void uiTask(void*) {
     }
     board.tick(now);
 
+    PostUpdate update;
+    while (xQueueReceive(postUpdates, &update, 0) == pdTRUE) {
+      postResult.checks[update.id] = update.report;
+      applyPost();
+      Serial.printf("[%7lu] check %u now %s\n", (unsigned long)now, update.id,
+                    update.report.detail);
+    }
+
     displaySetContrast(facts.menu.brightness, dimmed);
     displaySetTextSize(textSize());
     ui::render(board, facts, layout, textSize(), now, text);
@@ -204,18 +234,9 @@ void uiTask(void*) {
 }  // namespace
 
 void uiStart(const ui::PostResult& post) {
-  static char summary[17];
-  static ui::PostResult result;  // for About, which shows it check by check
-  result = post;
-  facts.post = &result;
-  ui::postSummary(post, summary);
-  int8_t refusing = post.refusingCheck();
-  facts.menu.loggingAllowed = refusing < 0;
-  facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
-  // A failed check, or a config.json that is not all it should be: the warning mark (§3.2).
-  facts.warning = post.warning() || settingsProblems().count ||
-                  settingsSource() == SettingsSource::CardUnreadable;
-  facts.postSummary = summary;
+  postResult = post;
+  facts.post = &postResult;  // for About, which shows it check by check
+  postUpdates = xQueueCreate(4, sizeof(PostUpdate));
   // The card as the POST left it; the rest of the facts are still placeholders (step 2.6).
   // The settings of config.json, and where they came from (§3.8).
   for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) profileNamePtrs[i] = settingsProfileName(i);
@@ -237,11 +258,17 @@ void uiStart(const ui::PostResult& post) {
   // placeholders would be a lie on the GNSS screen.
   facts.gnssLink = gnssLinkBaud() != 0;
   facts.menu.gnssOk = facts.gnssLink;
-  facts.gnssBaud = gnssLinkBaud();
   if (!facts.gnssLink) {
     facts.fixType = 0;
     facts.sats = 0;
     facts.menu.hasFix = false;
   }
+  applyPost();
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);
+}
+
+void uiPostUpdate(uint8_t id, const ui::CheckReport& report) {
+  if (!postUpdates || id >= ui::kPostChecks) return;
+  PostUpdate update = {id, report};
+  xQueueSend(postUpdates, &update, 0);
 }

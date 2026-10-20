@@ -99,6 +99,9 @@ with `analogReadMilliVolts()` at 100 Hz.
 | Both UART directions | **Work**: the UBX-MON-VER poll is answered |
 | UBX-MON-VER | sw `ROM SPG 5.10 (7b202e)`, hw `000A0000`; `FWVER=SPG 5.10`, `PROTVER=34.10`; `GPS;GLO;GAL;BDS`, `SBAS;QZSS` |
 | Fix | Not yet — indoors, 0 satellites. To repeat with a view of the sky |
+| Configuration as found | Four of the eleven keys of POST check 9 differed: NAV-SAT off, NMEA on, `DYNMODEL` other than 4, 115200 baud. The other seven — 10 Hz, NAV-PVT with every solution, UBX out, SBAS with differential corrections — were already as §5.2 wants them (step 4.1, 2026-10-20). The old `DYNMODEL` value went unrecorded: that boot's log was lost to the USB re-enumeration |
+| Config flash | **Yes.** It takes a VALSET to the FLASH layer, and VALGET of that layer returns all eleven keys with their values: the four written there, and seven that were in it already — Flywoo's own setup lives in flash, which is why it survived days unpowered |
+| BBR | Kept over **15 s unpowered**: the module has a backup supply of its own. How long it lasts is still to measure |
 
 **TX and RX swapped give no byte at all**, at any baud rate, which looks like a dead module. Found
 on 2026-10-19 after the bench was rewired for the RC tests: the multimeter read 3.28 V on the line
@@ -107,9 +110,8 @@ two outputs fighting, averaged by the meter. A software swap of the pins did not
 so put the wires right rather than the pins: GPS TX to D7, GPS RX to D6.
 
 `PROTVER=34.10` confirms the configuration-database interface that §5.2 relies on (`CFG-VALSET`).
-The `ROM` prefix says the firmware runs from the chip's ROM. That hints the module carries no flash
-of its own, which bears on the config-flash question below but does not settle it; a VALSET to the
-FLASH layer will.
+The `ROM` prefix says the firmware runs from the chip's ROM; the configuration has flash all the
+same (above), so the prefix said nothing about it.
 
 ### Lesson: solder the headers
 
@@ -121,8 +123,8 @@ soldered. Every bench result above is from soldered headers.
 
 | Quantity | Why it matters | Value |
 | --- | --- | --- |
-| Whether this GM10 V3.1 carries a magnetometer, and whether it has config flash | Decides whether VALSET to FLASH is worth attempting (§5.2). Firmware runs from ROM, see above | — |
-| Time to first fix, cold and with the backup LiPo | Sets expectations for the GNSS screen (§3.4) and confirms the value of the BBR backup (§2.7) | — |
+| Whether this GM10 V3.1 carries a magnetometer | §9 question 4; its other half, config flash, is answered above | — |
+| Time to first fix, cold and with the backup LiPo, and how long the module's own backup keeps its BBR | Sets expectations for the GNSS screen (§3.4) and confirms the value of the BBR backup (§2.7) | — |
 | Whether the GM10 runs from 3V3 | On battery the 5V pad is dead, so a GM10 on 5 V loses its BBR in SLEEP and every run starts cold (§2.7, §9 question 16) | — |
 | JS5208 ladder: the ADC reading of each key, once the switch is fitted | UP, DOWN and RIGHT are still nominal in `KEY_MV_BOUNDS` (§3.1; ROADMAP.md, "Switching to the JS5208") | — |
 | Whether OK on the ladder wakes the chip from deep sleep, and whether the RC inputs do (with the §2.5 pull-downs) without spurious wakes | The two wake sources of §4.5 | — |

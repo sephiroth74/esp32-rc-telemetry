@@ -766,7 +766,12 @@ Two robustness rules:
 - **Re-apply the whole configuration on every boot.** Write to RAM+BBR, and to FLASH only
   opportunistically: it is not established that this module has config flash, so a VALSET to FLASH may
   simply fail. BBR is an optimisation, never an assumption — and the ROM boot banner on GPIO43 (§2.2)
-  is a second reason not to trust the module's state across a reset.
+  is a second reason not to trust the module's state across a reset. Refined in step 4.1: every boot
+  reads the RAM layer back (VALGET) and writes only what differs, so a module that kept its settings
+  is left alone — no GNSS restart for a signal key rewritten with its own value — and the read says
+  whether it kept them. FLASH is written only by a boot that had to change something, which spares
+  it wear. The GM10 has config flash and takes the write (§9, question 4), so a module set up once
+  comes up set.
 
 ### 5.3 Nothing gets thrown away
 
@@ -1204,7 +1209,9 @@ Rules that keep it from compromising the logger:
    car is still measured once and recorded in `docs/hardware.md`.
 3. ~~Does the socket need external pull-ups on CMD/DAT0 for SD mode?~~ **Resolved:** no — clean at
    20 MHz and at 40 MHz on the bench (`docs/hardware.md`). (§2.3)
-4. Does this GM10 unit have config flash, and does it carry a magnetometer? (§5.2)
+4. Does this GM10 unit have config flash, and does it carry a magnetometer? **Half resolved:** it has
+   config flash — Flywoo's setup was in it, and it takes a VALSET to FLASH (step 4.1). The
+   magnetometer is still open. (§5.2)
 5. `DYNMODEL` 4 vs 8 for the quickest cars — decide by A/B on track. (§5.2)
 6. ~~Is `55.03.38` or `55.03.311` the correct pioarduino platform version?~~ **Resolved:** both tags
    exist, `55.03.311` is the newer, and the tags have no `v` prefix. Pinned in `platformio.ini`. (§6.2)
@@ -1229,6 +1236,8 @@ Rules that keep it from compromising the logger:
 16. Can the GM10 run from 3V3? If it needs the 5V pad, the backup LiPo does not keep its BBR alive in
     SLEEP, because the 5V pad is dead on battery, and the hot-fix benefit claimed in §2.7 is lost.
     Options: a GM10 on 3V3, or a small backup supply for its BBR. Check the module in Phase 1.
+    The module has a backup of its own, which kept its BBR over 15 s unpowered (step 4.1): the
+    question is now how long it lasts. Its configuration is in flash, so only the hot fix is at stake.
 17. Are the automatic start and stop thresholds right — 5 km/h for 2 s, ±10 % throttle for 1 s, 5
     minutes of standstill? Tune them on track. (§3.6)
 18. How does the JS5208 survive on a car: carrier board, rubber boot, and do the ladder windows hold
