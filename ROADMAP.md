@@ -309,6 +309,12 @@ try when one is at hand; their logic is host-tested.
   A track whose geo-fence contains the fix comes first, then the 300 m radius; among several the one
   used most recently wins, and Track › New track creates a folder at the fix with the next suffix.
   The point-in-polygon test lives in `lib/geo`, host-tested; the GNSS screen names the track.
+  *So far:* the rules written down in `docs/algorithms.md` and implemented in `lib/geo`, host-tested
+  (13 tests): the cell id in integers, truncated; the distance; the fence test, exact in integers;
+  which track a fix belongs to; a new track's name with the first free suffix; the session numbers,
+  widening past 999. One rule made explicit on the way (§7.1): a fenced track is recognised by its
+  fence only, so a fix at the unfenced club next door is not taken for it. Still to do, on the
+  device: reading `track.json`, the folders, `meta.json`, and the GNSS screen's track.
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.

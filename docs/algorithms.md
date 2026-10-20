@@ -4,7 +4,9 @@ Implemented twice against the fixtures in [fixtures/](fixtures/): `firmware/lib/
 and `packages/rct_core/` in Dart. Both must agree to the last decimal, because the phone shows a lap
 time the desktop app then has to reproduce.
 
-**Status: not written yet.** Blocks on-device lap detection (PLAN-ESP32.md phase 8).
+**Status:** the track rules — cell names, recognition, session numbers — are written below and
+implemented in `firmware/lib/geo/` (ROADMAP.md step 5.4). The lap algorithms are still to define;
+they block on-device lap detection (PLAN-ESP32.md phase 8).
 
 ## Fixed already
 
@@ -31,5 +33,82 @@ PLAN-ESP32.md §7.5 settles what these algorithms must do, before how:
   where there is one.
 - **Loop closure and the fastest point**, for the automatic start line.
 - **The median path**, building `geometry.rcg` from the unflagged laps of every session.
-- **Track cell naming and proximity resolution** — the one piece that exists already, in
-  `firmware/lib/geo/geo.h`; the rule it implements is PLAN-ESP32.md §7.1.
+
+## Tracks and sessions on the card
+
+The rules of PLAN-ESP32.md §7.1, to the detail two implementations need to agree on. Positions are
+u-blox's integers, degrees × 10⁷, as NAV-PVT gives them; nothing between a fix and a folder name
+goes through floating point.
+
+### Cell id
+
+`{N|S}DDdd{E|W}DDDdd`, from the absolute value of each coordinate, **truncated**, never rounded:
+degrees, then hundredths of a degree. In integers, for latitude `lat` (× 10⁷):
+
+```text
+hemisphere = lat < 0 ? 'S' : 'N'
+a          = |lat|
+DD         = a / 10⁷              (integer division)
+dd         = (a mod 10⁷) / 10⁵
+```
+
+and the same for longitude with `E`/`W` and three digits of degrees. Latitude 45.1234, longitude
+9.3456 → `N4512E00934`; −0.00001 → `S0000`; −179.99999 → `W17999`.
+
+### Distance
+
+For the radius, between two points a few hundred metres apart, the equirectangular approximation,
+in double precision:
+
+```text
+φ1, φ2, λ1, λ2   the coordinates in radians: value × 10⁻⁷ × π / 180
+Δλ               λ2 − λ1, brought into [−π, π]
+x                Δλ × cos((φ1 + φ2) / 2)
+y                φ2 − φ1
+d                6 371 008.8 m × √(x² + y²)
+```
+
+Within 0.1 % of the great circle up to tens of kilometres, far below what matters for a 300 m
+radius. Two implementations' `cos` may differ in the last bit, which only matters for a point
+exactly on the radius.
+
+### Inside a geo-fence
+
+A fence is a polygon of at least three vertices, in order, implicitly closed. A point is inside by
+the even-odd rule, a horizontal ray from the point, counted **in the integer coordinates
+themselves** — a horizontal ray's crossings do not change when longitude is scaled by the cosine of
+the latitude, so no projection is needed and the test is exact. For each edge from `(xi, yi)` to
+`(xj, yj)`, with `x` longitude, `y` latitude and the point at `(x, y)`, all relative to the point:
+
+```text
+crosses  = (yi > y) ≠ (yj > y)
+and then  (x − xi) × (yj − yi)  <  (y − yi) × (xj − xi)    when yj > yi
+          (x − xi) × (yj − yi)  >  (y − yi) × (xj − xi)    when yj < yi
+```
+
+in 64-bit integers. A point exactly on an edge may come out either way, as with any such test. A
+fence spanning more than 10° of latitude or longitude is invalid and contains nothing: no track is
+that size, and it keeps the products within 64 bits.
+
+### Which track
+
+Given the fix — a 3D fix with hAcc ≤ 5 m — and every `track.json` on the card:
+
+1. **By fence.** The tracks whose fence contains the fix. A track with a fence is recognised by its
+   fence alone, never by the radius: that is what a fence is for, two clubs a few hundred metres
+   apart, only one of them fenced.
+2. **Otherwise by radius**, among the tracks without a fence: those whose reference point — the
+   start line if one is set, else the centre — lies within `track.match_radius_m` (300 m).
+3. Among several of either, the one with the highest `last_used`; on a tie, the first in the order
+   the tracks were listed.
+4. None: a new track, named as below.
+
+**A new track's name** is the cell id of the fix, if no folder on the card has it; otherwise the
+cell id with the first free suffix of `-2` to `-99`. All 99 taken, no new track. **Track › New
+track** names its folder the same way, skipping steps 1–3.
+
+### Session numbers
+
+`session_NNN`, numbered per track from the highest existing number plus one, starting at 1. A name
+counts only if it is `session_` followed by digits and nothing else. Three digits with leading
+zeros, as many as the number needs from 1000 on: `session_999`, then `session_1000`.

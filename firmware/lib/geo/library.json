@@ -1,7 +1,7 @@
 {
   "name": "geo",
   "version": "0.1.0",
-  "description": "Track cell ids, gate crossing, s/d projection and lap detection. Framework-free.",
+  "description": "Track cell ids, recognition and session numbers; later gate crossing, s/d projection and lap detection. Framework-free.",
   "frameworks": "*",
   "platforms": "*"
 }

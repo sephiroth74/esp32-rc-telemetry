@@ -998,7 +998,9 @@ track could split across two days. So the cell id *names* the folder but does no
 2. Scan `/tracks/*/track.json`. A track whose **geo-fence** contains the fix is the one. Otherwise,
    reuse the folder whose `start_line` — or `centre`, if no start line is set yet — lies within
    `track.match_radius_m` (default **300 m**) of that fix. If several match either way, take the one
-   used most recently: `last_used` is updated whenever a session is filed there.
+   used most recently: `last_used` is updated whenever a session is filed there. A track with a fence
+   is matched by its fence only, never by the radius (step 5.4): a fix at the unfenced club next door
+   is not the fenced one's. The exact rules are `docs/algorithms.md`'s.
 3. Otherwise create a new folder named from the cell id and write `track.json` with the fix as
    `centre`. If that name exists but belongs to a different track — two circuits inside one kilometre
    cell — append `-2`, `-3`, … up to `-99`. The longest id is therefore 14 characters,
