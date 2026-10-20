@@ -80,12 +80,12 @@ taken for one of this session's.
 #### Reading
 
 1. Check the file header: magic, a known version, its CRC. Records start at `header size`.
-2. At each position: a byte other than `0xA5` is not a record. A record whose length runs past the
-   end of the file is the cut-short end of the data, and reading stops. A record whose CRC does not
-   match is not one either.
-3. After anything that is not a record, look for the next `0xA5` one byte further on and try again,
-   counting the bytes skipped. That is how a reader crosses a zero-filled or stale tail, and the one
-   corrupted record a card might produce mid-file, without giving up the records after it.
+2. At each position, a record is the sync byte, a header, a payload that ends within the file, and
+   a CRC that matches. The next record starts right after it.
+3. Anything else is not a record: skip one byte, look for the next `0xA5`, try again, and count the
+   bytes skipped. One rule covers every case — the cut-short last record, the zero-filled or stale
+   tail, the one corrupted record a card might produce mid-file — and gives up none of the records
+   after it. A length mangled mid-file does not end the reading either.
 4. A file with no session footer ended without SAVING.
 
 `t_ms` never decreases from one record of a type to the next. Across types it can step back a

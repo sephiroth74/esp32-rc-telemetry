@@ -288,7 +288,15 @@ try when one is at hand; their logic is host-tested.
   an older session is skipped, never misread. Eight types — session header, UBX frame (whole and
   verbatim), IMU aggregate, IMU raw, RC samples, marker, lap, footer — with RC and IMU batched per
   100 ms epoch, about 2.5 KB/s in all. Payloads grow only by appending fields.
-- [ ] **5.2 Packing.** `lib/rcl`, with host tests and golden fixtures shared with `rct_core`.
+- [x] **5.2 Packing.** `lib/rcl`, with host tests and golden fixtures shared with `rct_core`.
+  *Result:* `lib/rcl` writes the file header and whole records with their CRC, reads a file record by
+  record, and encodes and decodes each payload type. The golden file is `rcl-golden-v1`: values in
+  JSON, bytes in hex, the bytes written by a Python script from `docs/protocol.md` alone, and
+  `lib/rcl` agrees with it both ways. 11 host tests, the golden ones included, then a cut at every
+  byte, tails of zeros and of an older session, a corrupted record and a mangled length, headers
+  that are not ours, and payloads that grow. `rct_core` is held to the same two files when it comes.
+  One rule changed in `docs/protocol.md` on the way: a length running past the end no longer ends
+  the reading, since a length mangled mid-file would have cost every record after it.
 - [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.

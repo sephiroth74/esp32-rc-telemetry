@@ -1,0 +1,34 @@
+# The golden .rcl of docs/protocol.md, version 1: rcl-golden-v1.json encoded by
+# make_rcl_golden.py. Do not edit by hand; edit the JSON and run the script.
+# file header: version 1, nonce 0123456789abcdef
+89 52 43 4c 0d 0a 1a 0a 01 00 18 00 ef cd ab 89 67 45 23 01 e2 48 69 40
+# record 1: session_header, t 0 ms, 40 payload bytes
+a5 01 28 00 00 00 00 00 2a 00 00 00 34 85 18 6a 1b 2c 00 00 30 2e 31 2e 30 2d 64 65 76 00 00 00
+00 00 00 00 64 00 20 4e 10 27 10 00 d0 07 03 00 a2 6e a9 78
+# record 2: ubx, t 31 ms, 100 payload bytes
+a5 02 64 00 1f 00 00 00 b5 62 01 07 5c 00 0c 7b 00 00 e5 07 03 07 00 00 1f f0 ff ff ff ff 00 65
+cd 1d 00 00 24 00 00 00 00 00 00 00 00 00 00 00 00 00 98 bd ff ff ff ff ff ff 00 76 84 df 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 4e 00 00 80 a8 12 01 0f 27 00 00 5c 40
+56 2f 00 00 00 00 00 00 00 00 87 28 c4 9f c5 08
+# record 3: ubx, t 33 ms, 16 payload bytes
+a5 02 10 00 21 00 00 00 b5 62 01 35 08 00 0c 7b 00 00 01 00 00 00 c6 64 f7 6a 28 28
+# record 4: imu_aggregate, t 0 ms, 38 payload bytes
+a5 03 26 00 00 00 00 00 14 00 64 fe 7c 01 f4 ff 88 ff 5f 00 03 00 62 07 a2 08 00 08 d4 fe 18 01
+fc ff 6a ff a0 00 02 00 7c fc b0 04 55 00 1b e6 97 61
+# record 5: imu_raw, t 0 ms, 26 payload bytes
+a5 04 1a 00 00 00 00 00 02 00 f4 ff 03 00 00 08 fc ff 02 00 55 00 f6 ff 05 00 02 08 fd ff 01 00
+5a 00 3d 3f 77 e8
+# record 6: rc_samples, t 0 ms, 32 payload bytes
+a5 05 20 00 00 00 00 00 05 00 dc 05 dc 05 00 00 e8 05 fa 05 00 00 04 06 41 06 00 00 2c 06 98 06
+00 00 4b 06 a6 06 00 00 e3 7c 5f 1c
+# record 7: marker, t 250 ms, 4 payload bytes
+a5 06 04 00 fa 00 00 00 01 00 00 00 0a f7 19 91
+# record 8: lap, t 320 ms, 16 payload bytes
+a5 07 10 00 40 01 00 00 00 00 00 01 20 01 00 00 2c 7c 00 00 00 00 00 00 25 89 06 67
+# record 9: lap, t 62700 ms, 16 payload bytes
+a5 07 10 00 ec f4 00 00 01 00 01 01 a5 f4 00 00 b1 6f 01 00 85 f3 00 00 5a 8c 15 6e
+# record 10: footer, t 62800 ms, 68 payload bytes
+a5 08 44 00 50 f5 00 00 00 00 00 00 02 00 00 00 09 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 03 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00
+29 00 00 00 29 00 00 00 fa 05 00 00 69 58 a9 ff
+# 500 bytes

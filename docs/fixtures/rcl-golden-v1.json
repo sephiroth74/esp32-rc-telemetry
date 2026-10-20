@@ -1,0 +1,92 @@
+{
+  "comment": "The golden .rcl of docs/protocol.md, version 1: every record type once, laps twice. rcl-golden-v1.hex is these records encoded by make_rcl_golden.py; lib/rcl and rct_core must encode them to the same bytes and decode those bytes back to these values. The UBX frames are the GM10's own, from gm10-indoor-115200.hex.",
+  "version": 1,
+  "nonce": "0123456789abcdef",
+  "records": [
+    {
+      "type": "session_header",
+      "t_ms": 0,
+      "session_id": 42,
+      "device": "34:85:18:6a:1b:2c",
+      "post": 0,
+      "firmware": "0.1.0-dev",
+      "epoch_ms": 100,
+      "rc_period_us": 20000,
+      "imu_raw_period_us": 10000,
+      "accel_range_g": 16,
+      "gyro_range_dps": 2000,
+      "car_profile": 3
+    },
+    {
+      "type": "ubx",
+      "t_ms": 31,
+      "frame": "b56201075c000c7b0000e507030700001ff0ffffffff0065cd1d0000240000000000000000000000000098bdffffffffffff007684df0000000000000000000000000000000000000000204e000080a812010f2700005c40562f00000000000000008728"
+    },
+    {
+      "type": "ubx",
+      "t_ms": 33,
+      "frame": "b562013508000c7b000001000000c664"
+    },
+    {
+      "type": "imu_aggregate",
+      "t_ms": 0,
+      "count": 20,
+      "axes": [[-412, 380, -12], [-120, 95, 3], [1890, 2210, 2048], [-300, 280, -4], [-150, 160, 2], [-900, 1200, 85]]
+    },
+    {
+      "type": "imu_raw",
+      "t_ms": 0,
+      "samples": [[-12, 3, 2048, -4, 2, 85], [-10, 5, 2050, -3, 1, 90]]
+    },
+    {
+      "type": "rc_samples",
+      "t_ms": 0,
+      "samples": [[1500, 1500, 0], [1512, 1530, 0], [1540, 1601, 0], [1580, 1688, 0], [1611, 1702, 0]]
+    },
+    {
+      "type": "marker",
+      "t_ms": 250,
+      "number": 1,
+      "source": 0
+    },
+    {
+      "type": "lap",
+      "t_ms": 320,
+      "lap": 0,
+      "flags": 0,
+      "line": 1,
+      "crossing_ms": 288,
+      "crossing_itow_ms": 31788,
+      "lap_time_ms": 0
+    },
+    {
+      "type": "lap",
+      "t_ms": 62700,
+      "lap": 1,
+      "flags": 1,
+      "line": 1,
+      "crossing_ms": 62629,
+      "crossing_itow_ms": 94129,
+      "lap_time_ms": 62341
+    },
+    {
+      "type": "footer",
+      "t_ms": 62800,
+      "close": 0,
+      "ubx_frames": 2,
+      "records": 9,
+      "uart_overruns": 0,
+      "uart_errors": 1,
+      "ubx_bad_checksums": 0,
+      "ubx_oversize": 0,
+      "gnss_queue_full": 0,
+      "ring_overflow": 0,
+      "rc_rejects": [3, 0, 0],
+      "writes": 2,
+      "slow_writes": 0,
+      "write_max_ms": 41,
+      "write_p99_ms": 41,
+      "ring_high_water": 1530
+    }
+  ]
+}
