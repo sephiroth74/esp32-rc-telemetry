@@ -281,8 +281,13 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 5 — Logging core and manual sessions
 
-- [ ] **5.1 Record format.** The `.rcl` records written down in `docs/protocol.md` before any code
+- [x] **5.1 Record format.** The `.rcl` records written down in `docs/protocol.md` before any code
   (§7.2).
+  *Result:* a 24-byte file header with a per-session nonce, then records of sync, type, length,
+  session time in ms, payload and a CRC-32 seeded with the nonce: a power cut's tail of zeros or of
+  an older session is skipped, never misread. Eight types — session header, UBX frame (whole and
+  verbatim), IMU aggregate, IMU raw, RC samples, marker, lap, footer — with RC and IMU batched per
+  100 ms epoch, about 2.5 KB/s in all. Payloads grow only by appending fields.
 - [ ] **5.2 Packing.** `lib/rcl`, with host tests and golden fixtures shared with `rct_core`.
 - [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.

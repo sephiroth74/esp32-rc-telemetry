@@ -1047,6 +1047,11 @@ contradicted [PLAN.md](PLAN.md#context).
 The raw-passthrough record is what makes §5.3 work: `docs/protocol.md` must define it as an opaque,
 length-prefixed container carrying class, id, receive timestamp and payload bytes, so that adding a
 UBX message to the configuration requires no format revision and no firmware-side interpretation.
+Written in step 5.1, it holds the whole frame, sync to checksum, so any UBX parser reads it as it is.
+The same step settled the rest: a CRC-32 on every record, seeded with a nonce drawn per session so
+that an older session's bytes in the pre-allocated space never pass for this one's; RC and IMU
+batched one record an epoch, which keeps the stream near 2.5 KB/s; and the session header limited
+to what decoding needs, the rest of the session going into `meta.json`.
 
 ### 7.3 USB Mass Storage
 
