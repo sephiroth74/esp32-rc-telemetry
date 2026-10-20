@@ -614,9 +614,9 @@ Rules across the states:
 
 | Task | Core | Prio | Job |
 | --- | --- | --- | --- |
-| `gnss` | 1 | 5 | UART1 RX → UBX frame sync → raw-frame queue (depth 32). Highest priority |
+| `gnss` | 1 | 5 | UART1 RX → UBX frame sync → each frame, whole, appended to the logger's ring as a record. Highest priority |
 | `imu` | 1 | 4 | I²C at 200 Hz; per-epoch aggregates (min/max/mean) + optional 100 Hz raw stream |
-| `logger` | 0 | 3 | Drains the queues, packs `.rcl` records, writes to SDMMC from a PSRAM ring buffer |
+| `logger` | 0 | 3 | Writes the PSRAM ring of `.rcl` records to SDMMC: 32 KB at a time, a flush every 5 s, the extents ahead (§4.4) |
 | `ui` | 0 | 2 | Key sampling (ADC, 100 Hz), display rendering, the board states of §3.7 with the automatic session start and stop, lap detection |
 | `ble` | 0 | 2 | NimBLE GATT, only while in TRANSFER (§3.7): status notifications, control, chunked download |
 
@@ -642,13 +642,19 @@ Known contention to watch:
 ### 4.2 GNSS reading
 
 The `gnss` task blocks on `uart_read_bytes` with a short timeout and feeds bytes into the frame
-scanner in `lib/ubx/`. What it enqueues is the **complete raw frame** — class, id, length, payload,
-plus a receive timestamp — not a decoded struct. The logger writes that verbatim; the UI and BLE
-decode the fields they need from the same buffer. One copy, no lossy transformation anywhere on the
-path from UART to card.
+scanner in `lib/ubx/`. What it logs is the **complete raw frame** — class, id, length, payload, plus
+a receive timestamp — not a decoded struct, written verbatim; the UI and BLE decode the fields they
+need from the same bytes. One copy, no lossy transformation anywhere on the path from UART to card.
 
-UART RX ring buffer 2048 B and queue depth 32 (over 3 s of headroom at 10 Hz) so that an SD stall
-cannot cost a fix. If either does overflow, it is counted, never ignored (§5.3).
+UART RX ring buffer 2048 B, so that the task's own reads never cost a byte. If it does overflow, it
+is counted, never ignored (§5.3).
+
+**Refined in step 5.3:** the frame goes straight into the logger's ring of §4.4 as an `.rcl` record,
+not through a queue of its own to the logger. A logger that both drained queues and wrote to the
+card would stop draining for as long as a write stalled, and a 32-frame queue fills in 3 s: the
+ring's 75 s would never be reached. So every producer — this task, the RC sampling, the IMU, the
+markers — appends whole records to the ring under a mutex held for the copy, and the logger only
+writes the ring out. The ring is the one queue, and a stall costs nothing until it is full.
 
 ### 4.3 RC capture
 

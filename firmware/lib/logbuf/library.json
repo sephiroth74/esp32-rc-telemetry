@@ -1,0 +1,7 @@
+{
+  "name": "logbuf",
+  "version": "0.1.0",
+  "description": "The logger's ring of whole records and its write-latency statistics. Framework-free, host-testable.",
+  "frameworks": "*",
+  "platforms": "*"
+}

@@ -299,6 +299,12 @@ try when one is at hand; their logic is host-tested.
   the reading, since a length mangled mid-file would have cost every record after it.
 - [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.
+  *So far:* `lib/logbuf`, host-tested (8 tests): the ring of whole records — in entire or dropped
+  and counted, out in order however the writer slices it, across the wrap and through a stall that
+  fills it — and the write statistics of the footer: the longest, the 99th percentile from a fixed
+  histogram, the writes over 250 ms. The design changed on the way (§4.2): producers append records
+  to the ring themselves and the logger only writes it out, so the gnss task's frame queue of 4.3
+  goes once the logger is on the device. Still to do: the logger task and the card, on the bench.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.
   A track whose geo-fence contains the fix comes first, then the 300 m radius; among several the one
   used most recently wins, and Track › New track creates a folder at the fix with the next suffix.
