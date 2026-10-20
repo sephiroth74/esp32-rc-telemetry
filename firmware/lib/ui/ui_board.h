@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 
+#include "ui_gnss.h"
 #include "ui_keys.h"
 #include "ui_menu.h"
 #include "ui_post.h"
@@ -29,10 +30,12 @@ struct Facts {
   uint32_t gnssBaud = 0;
   uint8_t fixType = 0;           // UBX fixType: 0 none, 2 2D, 3 3D
   int32_t latE7 = 0, lonE7 = 0;  // degrees × 1e7, as NAV-PVT gives them; meaningful with a fix
-  uint8_t sats = 0;
+  uint8_t sats = 0;       // used in the solution
+  uint8_t satsSeen = 0;   // tracked, with a signal (NAV-SAT)
   uint16_t hAccCm = 0;
   uint16_t pdopX100 = 0;
-  uint16_t ttffS = 0;  // time to first fix
+  AcqState acq = AcqState::Acquiring;  // ui_gnss.h
+  uint16_t acqS = 0;  // Fix: what it took; otherwise the time since the acquisition started
   uint16_t speedKmh = 0;
   uint32_t gnssLoss = 0;
 

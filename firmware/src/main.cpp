@@ -39,8 +39,8 @@ void setup() {
   keysBegin();                      // before the POST, whose fatal latch polls them
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
   keysSetLayout(settings().keysLayout == 1 ? KeyLayout::FiveWay : KeyLayout::TwoButtons);
-  uiStart(post);
   gnssTaskStart();  // when check 8 found the module; it retries check 9 if that went unanswered
+  uiStart(post);    // after it: acquisition is timed from the gnss task's start
 }
 
 void loop() {

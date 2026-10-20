@@ -5,6 +5,7 @@
 #pragma once
 
 #include "config.h"
+#include "ui_gnss.h"
 #include "ui_keys.h"
 #include "ui_menu.h"
 
@@ -21,6 +22,15 @@ inline ui::KeyConfig keyConfig(KeyLayout layout = KEY_LAYOUT_DEFAULT) {
   c.repeatMs = KEY_REPEAT_MS;
   c.navBackMs = KEY_NAV_BACK_MS;
   return c;
+}
+
+inline ui::AcquisitionTiming acquisitionTiming() {
+  ui::AcquisitionTiming t{};
+  t.fixHAccMm = GNSS_FIX_HACC_MM;
+  t.fixHoldMs = GNSS_FIX_HOLD_MS;
+  t.timeoutMs = GNSS_ACQ_TIMEOUT_MS;
+  t.staleMs = GNSS_STALE_MS;
+  return t;
 }
 
 inline ui::MenuTiming menuTiming() {

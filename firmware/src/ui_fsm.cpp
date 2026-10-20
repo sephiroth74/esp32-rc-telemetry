@@ -8,6 +8,7 @@
 #include "config.h"
 #include "display.h"
 #include "gnss_link.h"
+#include "gnss_task.h"
 #include "keys.h"
 #include "settings.h"
 #include "ui_board.h"
@@ -20,7 +21,7 @@ constexpr uint32_t kStackBytes = 6144;
 
 // --- Placeholder facts (ROADMAP.md step 2.6) -----------------------------------
 // Every screen shows plausible values until the modules that own them arrive: the card in phase 3,
-// GNSS in phase 4, sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
+// GNSS in phase 4 (here now), sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
 
 // The profiles' names are config.json's (settings.h); the track id is writable for New track.
 const char* profileNamePtrs[CAR_PROFILES_MAX];
@@ -29,20 +30,10 @@ uint8_t trackSuffix = 1;
 
 ui::Facts sampleFacts() {
   ui::Facts f;
-  f.menu.hasFix = true;
   f.menu.rcSignal = true;
   f.menu.profileMax = CAR_PROFILES_MAX;
   f.menu.textSize = DISPLAY_TEXT_SIZE_DEFAULT;
   f.profileNames = profileNamePtrs;
-  f.gnssLink = true;
-  f.gnssBaud = 115200;
-  f.fixType = 3;
-  f.latE7 = 451234560;  // inside the sample cell, N4512E00934
-  f.lonE7 = 93456780;
-  f.sats = 14;
-  f.hAccCm = 120;
-  f.pdopX100 = 132;
-  f.ttffS = 34;
   f.freeMb = 59600;
   f.cardGb = 62;
   f.cardKbps = 3495;
@@ -67,6 +58,7 @@ ui::Facts facts = sampleFacts();
 
 // The POST's result, kept for About, and the checks retried since (uiPostUpdate).
 ui::PostResult postResult;
+bool postWarning = false;  // what the POST and config.json add to the warning mark
 char postSummaryText[17];
 struct PostUpdate {
   uint8_t id;
@@ -82,9 +74,48 @@ void applyPost() {
   facts.menu.loggingAllowed = refusing < 0;
   facts.menu.refusingCheck = refusing < 0 ? 0 : refusing;
   // A failed check, or a config.json that is not all it should be: the warning mark (§3.2).
-  facts.warning = postResult.warning() || settingsProblems().count ||
-                  settingsSource() == SettingsSource::CardUnreadable;
+  postWarning = postResult.warning() || settingsProblems().count ||
+                settingsSource() == SettingsSource::CardUnreadable;
+  facts.warning = postWarning || facts.gnssLoss;
   facts.gnssBaud = gnssLinkBaud();  // check 9 moves it
+}
+
+// The gnss task's live state into the facts (§3.4): the link while the module keeps sending, the
+// last epoch while it is fresh, and the acquisition the GNSS screen tells. Without a link at the
+// POST there is no task, and the facts uiStart set stay.
+void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now) {
+  if (!gnssTaskRunning()) return;
+  GnssLive l;
+  gnssLiveRead(l);
+  if (l.epochs != seenEpochs) {
+    seenEpochs = l.epochs;
+    acq.epoch(l.pvt.fix3d(), l.pvt.hAccMm, l.pvtAtMs);
+  }
+  acq.tick(now);
+
+  uint32_t heard = l.lastByteMs ? l.lastByteMs : l.startMs;
+  facts.gnssLink = now - heard < GNSS_STALE_MS;
+  facts.menu.gnssOk = facts.gnssLink;
+  const ubx::NavPvt& p = l.pvt;
+  bool fresh = l.havePvt && now - l.pvtAtMs < GNSS_STALE_MS;
+  // The status bar's "3D" is the module's own word for it, gnssFixOK and all: a time-only or a
+  // dead-reckoning solution is no fix here.
+  bool fix2d = p.fixType == ubx::FixType::Fix2D && p.gnssFixOk() && !p.invalidLlh();
+  facts.fixType = !fresh ? 0 : p.fix3d() ? 3 : fix2d ? 2 : 0;
+  facts.latE7 = p.latE7;
+  facts.lonE7 = p.lonE7;
+  facts.sats = fresh ? p.numSv : 0;
+  facts.satsSeen = l.haveSat ? l.satsTracked : 0;
+  facts.hAccCm = p.hAccMm / 10 > 65535 ? 65535 : p.hAccMm / 10;
+  facts.pdopX100 = p.pDopE2;
+  int32_t kmh = p.gSpeedMmS * 36 / 10000;  // mm/s to km/h
+  facts.speedKmh = !fresh || kmh < 0 ? 0 : kmh;
+  facts.gnssLoss = l.loss.total();
+  facts.acq = acq.state(now);
+  uint32_t s = acq.fix() ? acq.ttffS() : acq.elapsedS(now);
+  facts.acqS = s > 65535 ? 65535 : s;
+  facts.menu.hasFix = acq.fix();
+  facts.warning = postWarning || facts.gnssLoss;  // a loss counted (§3.5)
 }
 
 // Stand-ins for the modules that will carry the commands out. Each only updates the sample facts,
@@ -154,6 +185,13 @@ void uiTask(void*) {
   char shownState[ui::kScreenCols + 1] = "";
   settingsFill(facts.menu);
   uint32_t lastKeyMs = millis();
+  ui::Acquisition acq(acquisitionTiming());
+  uint32_t seenEpochs = 0;
+  {
+    GnssLive l;
+    gnssLiveRead(l);
+    acq.restart(l.startMs);  // acquisition began with the gnss task, started before this one
+  }
 
   for (;;) {
     uint32_t now = millis();
@@ -183,6 +221,7 @@ void uiTask(void*) {
       if (out.command != ui::Command::None) {
         Serial.printf("[%7lu] command %s (%u)\n", (unsigned long)now, ui::commandName(out.command),
                       out.arg);
+        if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
         runPlaceholder(out);
         settingsSave(facts.menu);  // only what the command changed reaches NVS
       }
@@ -205,6 +244,7 @@ void uiTask(void*) {
       }
     }
     board.tick(now);
+    applyGnss(acq, seenEpochs, now);
 
     PostUpdate update;
     while (xQueueReceive(postUpdates, &update, 0) == pdTRUE) {
@@ -254,15 +294,9 @@ void uiStart(const ui::PostResult& post) {
   facts.freeMb = cardFreeMb();
   facts.cardGb = cardTotalMb() / 1024;
   facts.cardKbps = cardLastProbe().writeKbps;
-  // The GNSS link as check 8 found it. Without one there is no fix either: the sample fix of the
-  // placeholders would be a lie on the GNSS screen.
+  // The GNSS link as check 8 found it; from now on the gnss task's live state (applyGnss).
   facts.gnssLink = gnssLinkBaud() != 0;
   facts.menu.gnssOk = facts.gnssLink;
-  if (!facts.gnssLink) {
-    facts.fixType = 0;
-    facts.sats = 0;
-    facts.menu.hasFix = false;
-  }
   applyPost();
   xTaskCreatePinnedToCore(uiTask, "ui", kStackBytes, nullptr, TASK_UI_PRIO, nullptr, TASK_UI_CORE);
 }

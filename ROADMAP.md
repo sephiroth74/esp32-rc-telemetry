@@ -271,6 +271,13 @@ try when one is at hand; their logic is host-tested.
 - [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
   and its baud, the fix and satellites, the coordinates, hAcc and pDOP (§3.4). Measure the time to
   first fix, cold and warm, into `docs/hardware.md`.
+  *So far:* `lib/ui/ui_gnss`: the acquisition of §3.4 — `Acquiring`, `Fix` after 3 s within 5 m,
+  `Timeout` at 90 s, a new acquisition when the fix is lost (7 host tests). The ui task feeds it the
+  gnss task's epochs and fills the facts from the live state: the link while the module keeps
+  sending, the fix, `used/seen` satellites, coordinates, hAcc, pDOP and speed while the epoch is
+  fresh, the loss count into the warning mark, and the gating's fix. Holding OK on the GNSS screen
+  restarts the clock. The sample GNSS values are gone. Still to do: the bench, and the time to first
+  fix.
 
 ## Phase 5 — Logging core and manual sessions
 

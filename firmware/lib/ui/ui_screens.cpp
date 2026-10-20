@@ -448,10 +448,12 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       } else {
         c.add("Link: no GNSS");
       }
+      // Satellites used in the solution, of those with a signal: indoors, "0/3" says the antenna
+      // hears something.
       if (f.fixType >= 2) {
-        c.add("Fix %s, %u sats", fixName(f.fixType), f.sats);
+        c.add("Fix %s, %u/%u sats", fixName(f.fixType), f.sats, f.satsSeen);
       } else {
-        c.add("No fix, %u sats", f.sats);
+        c.add("No fix, %u/%u sats", f.sats, f.satsSeen);
       }
       c.add("Track %s", trackText(f));
       if (f.fixType >= 2) {
@@ -459,13 +461,25 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
         c.add("Lat %s", a);
         coordText(f.lonE7, 'E', 'W', a);
         c.add("Lon %s", a);
-      } else {
+        c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
+        c.add("pDOP %u.%02u", f.pdopX100 / 100, f.pdopX100 % 100);
+      } else {  // the module's figures without a fix are its "unknown": 4295 km, 99.99
         c.add("Lat --");
         c.add("Lon --");
+        c.add("hAcc --");
+        c.add("pDOP --");
       }
-      c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
-      c.add("pDOP %u.%02u", f.pdopX100 / 100, f.pdopX100 % 100);
-      c.add("First fix %u s", f.ttffS);
+      switch (f.acq) {
+        case AcqState::Fix:
+          c.add("Fix in %u s", f.acqS);
+          break;
+        case AcqState::Timeout:
+          c.add("Timeout, %u s", f.acqS);
+          break;
+        default:
+          c.add("Acquiring %u s", f.acqS);
+          break;
+      }
       c.setHint("OK back hold:restart");
       return;
     }

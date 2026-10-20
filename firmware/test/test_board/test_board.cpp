@@ -52,9 +52,11 @@ static Facts worstCase() {
   f.latE7 = -899999999;  // the widest coordinates there are
   f.lonE7 = -1799999999;
   f.sats = 32;
+  f.satsSeen = 99;
   f.hAccCm = 9999;
   f.pdopX100 = 9999;
-  f.ttffS = 9999;
+  f.acq = ui::AcqState::Timeout;
+  f.acqS = 9999;
   f.speedKmh = 199;
   f.gnssLoss = 4294967295u;
   f.freeMb = 60000;
@@ -589,12 +591,24 @@ static void the_gnss_screen_reads_as_designed() {
   ScreenText t;
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Link ok, 230400 bd", t.lines[1]);
-  TEST_ASSERT_EQUAL_STRING("Fix 3D, 32 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("Fix 3D, 32/99 sats", t.lines[2]);
   TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[3]);
   w.key(Event::Down);  // the next page: the coordinates
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Lat 89.999999 S", t.lines[1]);
   TEST_ASSERT_EQUAL_STRING("Lon 179.999999 W", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("hAcc 99.99 m", t.lines[3]);
+  w.key(Event::Down);  // the last: the acquisition
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("pDOP 99.99", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("Timeout, 9999 s", t.lines[2]);
+  w.facts.acq = ui::AcqState::Fix;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Fix in 9999 s", t.lines[2]);
+  w.facts.acq = ui::AcqState::Acquiring;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Acquiring 9999 s", t.lines[2]);
+  w.key(Event::Up);
 
   // A name from the apps takes the cell id's place; without a link or a fix, no coordinates.
   w.facts.trackName = "Ambrosiana";
@@ -603,11 +617,12 @@ static void the_gnss_screen_reads_as_designed() {
   w.key(Event::Up);
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Link: no GNSS", t.lines[1]);
-  TEST_ASSERT_EQUAL_STRING("No fix, 32 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("No fix, 32/99 sats", t.lines[2]);
   TEST_ASSERT_EQUAL_STRING("Track Ambrosiana", t.lines[3]);
   w.key(Event::Down);
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Lat --", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("hAcc --", t.lines[3]);  // not the module's 4295 km of no estimate
 }
 
 static void about_lists_the_post_check_by_check() {

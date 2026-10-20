@@ -22,6 +22,11 @@ constexpr size_t GNSS_UART_RX_BUFFER = 2048;
 constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;  // >3 s of headroom at 10 Hz (§4.2)
 constexpr uint32_t GNSS_READ_TIMEOUT_MS = 20;   // the gnss task's read: a short block (§4.2)
 constexpr uint32_t GNSS_BENCH_LOG_MS = 10000;   // the rate, fix and losses on the console
+// What the GNSS screen calls a fix (§3.4): 3D, hAcc within 5 m, held 3 s; Timeout after 90 s.
+constexpr uint32_t GNSS_FIX_HACC_MM = 5000;
+constexpr uint32_t GNSS_FIX_HOLD_MS = 3000;
+constexpr uint32_t GNSS_ACQ_TIMEOUT_MS = 90000;
+constexpr uint32_t GNSS_STALE_MS = 2000;  // no epoch this long: no fix, and the link has gone quiet
 
 // --- Logging and the SD write path (§4.4) -----------------------------------
 constexpr size_t LOG_RING_BYTES = 256 * 1024;  // PSRAM, ~75 s of stall absorption
