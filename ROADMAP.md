@@ -255,6 +255,11 @@ try when one is at hand; their logic is host-tested.
   answer (the background retry) and one at the u-blox defaults, 9600 baud with NMEA only.
 - [ ] **4.2 NAV-PVT and NAV-SAT decode** in `lib/ubx`.
   *Test:* host tests against fixtures captured after 4.1.
+  *So far:* `lib/ubx/nav`: NAV-PVT whole, all 92 bytes, and NAV-SAT read in place a satellite at a
+  time, with `fix3d()` for the fix §3.4 trusts. Tested against the indoor capture (four epochs at
+  10 Hz, no fix, an empty sky) and against frames built at the documented offsets for a fix and for
+  three satellites. Still to do: a capture at 230400 with a fix and satellites in view, into
+  `docs/fixtures/`, and the same tests against it.
 - [ ] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
   counters (§4.2, §5.3).
 - [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
