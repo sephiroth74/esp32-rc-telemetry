@@ -262,6 +262,12 @@ try when one is at hand; their logic is host-tested.
   `docs/fixtures/`, and the same tests against it.
 - [ ] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
   counters (§4.2, §5.3).
+  *So far:* `gnss_task.cpp`, built, not yet run. Reads with a 20 ms block, scans, and decodes NAV-PVT
+  and NAV-SAT into a live state any task can copy; whole frames with a receive timestamp go into a
+  queue of 32 in PSRAM, only while the logger asks for them, so IDLE costs no false loss. Counts UART
+  overruns and errors, bad checksums, lengths out of range and a full queue. Takes check 9's retry
+  over from `loop()`. A console line every 10 s gives the rate, the fix and the losses, for the
+  bench: 100 epochs in 10 s, 0 lost, is what to see.
 - [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
   and its baud, the fix and satellites, the coordinates, hAcc and pDOP (§3.4). Measure the time to
   first fix, cold and warm, into `docs/hardware.md`.

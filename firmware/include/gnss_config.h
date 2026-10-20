@@ -11,7 +11,7 @@
 // are read back, for /post.log: what the module would come up with after a power cut.
 //
 // The POST runs it as check 9, after check 8 found the link. A module that did not answer is tried
-// again every GNSS_CFG_RETRY_MS, from loop() until the gnss task of step 4.3 takes the UART.
+// again every GNSS_CFG_RETRY_MS by the gnss task, which owns the UART after the POST (gnss_task.h).
 #pragma once
 
 #include <Print.h>

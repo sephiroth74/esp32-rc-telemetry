@@ -6,11 +6,11 @@
 // housekeeping.
 //
 // So far: the POST, the ui task with the menu on the keys and the display (ROADMAP.md phases 2
-// and 3), and the GNSS module's configuration, check 9 (step 4.1), retried here when unanswered.
+// and 3), and the gnss task on the module check 9 configured (steps 4.1 and 4.3).
 #include <Arduino.h>
 
 #include "config.h"
-#include "gnss_config.h"
+#include "gnss_task.h"
 #include "i2c_bus.h"
 #include "keys.h"
 #include "pins.h"
@@ -28,8 +28,6 @@ volatile bool hostOpened = false;
 
 void onHostOpened(void*, esp_event_base_t, int32_t, void*) { hostOpened = true; }
 
-uint32_t lastGnssTryMs = 0;
-
 }  // namespace
 
 void setup() {
@@ -40,9 +38,9 @@ void setup() {
   i2cBusBegin();
   keysBegin();                      // before the POST, whose fatal latch polls them
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
-  lastGnssTryMs = millis();
   keysSetLayout(settings().keysLayout == 1 ? KeyLayout::FiveWay : KeyLayout::TwoButtons);
   uiStart(post);
+  gnssTaskStart();  // when check 8 found the module; it retries check 9 if that went unanswered
 }
 
 void loop() {
@@ -50,14 +48,5 @@ void loop() {
     hostOpened = false;
     postEchoLog();
   }
-  // Check 9 unanswered: tried again from here, on core 1, until the gnss task of step 4.3 owns the
-  // UART and takes this over.
-  if (gnssConfigPending() && millis() - lastGnssTryMs >= GNSS_CFG_RETRY_MS) {
-    lastGnssTryMs = millis();
-    ui::CheckReport report = gnssConfigure();
-    Serial.printf("GNSS config retried: %s\n", report.detail);
-    gnssConfigLog(Serial);
-    uiPostUpdate(9, report);
-  }
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(100));  // nothing else to do here; the work is in the tasks
 }

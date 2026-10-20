@@ -20,6 +20,8 @@ constexpr uint32_t GNSS_CFG_ANSWER_MS = 1000;         // VALGET's response, VALS
 constexpr uint32_t GNSS_CFG_RETRY_MS = 10000;         // check 9 unanswered: tried again this often
 constexpr size_t GNSS_UART_RX_BUFFER = 2048;
 constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;  // >3 s of headroom at 10 Hz (§4.2)
+constexpr uint32_t GNSS_READ_TIMEOUT_MS = 20;   // the gnss task's read: a short block (§4.2)
+constexpr uint32_t GNSS_BENCH_LOG_MS = 10000;   // the rate, fix and losses on the console
 
 // --- Logging and the SD write path (§4.4) -----------------------------------
 constexpr size_t LOG_RING_BYTES = 256 * 1024;  // PSRAM, ~75 s of stall absorption
