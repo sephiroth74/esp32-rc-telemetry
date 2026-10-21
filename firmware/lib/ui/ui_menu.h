@@ -208,4 +208,8 @@ class Menu {
   uint32_t lastKeyMs_ = 0;
 };
 
+// Why a session cannot start now, by hand or automatically (§3.6): no card, or the POST refused
+// logging, `arg` naming the check. Refusal::None when it can.
+Refusal sessionRefusal(const MenuContext& context, uint8_t& arg);
+
 }  // namespace ui

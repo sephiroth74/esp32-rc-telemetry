@@ -334,6 +334,11 @@ try when one is at hand; their logic is host-tested.
   - The Calibrate procedure, with its overwrite confirmation.
   - One calibration per profile in NVS, copied into each session's `meta.json`.
 - [ ] **6.4 Automatic start and stop** (§3.6). The rules are host-tested in `lib/ui`.
+  *So far:* `lib/ui/ui_auto` decides from speed and throttle, each counted only when known, and the
+  board acts on it: from IDLE only and with `session.auto_start` on, through Home with any dialog
+  closed, a refusal shown once, the stop after `session.auto_stop_min` still with a stop dialog
+  closed, and no new run after a stop by hand until the car has stood still for 5 s (12 host tests,
+  §3.6 refined). The ui task feeds it the GNSS speed; the throttle joins with step 6.2.
   *Test:* on the bench with the throttle, then on track with speed. Record the thresholds against §9
   question 17.
 - [ ] **6.5 Power loss and sleep** (§4.5).

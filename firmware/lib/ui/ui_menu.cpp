@@ -103,14 +103,24 @@ Refusal positionRefusal(const MenuContext& c) {
   return Refusal::None;
 }
 
-// A session needs a card it may write to; the POST can have refused logging for other reasons too.
 MenuResult startSession(const MenuContext& c) {
-  if (!c.cardOk) return refused(Refusal::NoCard);
-  if (!c.loggingAllowed) return refused(Refusal::LoggingRefused, c.refusingCheck);
-  return issue(Command::StartSession);
+  uint8_t arg = 0;
+  Refusal r = sessionRefusal(c, arg);
+  return r != Refusal::None ? refused(r, arg) : issue(Command::StartSession);
 }
 
 }  // namespace
+
+// A session needs a card it may write to; the POST can have refused logging for other reasons too.
+Refusal sessionRefusal(const MenuContext& c, uint8_t& arg) {
+  arg = 0;
+  if (!c.cardOk) return Refusal::NoCard;
+  if (!c.loggingAllowed) {
+    arg = c.refusingCheck;
+    return Refusal::LoggingRefused;
+  }
+  return Refusal::None;
+}
 
 const char* commandName(Command command) {
   static const char* const kNames[] = {

@@ -184,6 +184,7 @@ BoardOutput Board::answer(Confirm::Answer a, DialogKind kind, const Facts& f, ui
       o = command(Command::StopSession);
       toast(o, "Session %u saved", f.nextSession);
       backToIdle(nowMs);
+      auto_.disarm();  // stopped while moving, maybe: no new run until the car has stood still
       break;
     case DialogKind::OverwriteCalibration:
       o = command(Command::SaveCalibration);
@@ -298,7 +299,40 @@ void Board::enter(Mode mode, uint32_t nowMs) {
   if (mode == Mode::Session) {
     sessionStartMs_ = nowMs;
     markers_ = 0;
+    auto_.restartStill(nowMs);
   }
+}
+
+BoardOutput Board::onMotion(const Motion& motion, const Facts& f, uint32_t nowMs) {
+  auto_.update(motion, nowMs);
+  BoardOutput o;
+  if (mode_ == Mode::Session) {
+    if (!auto_.stopDue(nowMs)) return o;
+    confirm_.close();  // a stop dialog left open: the car has stopped anyway
+    o = command(Command::StopSession);
+    toast(o, "Session %u saved", f.nextSession);
+    backToIdle(nowMs);
+    menu_.goHome();  // §3.6: back to Home, whatever was open before the run
+    return o;
+  }
+  if (mode_ != Mode::Idle || !f.autoStart || !auto_.startDue(nowMs)) return o;
+  uint8_t arg = 0;
+  Refusal r = sessionRefusal(f.menu, arg);
+  if (r != Refusal::None) {
+    if (autoRefused_) return o;
+    autoRefused_ = true;
+    notice_ = r;
+    noticeArg_ = arg;
+    o.refused = r;
+    o.arg = arg;
+    return o;
+  }
+  notice_ = Refusal::None;
+  menu_.goHome();  // a dialog that is open is cancelled
+  enter(Mode::Session, nowMs);
+  o.command = Command::StartSession;
+  toast(o, "Session %u", f.nextSession);
+  return o;
 }
 
 void Board::backToIdle(uint32_t nowMs) {

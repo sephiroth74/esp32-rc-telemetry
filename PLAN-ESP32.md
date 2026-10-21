@@ -525,6 +525,16 @@ without a key press; the keys remain for doing either by hand.
   the automatic stop covers the normal case, and a knock on the switch must not end a run.
 - `session.auto_start` in `config.json` turns the automatic start off, for the bench or for runs
   controlled by hand; Home shows which is active.
+- **Refined in step 6.4**, where `lib/ui` makes these rules testable:
+  - What is not known does not count either way: the speed counts with a fresh 3D fix only, the
+    throttle with a calibrated profile and a live input only. With neither known the car is never
+    taken for still, and only switching it off ends the run.
+  - The standstill counts from the start of the session at the earliest, so a run started by hand
+    on a car parked for an hour is not stopped at once.
+  - After a **stop by hand** the automatic start waits until the car has stood still for 5 s:
+    stopped while still rolling, it would otherwise start a new session at once. After the
+    automatic stop the car has stood still for minutes already.
+  - An automatic start, stop or refusal wakes a dimmed display, so its toast or notice is seen.
 
 While a session is open the menu is **locked**. OK inserts a **marker record** into the log (toast
 `Marker N`), which is far more useful mid-run than navigation; UP/DOWN turn the session's pages; only

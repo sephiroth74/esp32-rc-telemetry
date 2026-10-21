@@ -83,7 +83,8 @@ void applyPost() {
 // The gnss task's live state into the facts (§3.4): the link while the module keeps sending, the
 // last epoch while it is fresh, and the acquisition the GNSS screen tells. Without a link at the
 // POST there is no task, and the facts uiStart set stay.
-void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now) {
+void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now, ui::Motion& motion) {
+  motion = ui::Motion();  // the throttle joins with the RC capture of step 6.2
   if (!gnssTaskRunning()) return;
   GnssLive l;
   gnssLiveRead(l);
@@ -116,6 +117,9 @@ void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now) {
   facts.acqS = s > 65535 ? 65535 : s;
   facts.menu.hasFix = acq.fix();
   facts.warning = postWarning || facts.gnssLoss;  // a loss counted (§3.5)
+  // The automatic start's speed (§3.6): a fresh 3D fix's, from Doppler.
+  motion.speedKnown = fresh && p.fix3d();
+  motion.speedMmS = p.gSpeedMmS > 0 ? p.gSpeedMmS : 0;
 }
 
 // Stand-ins for the modules that will carry the commands out. Each only updates the sample facts,
@@ -181,6 +185,7 @@ void uiTask(void*) {
   TickType_t wake = xTaskGetTickCount();
   const ui::Layout layout = keysLayout();
   ui::Board board(menuTiming());
+  board.setAutoTiming(autoSessionTiming(settings().autoStopMin));
   ui::ScreenText text;
   char shownState[ui::kScreenCols + 1] = "";
   settingsFill(facts.menu);
@@ -192,6 +197,34 @@ void uiTask(void*) {
     gnssLiveRead(l);
     acq.restart(l.startMs);  // acquisition began with the gnss task, started before this one
   }
+
+  // What the board asks for, from a key or on its own: logged, carried out, shown.
+  auto act = [&](const ui::BoardOutput& out, uint32_t now) {
+    if (out.command != ui::Command::None) {
+      Serial.printf("[%7lu] command %s (%u)\n", (unsigned long)now, ui::commandName(out.command),
+                    out.arg);
+      if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
+      runPlaceholder(out);
+      settingsSave(facts.menu);  // only what the command changed reaches NVS
+    }
+    if (out.swallow) keysSwallow();  // the press closed a notice and does nothing else
+    if (out.refused != ui::Refusal::None) {
+      char why[22];
+      ui::refusalText(out.refused, out.arg, why);
+      Serial.printf("[%7lu] refused: %s\n", (unsigned long)now, why);
+    }
+    if (out.toast[0]) {
+      displayToast(out.toast, now);
+      Serial.printf("[%7lu] toast %s\n", (unsigned long)now, out.toast);
+    }
+    if (out.command == ui::Command::Restart) {
+      // Settings is reached from IDLE only, so nothing is open; the settings are in NVS already.
+      // The toast goes out first, and stays long enough to be read.
+      displayFlush(now);
+      vTaskDelay(pdMS_TO_TICKS(800));
+      ESP.restart();
+    }
+  };
 
   for (;;) {
     uint32_t now = millis();
@@ -218,33 +251,19 @@ void uiTask(void*) {
       if (event != ui::Event::Press) {
         Serial.printf("[%7lu] event %s\n", (unsigned long)now, ui::eventName(event));
       }
-      if (out.command != ui::Command::None) {
-        Serial.printf("[%7lu] command %s (%u)\n", (unsigned long)now, ui::commandName(out.command),
-                      out.arg);
-        if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
-        runPlaceholder(out);
-        settingsSave(facts.menu);  // only what the command changed reaches NVS
-      }
-      if (out.swallow) keysSwallow();  // the press closed a notice and does nothing else
-      if (out.refused != ui::Refusal::None) {
-        char why[22];
-        ui::refusalText(out.refused, out.arg, why);
-        Serial.printf("[%7lu] refused: %s\n", (unsigned long)now, why);
-      }
-      if (out.toast[0]) {
-        displayToast(out.toast, now);
-        Serial.printf("[%7lu] toast %s\n", (unsigned long)now, out.toast);
-      }
-      if (out.command == ui::Command::Restart) {
-        // Settings is reached from IDLE only, so nothing is open; the settings are in NVS already.
-        // The toast goes out first, and stays long enough to be read.
-        displayFlush(now);
-        vTaskDelay(pdMS_TO_TICKS(800));
-        ESP.restart();
-      }
+      act(out, now);
     }
     board.tick(now);
-    applyGnss(acq, seenEpochs, now);
+    ui::Motion motion;
+    applyGnss(acq, seenEpochs, now, motion);
+    // The automatic start and stop (§3.6). What they do is worth seeing: a dimmed display wakes.
+    ui::BoardOutput automatic = board.onMotion(motion, facts, now);
+    if (automatic.command != ui::Command::None || automatic.refused != ui::Refusal::None) {
+      lastKeyMs = now;
+      Serial.printf("[%7lu] automatic, at %lu mm/s\n", (unsigned long)now,
+                    (unsigned long)motion.speedMmS);
+      act(automatic, now);
+    }
 
     PostUpdate update;
     while (xQueueReceive(postUpdates, &update, 0) == pdTRUE) {

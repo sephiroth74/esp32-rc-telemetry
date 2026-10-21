@@ -95,6 +95,7 @@ constexpr uint16_t SESSION_START_THROTTLE_MS = 1000;
 constexpr float SESSION_STILL_SPEED_KMH = 2.0f;    // standing still: below this speed...
 constexpr uint8_t SESSION_STILL_THROTTLE_PCT = 5;  // ...and within this of neutral
 constexpr uint8_t SESSION_AUTO_STOP_MIN = 5;       // session.auto_stop_min default
+constexpr uint32_t SESSION_REARM_MS = 5000;  // after a stop by hand: still this long before a start
 
 // --- Sleep and wake (§4.5) --------------------------------------------------
 constexpr uint32_t SLEEP_CAR_OFF_NOTICE_MS = 10000;  // from IDLE; any key cancels

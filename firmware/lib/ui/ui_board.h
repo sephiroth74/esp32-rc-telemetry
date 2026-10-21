@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 
+#include "ui_auto.h"
 #include "ui_gnss.h"
 #include "ui_keys.h"
 #include "ui_menu.h"
@@ -92,6 +93,12 @@ class Board {
 
   BoardOutput handle(Event event, const Facts& facts, uint32_t nowMs);
   void tick(uint32_t nowMs);
+  // Every tick, with what the car is doing: the automatic start from IDLE and the automatic stop
+  // of a session (§3.6). A start closes whatever the menu had open and goes through Home; one the
+  // POST refuses shows its notice once, and Home says why from then on.
+  BoardOutput onMotion(const Motion& motion, const Facts& facts, uint32_t nowMs);
+  void setAutoTiming(const AutoSessionTiming& timing) { auto_ = AutoSession(timing); }
+  const AutoSession& autoSession() const { return auto_; }
   // A key that only woke the dimmed display (§3.2): activity for the menu's timeout, nothing more,
   // so that it does not close a notice before it was read.
   void wake(uint32_t nowMs) { menu_.restartTimer(nowMs); }
@@ -131,6 +138,8 @@ class Board {
   uint8_t step_ = 0;
   Refusal notice_ = Refusal::None;
   uint8_t noticeArg_ = 0;
+  AutoSession auto_{AutoSessionTiming{}};
+  bool autoRefused_ = false;  // its notice shown: once a boot
 };
 
 // A refusal of §3.4 in one line of 21 columns, for the serial log.
