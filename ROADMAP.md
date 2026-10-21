@@ -333,6 +333,11 @@ try when one is at hand; their logic is host-tested.
     index cleared, the profile made active.
   - The Calibrate procedure, with its overwrite confirmation.
   - One calibration per profile in NVS, copied into each session's `meta.json`.
+
+  *So far:* `lib/rc`, host-tested (8 tests) on the bench car's widths: endpoints by meaning, the
+  percentage on each side's own scale, rounded and held at ±100, the check of a capture before it is
+  saved, the accepted window, and the six steps filling a calibration, an absent input's axis left
+  uncaptured. Still to do, on the device: the capture screens on live widths, NVS, `meta.json`.
 - [ ] **6.4 Automatic start and stop** (§3.6). The rules are host-tested in `lib/ui`.
   *So far:* `lib/ui/ui_auto` decides from speed and throttle, each counted only when known, and the
   board acts on it: from IDLE only and with `session.auto_start` on, through Home with any dialog

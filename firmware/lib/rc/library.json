@@ -1,0 +1,7 @@
+{
+  "name": "rc",
+  "version": "0.1.0",
+  "description": "RC calibration: per-car endpoints, pulse widths to percent, accepted windows. Framework-free, host-testable.",
+  "frameworks": "*",
+  "platforms": "*"
+}

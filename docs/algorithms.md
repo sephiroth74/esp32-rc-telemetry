@@ -112,3 +112,31 @@ track** names its folder the same way, skipping steps 1–3.
 `session_NNN`, numbered per track from the highest existing number plus one, starting at 1. A name
 counts only if it is `session_` followed by digits and nothing else. Three digits with leading
 zeros, as many as the number needs from 1000 on: `session_999`, then `session_1000`.
+
+## Steering and throttle in percent
+
+A car profile's calibration (PLAN-ESP32.md §3.8) holds three widths for each input, by meaning:
+the **negative** end (steering full left, throttle full brake), **neutral**, and the **positive**
+end (full right, full throttle). Which of them is the larger number depends on the radio, and does
+not matter. Implemented in `firmware/lib/rc/`.
+
+A width `w` becomes a percentage on its own side of neutral, each side with its own scale — an ESC
+with 450 µs of travel to full throttle and 200 µs to full brake is half-way at +225 µs and at
+−100 µs:
+
+```text
+d       = w − neutral
+side    = positive  if d and (positive − neutral) have the same sign, else negative
+full    = |end of that side − neutral|
+p       = (|d| × 100 + ⌊full / 2⌋) ÷ full     (integer division: rounded to the nearest)
+percent = min(p, 100), negative on the negative side; 0 when d is 0
+```
+
+**A capture is a calibration** when every width is non-zero, each end lies at least 50 µs from
+neutral, and the two ends lie on opposite sides of it. Otherwise the summary of Settings ›
+Calibrate does not save it: a step was skipped, a stick stayed put, or an end was captured the
+wrong way.
+
+**The accepted window** of a calibrated input (§4.3) runs from the smaller end to the larger one,
+widened by a margin each way.
+

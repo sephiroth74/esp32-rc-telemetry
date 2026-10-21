@@ -696,7 +696,11 @@ active **car profile**. PWM endpoints vary between radios, and with trims and en
 raw microseconds are not comparable across setups. The device moves between cars, so each car gets
 its own profile, calibrated once and selected when the device moves. The profile name and the
 endpoints a session was recorded with are copied into its `meta.json`, so every log stays
-interpretable on its own.
+interpretable on its own. Settled in step 6.3: the endpoints are kept by meaning — left and brake
+negative, right and throttle positive — so a reversed channel needs no setting; a width becomes a
+percentage on each side of neutral separately, since an ESC with more travel forward than back is
+the rule; and a capture with an end under 50 µs from neutral, or both ends on one side, is not saved.
+The formulas are `docs/algorithms.md`'s.
 
 ### 4.4 SD write strategy
 
