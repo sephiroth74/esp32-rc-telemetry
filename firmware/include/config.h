@@ -19,7 +19,6 @@ constexpr uint8_t GNSS_DYNMODEL = 4;                  // automotive; A/B against
 constexpr uint32_t GNSS_CFG_ANSWER_MS = 1000;         // VALGET's response, VALSET's ACK (check 9)
 constexpr uint32_t GNSS_CFG_RETRY_MS = 10000;         // check 9 unanswered: tried again this often
 constexpr size_t GNSS_UART_RX_BUFFER = 2048;
-constexpr uint8_t GNSS_FRAME_QUEUE_DEPTH = 32;  // >3 s of headroom at 10 Hz (§4.2)
 constexpr uint32_t GNSS_READ_TIMEOUT_MS = 20;   // the gnss task's read: a short block (§4.2)
 constexpr uint32_t GNSS_BENCH_LOG_MS = 10000;   // the rate, fix and losses on the console
 // What the GNSS screen calls a fix (§3.4): 3D, hAcc within 5 m, held 3 s; Timeout after 90 s.
@@ -35,6 +34,7 @@ constexpr uint32_t LOG_FLUSH_INTERVAL_MS = 5000;              // bounds loss on 
 constexpr size_t LOG_EXTENT_BYTES = 4u * 1024 * 1024;         // ~20 min per extent
 constexpr size_t LOG_EXTENT_REFILL_BYTES = 1u * 1024 * 1024;  // extend when this much is left
 constexpr uint32_t LOG_SLOW_WRITE_MS = 250;                   // counted per session and reported
+constexpr uint32_t LOG_CLOSE_WAIT_MS = 3000;  // a stop waits this long for the card to be done
 
 // --- Power-on self-test (§3.3) ----------------------------------------------
 constexpr size_t POST_PROBE_BYTES = 256 * 1024;   // one probe answers "writable?" and "how fast?"

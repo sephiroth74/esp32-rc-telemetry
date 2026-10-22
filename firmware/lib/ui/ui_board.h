@@ -98,6 +98,9 @@ class Board {
   // POST refuses shows its notice once, and Home says why from then on.
   BoardOutput onMotion(const Motion& motion, const Facts& facts, uint32_t nowMs);
   void setAutoTiming(const AutoSessionTiming& timing) { auto_ = AutoSession(timing); }
+  // A session the card could not take, at its start or in its middle: back to IDLE, and the
+  // reason on screen until a key (§3.5).
+  void abortSession(Refusal why, uint8_t arg, uint32_t nowMs);
   const AutoSession& autoSession() const { return auto_; }
   // A key that only woke the dimmed display (§3.2): activity for the menu's timeout, nothing more,
   // so that it does not close a notice before it was read.

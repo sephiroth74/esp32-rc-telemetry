@@ -9,10 +9,12 @@
 // and 3), and the gnss task on the module check 9 configured (steps 4.1 and 4.3).
 #include <Arduino.h>
 
+#include "card.h"
 #include "config.h"
 #include "gnss_task.h"
 #include "i2c_bus.h"
 #include "keys.h"
+#include "logger.h"
 #include "pins.h"
 #include "post.h"
 #include "settings.h"
@@ -39,6 +41,7 @@ void setup() {
   keysBegin();                      // before the POST, whose fatal latch polls them
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
   keysSetLayout(settings().keysLayout == 1 ? KeyLayout::FiveWay : KeyLayout::TwoButtons);
+  if (cardMounted() && !loggerBegin()) Serial.println("logger: not started");
   gnssTaskStart();  // when check 8 found the module; it retries check 9 if that went unanswered
   uiStart(post);    // after it: acquisition is timed from the gnss task's start
 }

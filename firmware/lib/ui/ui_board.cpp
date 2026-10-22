@@ -303,6 +303,15 @@ void Board::enter(Mode mode, uint32_t nowMs) {
   }
 }
 
+void Board::abortSession(Refusal why, uint8_t arg, uint32_t nowMs) {
+  if (mode_ == Mode::Session) {
+    confirm_.close();
+    backToIdle(nowMs);
+  }
+  notice_ = why;
+  noticeArg_ = arg;
+}
+
 BoardOutput Board::onMotion(const Motion& motion, const Facts& f, uint32_t nowMs) {
   auto_.update(motion, nowMs);
   BoardOutput o;

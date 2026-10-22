@@ -10,6 +10,8 @@
 #include "gnss_link.h"
 #include "gnss_task.h"
 #include "keys.h"
+#include "logger.h"
+#include "session.h"
 #include "settings.h"
 #include "ui_board.h"
 #include "ui_config.h"
@@ -198,11 +200,53 @@ void uiTask(void*) {
     acq.restart(l.startMs);  // acquisition began with the gnss task, started before this one
   }
 
+  // A session's start, stop and markers, carried out on the card (session.h, logger.h). False when
+  // the start could not be: the board goes back to IDLE with the reason.
+  auto runSession = [&](ui::BoardOutput& out, uint32_t now, bool automatic) {
+    switch (out.command) {
+      case ui::Command::StartSession: {
+        SessionStart s;
+        s.haveFix = acq.fix();
+        s.fix = {facts.latE7, facts.lonE7};
+        s.automatic = automatic;
+        s.profile = facts.menu.activeProfile;
+        s.profileName = settingsProfileName(facts.menu.activeProfile);
+        s.postMask = postResult.failedMask();
+        s.postSummary = postSummaryText;
+        SessionInfo info;
+        if (!sessionBegin(s, info)) {
+          Serial.printf("[%7lu] session: the card took no session\n", (unsigned long)now);
+          board.abortSession(ui::Refusal::CardNotWritable, 0, now);
+          out.toast[0] = '\0';
+          return;
+        }
+        facts.nextSession = info.number;  // the toasts' number, start and stop
+        snprintf(out.toast, sizeof out.toast, "Session %lu", (unsigned long)info.number);
+        return;
+      }
+      case ui::Command::StopSession:
+        sessionEnd(automatic ? rcl::Close::AutoStop : rcl::Close::ByHand, acq.fix(),
+                   {facts.latE7, facts.lonE7});
+        return;
+      case ui::Command::Marker: {
+        rcl::Marker m;
+        m.number = board.markers();
+        m.source = static_cast<uint8_t>(rcl::MarkerSource::Key);
+        uint8_t payload[rcl::kMarkerBytes];
+        logAppend(rcl::Type::Marker, now, payload, rcl::encode(m, payload, sizeof payload));
+        return;
+      }
+      default:
+        return;
+    }
+  };
+
   // What the board asks for, from a key or on its own: logged, carried out, shown.
-  auto act = [&](const ui::BoardOutput& out, uint32_t now) {
+  auto act = [&](ui::BoardOutput out, uint32_t now, bool automatic) {
     if (out.command != ui::Command::None) {
       Serial.printf("[%7lu] command %s (%u)\n", (unsigned long)now, ui::commandName(out.command),
                     out.arg);
+      runSession(out, now, automatic);
       if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
       runPlaceholder(out);
       settingsSave(facts.menu);  // only what the command changed reaches NVS
@@ -251,9 +295,16 @@ void uiTask(void*) {
       if (event != ui::Event::Press) {
         Serial.printf("[%7lu] event %s\n", (unsigned long)now, ui::eventName(event));
       }
-      act(out, now);
+      act(out, now, /*automatic=*/false);
     }
     board.tick(now);
+    // A card that failed in the middle of a session: closed, and said so (§3.5).
+    if (board.mode() == ui::Mode::Session && logFailed()) {
+      sessionEnd(rcl::Close::CardError, acq.fix(), {facts.latE7, facts.lonE7});
+      board.abortSession(ui::Refusal::CardNotWritable, 0, now);
+      lastKeyMs = now;
+      Serial.printf("[%7lu] session: card write failed, closed\n", (unsigned long)now);
+    }
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
     // The automatic start and stop (§3.6). What they do is worth seeing: a dimmed display wakes.
@@ -262,7 +313,7 @@ void uiTask(void*) {
       lastKeyMs = now;
       Serial.printf("[%7lu] automatic, at %lu mm/s\n", (unsigned long)now,
                     (unsigned long)motion.speedMmS);
-      act(automatic, now);
+      act(automatic, now, /*automatic=*/true);
     }
 
     PostUpdate update;

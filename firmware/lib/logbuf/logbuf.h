@@ -33,6 +33,7 @@ class Ring {
   size_t peek(const uint8_t*& data, size_t max) const;
   void release(size_t n);  // n ≤ what peek() gave
   void clear();            // a session's end: nothing kept for the next
+  void resetHighWater() { highWater_ = used_; }  // a session's start: its own high water
 
   size_t used() const { return used_; }
   size_t free() const { return size_ - used_; }

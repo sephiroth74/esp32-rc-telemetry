@@ -116,6 +116,12 @@ static void clearing_forgets_the_waiting_bytes_not_the_counts() {
   TEST_ASSERT_TRUE(ring.append(r.data(), r.size()));
   TEST_ASSERT_EQUAL_PTR(storage, (ring.peek(p, 64), p));  // from the start again
   TEST_ASSERT_EQUAL_UINT32(1, ring.dropped());
+  TEST_ASSERT_EQUAL_UINT(50, ring.highWater());  // the first session's: one record of 50
+  ring.clear();
+  ring.resetHighWater();  // the next session's starts from nothing
+  TEST_ASSERT_EQUAL_UINT(0, ring.highWater());
+  ring.append(r.data(), 20);
+  TEST_ASSERT_EQUAL_UINT(20, ring.highWater());
 }
 
 // --- Write statistics --------------------------------------------------------------
