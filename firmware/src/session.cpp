@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include "config.h"
 #include "logger.h"
@@ -25,6 +26,7 @@ SessionInfo current;
 bool open_ = false;
 SessionStart started;
 char dir[96];  // /sdcard/tracks/<track>/session_NNN
+char startUtc[24];  // the session's start, once the clock is set; written again at the end
 
 char names[kMaxNames][40];
 const char* namePtrs[kMaxNames];
@@ -210,6 +212,17 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
   doc["car_profile"]["name"] = started.profileName;
   doc["car_profile"]["calibration"] = nullptr;  // phase 6
   doc["start"]["automatic"] = started.automatic;
+  time_t now = time(nullptr);
+  if (now > 1700000000 && !footer) {  // set from the GNSS (gnss_task.cpp), not the 1970 of a boot
+    char utc[24];
+    strftime(utc, sizeof utc, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+    snprintf(startUtc, sizeof startUtc, "%s", utc);
+  }
+  if (startUtc[0]) {
+    doc["start"]["utc"] = startUtc;
+  } else {
+    doc["start"]["utc"] = nullptr;
+  }
   doc["start"]["fix"] = started.haveFix;
   doc["inputs"]["steering"] = false;  // phase 6
   doc["inputs"]["throttle"] = false;
@@ -237,6 +250,7 @@ bool sessionBegin(const SessionStart& start, SessionInfo& out) {
   if (open_) return false;
   started = start;
   current = SessionInfo();
+  startUtc[0] = '\0';
   if (!makeDir(kTracks)) return false;
   if (start.haveFix) {
     if (!resolveTrack(start.fix, current.track)) {

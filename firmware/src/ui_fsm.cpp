@@ -327,12 +327,19 @@ void uiTask(void*) {
     displaySetContrast(facts.menu.brightness, dimmed);
     displaySetTextSize(textSize());
     ui::render(board, facts, layout, textSize(), now, text);
-    // Bench log: the status line that names the state, each time it changes.
+    // Bench log: the status line that names the state, each time it changes — the digits left
+    // out, or a session's clock would log a line a second.
     const char* state = text.lines[ui::statusRows(textSize()) - 1];
-    if (strncmp(shownState, state, 11) != 0) {
-      strncpy(shownState, state, 11);
-      shownState[11] = '\0';
-      Serial.printf("[%7lu] screen %s\n", (unsigned long)now, shownState);
+    char shape[12];
+    for (int i = 0; i < 11; ++i) {
+      char c = state[i];
+      shape[i] = c >= '0' && c <= '9' ? '#' : c;
+      if (!c) break;
+    }
+    shape[11] = '\0';
+    if (strcmp(shownState, shape) != 0) {
+      snprintf(shownState, sizeof shownState, "%s", shape);
+      Serial.printf("[%7lu] screen %.11s\n", (unsigned long)now, state);
     }
     displayShow(text);
     displayHoldBar(keysHoldPercent(now));

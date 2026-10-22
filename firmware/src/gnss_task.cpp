@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 
+#include <sys/time.h>
+#include <time.h>
+
 #include <atomic>
 
 #include "config.h"
@@ -32,11 +35,34 @@ void onUartError(hardwareSerial_error_t error) {
   }
 }
 
+// The system clock from the first epoch whose date and time are valid and fully resolved: files on
+// the card get real dates, and meta.json its UTC start. Once a boot; UTC, as the module gives it.
+void setClock(const ubx::NavPvt& pvt) {
+  static bool set = false;
+  if (set || !pvt.validDate() || !pvt.validTime() || !(pvt.valid & 0x04)) return;
+  struct tm t = {};
+  t.tm_year = pvt.year - 1900;
+  t.tm_mon = pvt.month - 1;
+  t.tm_mday = pvt.day;
+  t.tm_hour = pvt.hour;
+  t.tm_min = pvt.minute;
+  t.tm_sec = pvt.second;
+  setenv("TZ", "UTC0", 1);
+  tzset();
+  timeval tv = {mktime(&t), 0};
+  if (tv.tv_sec > 0 && settimeofday(&tv, nullptr) == 0) {
+    set = true;
+    Serial.printf("gnss: clock set, %04u-%02u-%02u %02u:%02u:%02u UTC\n", pvt.year, pvt.month,
+                  pvt.day, pvt.hour, pvt.minute, pvt.second);
+  }
+}
+
 void handle(const ubx::Frame& f, uint32_t nowMs) {
   logAppend(rcl::Type::Ubx, nowMs, f.bytes, f.size);  // nothing outside a session
   ubx::NavPvt pvt;
   ubx::NavSat sat;
   if (ubx::decodeNavPvt(f, pvt)) {
+    setClock(pvt);
     taskENTER_CRITICAL(&liveLock);
     live.pvt = pvt;
     live.havePvt = true;

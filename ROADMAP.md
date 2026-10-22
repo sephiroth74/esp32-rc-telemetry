@@ -310,7 +310,13 @@ try when one is at hand; their logic is host-tested.
   fills it — and the write statistics of the footer: the longest, the 99th percentile from a fixed
   histogram, the writes over 250 ms. The design changed on the way (§4.2): producers append records
   to the ring themselves and the logger only writes it out, so the gnss task's frame queue of 4.3
-  goes once the logger is on the device. Still to do: the logger task and the card, on the bench.
+  goes once the logger is on the device.
+  *Then:* `src/logger.cpp` on the device, the gnss task's queue gone. First session on the bench
+  (2026-10-22, 51 s, no fix): the first 4 MB extent in 5 ms, 11 writes of at most 8 ms, nothing
+  dropped, the file cut to its 76,720 bytes. Read back on a Mac by a Python reader written from
+  `docs/protocol.md`: 570 records, every CRC good, 0 bytes skipped, 514 NAV-PVT a step of 100 ms
+  each, the two markers, the footer matching `meta.json`. Still to do: the 30-minute session of
+  5.5.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.
   A track whose geo-fence contains the fix comes first, then the 300 m radius; among several the one
   used most recently wins, and Track › New track creates a folder at the fix with the next suffix.
@@ -321,6 +327,12 @@ try when one is at hand; their logic is host-tested.
   widening past 999. One rule made explicit on the way (§7.1): a fenced track is recognised by its
   fence only, so a fix at the unfenced club next door is not taken for it. Still to do, on the
   device: reading `track.json`, the folders, `meta.json`, and the GNSS screen's track.
+  *Then:* `src/session.cpp`: track resolution on the card one `track.json` at a time, a new track's
+  folder and `track.json`, `session_NNN`, the global id from NVS, `meta.json` at the start and the
+  footer's numbers at the end, and the move out of `_unassigned` when a fix comes. The clock is set
+  from the first fully resolved NAV-PVT, so files carry real dates and `meta.json` its UTC start.
+  Seen on the bench so far: `_unassigned/session_001` and its `meta.json`. Still to do: a session
+  with a fix, at a window, making its track.
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.
