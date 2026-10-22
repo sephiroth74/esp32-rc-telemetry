@@ -5,8 +5,9 @@
 // cut short, a false sync, a length out of range, a frame arriving in pieces (PLAN-ESP32.md §5.4).
 // Then the configuration messages of check 9 (§5.2): VALSET, VALGET and its response, the ACKs.
 // Then the decode of NAV-PVT and NAV-SAT (step 4.2): the capture's epochs, indoors without a fix,
-// and frames built at the interface description's offsets for what the capture lacks — a fix, a
-// sky full of satellites, the signs of the signed fields.
+// frames built at the interface description's offsets for the signs of the signed fields, and a
+// second capture, at a window with a fix (docs/fixtures/gm10-fix-230400.hex), checked against the
+// values a Python decode of the same bytes gave.
 #include <stdio.h>
 #include <string.h>
 #include <unity.h>
@@ -586,6 +587,90 @@ static void a_frame_of_the_wrong_shape_does_not_decode() {
   TEST_ASSERT_FALSE(ubx::decodeNavPvt(scanned(s3, monVer.data(), monVer.size()), pvt));
 }
 
+// --- The capture with a fix ---------------------------------------------------------
+
+static std::vector<Seen> fixFrames() {
+  static Bytes bytes = loadHex("gm10-fix-230400.hex");
+  ubx::Scanner s;
+  std::vector<Seen> seen = scan(s, bytes);
+  TEST_ASSERT_EQUAL_UINT32(0, s.stats().badChecksum);  // the moved positions' checksums hold
+  TEST_ASSERT_EQUAL_UINT32(0, s.stats().skipped);      // no NMEA: check 9's configuration
+  return seen;
+}
+
+static ubx::Frame asFrame(const Seen& seen) {
+  ubx::Frame f;
+  f.cls = seen.cls;
+  f.id = seen.id;
+  f.length = seen.length;
+  f.bytes = seen.bytes.data();
+  f.payload = seen.bytes.data() + ubx::kHeaderBytes;
+  f.size = seen.bytes.size();
+  return f;
+}
+
+static void a_second_at_a_window_is_nine_fixes_at_10_hz() {
+  std::vector<Seen> seen = fixFrames();
+  TEST_ASSERT_EQUAL_UINT(10, seen.size());
+  uint32_t pvts = 0;
+  for (const Seen& s : seen) {
+    ubx::NavPvt pvt;
+    if (!ubx::decodeNavPvt(asFrame(s), pvt)) continue;
+    TEST_ASSERT_EQUAL_UINT32(375549100 + 100 * pvts, pvt.iTowMs);
+    TEST_ASSERT_TRUE(pvt.fix3d());
+    TEST_ASSERT_FALSE(pvt.diffSoln());  // SBAS tracked, its corrections not applied yet
+    TEST_ASSERT_EQUAL_UINT8(10, pvt.numSv);
+    TEST_ASSERT_TRUE(pvt.validDate());
+    TEST_ASSERT_TRUE(pvt.validTime());
+    TEST_ASSERT_EQUAL_UINT16(2026, pvt.year);
+    TEST_ASSERT_EQUAL_UINT8(10, pvt.month);
+    TEST_ASSERT_EQUAL_UINT8(22, pvt.day);
+    TEST_ASSERT_TRUE(pvt.hAccMm >= 629 && pvt.hAccMm <= 635);
+    TEST_ASSERT_EQUAL_UINT16(316, pvt.pDopE2);
+    TEST_ASSERT_TRUE(pvt.gSpeedMmS < 100);  // standing on a sill
+    if (pvts == 0) {  // moved onto the sample point (the fixture's header)
+      TEST_ASSERT_EQUAL_INT32(451234560, pvt.latE7);
+      TEST_ASSERT_EQUAL_INT32(93456780, pvt.lonE7);
+    }
+    ++pvts;
+  }
+  TEST_ASSERT_EQUAL_UINT32(9, pvts);
+}
+
+static void the_sky_of_that_second() {
+  std::vector<Seen> seen = fixFrames();
+  ubx::NavSat sat;
+  TEST_ASSERT_TRUE(ubx::decodeNavSat(asFrame(seen[6]), sat));
+  TEST_ASSERT_EQUAL_UINT32(375549600, sat.iTowMs);  // the epoch of the PVT before it
+  TEST_ASSERT_EQUAL_UINT8(24, sat.numSvs);
+  uint8_t tracked = 0, used = 0, usedBy[7] = {}, listed[7] = {};
+  for (uint8_t i = 0; i < sat.numSvs; ++i) {
+    ubx::NavSatSv sv = sat.sv(i);
+    uint8_t g = static_cast<uint8_t>(sv.gnss);
+    TEST_ASSERT_TRUE(g < 7);
+    ++listed[g];
+    if (sv.cnoDbHz) ++tracked;
+    if (sv.used()) {
+      ++used;
+      ++usedBy[g];
+      TEST_ASSERT_TRUE(sv.cnoDbHz > 0);  // nothing in the solution without a signal
+    }
+    TEST_ASSERT_FALSE(sv.sbasCorrUsed());
+  }
+  TEST_ASSERT_EQUAL_UINT8(17, tracked);
+  TEST_ASSERT_EQUAL_UINT8(10, used);  // NAV-PVT's numSV for the same epoch
+  TEST_ASSERT_EQUAL_UINT8(4, usedBy[static_cast<uint8_t>(ubx::Gnss::Gps)]);
+  TEST_ASSERT_EQUAL_UINT8(3, usedBy[static_cast<uint8_t>(ubx::Gnss::Galileo)]);
+  TEST_ASSERT_EQUAL_UINT8(3, usedBy[static_cast<uint8_t>(ubx::Gnss::Beidou)]);
+  TEST_ASSERT_EQUAL_UINT8(4, listed[static_cast<uint8_t>(ubx::Gnss::Sbas)]);
+  TEST_ASSERT_EQUAL_UINT8(0, listed[static_cast<uint8_t>(ubx::Gnss::Glonass)]);  // off on the M10
+  ubx::NavSatSv first = sat.sv(0);
+  TEST_ASSERT_EQUAL_UINT8(4, first.svId);  // GPS 4: listed, not heard
+  TEST_ASSERT_EQUAL_UINT8(0, first.cnoDbHz);
+  TEST_ASSERT_EQUAL_INT8(19, first.elevDeg);
+  TEST_ASSERT_EQUAL_INT16(74, first.azimDeg);
+}
+
 int main(int, char**) {
   UNITY_BEGIN();
   RUN_TEST(the_capture_yields_its_six_frames_unchanged);
@@ -615,5 +700,7 @@ int main(int, char**) {
   RUN_TEST(only_a_vouched_3d_fix_is_a_fix);
   RUN_TEST(each_satellite_reads_back_in_place);
   RUN_TEST(a_frame_of_the_wrong_shape_does_not_decode);
+  RUN_TEST(a_second_at_a_window_is_nine_fixes_at_10_hz);
+  RUN_TEST(the_sky_of_that_second);
   return UNITY_END();
 }

@@ -253,13 +253,15 @@ try when one is at hand; their logic is host-tested.
   was lost, since TinyUSB drops what is printed before a host opens the port; the firmware now
   echoes `/post.log` each time a host opens it. Not seen on the bench yet: a module that does not
   answer (the background retry) and one at the u-blox defaults, 9600 baud with NMEA only.
-- [ ] **4.2 NAV-PVT and NAV-SAT decode** in `lib/ubx`.
+- [x] **4.2 NAV-PVT and NAV-SAT decode** in `lib/ubx`.
   *Test:* host tests against fixtures captured after 4.1.
   *So far:* `lib/ubx/nav`: NAV-PVT whole, all 92 bytes, and NAV-SAT read in place a satellite at a
   time, with `fix3d()` for the fix §3.4 trusts. Tested against the indoor capture (four epochs at
   10 Hz, no fix, an empty sky) and against frames built at the documented offsets for a fix and for
-  three satellites. Still to do: a capture at 230400 with a fix and satellites in view, into
-  `docs/fixtures/`, and the same tests against it.
+  three satellites.
+  *Result:* `docs/fixtures/gm10-fix-230400.hex`, a second of the configured stream at a window:
+  nine fixes at 10 Hz, 10 satellites used of the 24 NAV-SAT lists, its position moved onto the sample
+  point. Two more host tests read it against a Python decode of the same bytes (29 in `test_ubx`).
 - [x] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
   counters (§4.2, §5.3).
   *So far:* `gnss_task.cpp`, built, not yet run. Reads with a 20 ms block, scans, and decodes NAV-PVT
