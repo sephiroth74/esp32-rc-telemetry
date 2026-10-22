@@ -98,10 +98,13 @@ with `analogReadMilliVolts()` at 100 Hz.
 | Output as found | NMEA and UBX together, both at **10 Hz**: NAV-PVT and nine NMEA sentence types each tenth of a second (captured into `docs/fixtures/gm10-indoor-115200.hex`, 2026-10-19) |
 | Both UART directions | **Work**: the UBX-MON-VER poll is answered |
 | UBX-MON-VER | sw `ROM SPG 5.10 (7b202e)`, hw `000A0000`; `FWVER=SPG 5.10`, `PROTVER=34.10`; `GPS;GLO;GAL;BDS`, `SBAS;QZSS` |
-| Fix | Not yet — indoors, 0 satellites. To repeat with a view of the sky |
+| Fix | Indoors: none, 0 satellites. At a window (2026-10-22): **3D, 10 of 15 satellites, hAcc 0.75 m, pDOP 3.5** — a partial sky |
+| Time to first fix, cold | **141 s** from holding OK on the GNSS screen at the window, about **255 s from power-on**: the module had been on the bench unpowered for two days. The figure is the GNSS screen's `Fix`: 3D within 5 m, held 3 s (§3.4) |
+| Time to first fix, hot | **5 s** from power-on, the same 3 s hold included, after 16 s unplugged: the module's own backup kept what it had learnt |
+| Output in the firmware | 10 Hz to the epoch: 100 NAV-PVT in every 10 s for over half an hour, **0 lost** (gnss task, step 4.3) |
 | Configuration as found | Four of the eleven keys of POST check 9 differed: NAV-SAT off, NMEA on, `DYNMODEL` other than 4, 115200 baud. The other seven — 10 Hz, NAV-PVT with every solution, UBX out, SBAS with differential corrections — were already as §5.2 wants them (step 4.1, 2026-10-20). The old `DYNMODEL` value went unrecorded: that boot's log was lost to the USB re-enumeration |
 | Config flash | **Yes.** It takes a VALSET to the FLASH layer, and VALGET of that layer returns all eleven keys with their values: the four written there, and seven that were in it already — Flywoo's own setup lives in flash, which is why it survived days unpowered |
-| BBR | Kept over **15 s unpowered**: the module has a backup supply of its own. How long it lasts is still to measure |
+| BBR | Kept over **15 s unpowered**: the module has a backup supply of its own, and 16 s off still gave a hot fix in 5 s. **Gone after two days** off: the four keys written there were lost. How long it lasts in between is still to measure. VALGET of the BBR layer reads configuration keys only, and answers NAK when it holds none — it says nothing about the navigation data kept there |
 
 **TX and RX swapped give no byte at all**, at any baud rate, which looks like a dead module. Found
 on 2026-10-19 after the bench was rewired for the RC tests: the multimeter read 3.28 V on the line
@@ -124,7 +127,7 @@ soldered. Every bench result above is from soldered headers.
 | Quantity | Why it matters | Value |
 | --- | --- | --- |
 | Whether this GM10 V3.1 carries a magnetometer | §9 question 4; its other half, config flash, is answered above | — |
-| Time to first fix, cold and with the backup LiPo, and how long the module's own backup keeps its BBR | Sets expectations for the GNSS screen (§3.4) and confirms the value of the BBR backup (§2.7) | — |
+| How long the module's own backup keeps its BBR, and the time to first fix with the backup LiPo fitted | Hot in 5 s after 16 s off, cold after two days (above): where in between does it go cold? (§2.7) | — |
 | Whether the GM10 runs from 3V3 | On battery the 5V pad is dead, so a GM10 on 5 V loses its BBR in SLEEP and every run starts cold (§2.7, §9 question 16) | — |
 | JS5208 ladder: the ADC reading of each key, once the switch is fitted | UP, DOWN and RIGHT are still nominal in `KEY_MV_BOUNDS` (§3.1; ROADMAP.md, "Switching to the JS5208") | — |
 | Whether OK on the ladder wakes the chip from deep sleep, and whether the RC inputs do (with the §2.5 pull-downs) without spurious wakes | The two wake sources of §4.5 | — |

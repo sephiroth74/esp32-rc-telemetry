@@ -1263,8 +1263,10 @@ Rules that keep it from compromising the logger:
 16. Can the GM10 run from 3V3? If it needs the 5V pad, the backup LiPo does not keep its BBR alive in
     SLEEP, because the 5V pad is dead on battery, and the hot-fix benefit claimed in §2.7 is lost.
     Options: a GM10 on 3V3, or a small backup supply for its BBR. Check the module in Phase 1.
-    The module has a backup of its own, which kept its BBR over 15 s unpowered (step 4.1): the
-    question is now how long it lasts. Its configuration is in flash, so only the hot fix is at stake.
+    The module has a backup of its own, which kept its BBR over 15 s unpowered (step 4.1) and gave a
+    hot fix in 5 s after 16 s off, against a cold one in about 4 minutes after two days (step 4.4):
+    the question is now how long it lasts. Its configuration is in flash, so only the hot fix is at
+    stake.
 17. Are the automatic start and stop thresholds right — 5 km/h for 2 s, ±10 % throttle for 1 s, 5
     minutes of standstill? Tune them on track. (§3.6)
 18. How does the JS5208 survive on a car: carrier board, rubber boot, and do the ladder windows hold

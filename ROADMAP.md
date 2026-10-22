@@ -260,7 +260,7 @@ try when one is at hand; their logic is host-tested.
   10 Hz, no fix, an empty sky) and against frames built at the documented offsets for a fix and for
   three satellites. Still to do: a capture at 230400 with a fix and satellites in view, into
   `docs/fixtures/`, and the same tests against it.
-- [ ] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
+- [x] **4.3 GNSS task.** Core 1, a 2048 B UART receive buffer, a raw-frame queue of 32, loss
   counters (§4.2, §5.3).
   *So far:* `gnss_task.cpp`, built, not yet run. Reads with a 20 ms block, scans, and decodes NAV-PVT
   and NAV-SAT into a live state any task can copy; whole frames with a receive timestamp go into a
@@ -268,7 +268,9 @@ try when one is at hand; their logic is host-tested.
   overruns and errors, bad checksums, lengths out of range and a full queue. Takes check 9's retry
   over from `loop()`. A console line every 10 s gives the rate, the fix and the losses, for the
   bench: 100 epochs in 10 s, 0 lost, is what to see.
-- [ ] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
+  *Result:* on the bench, 100 epochs in every 10 s for over half an hour, indoors and at a window,
+  0 lost.
+- [x] **4.4 Live GNSS on screen.** The GNSS screen and the status bar fed by real NAV-PVT: the link
   and its baud, the fix and satellites, the coordinates, hAcc and pDOP (§3.4). Measure the time to
   first fix, cold and warm, into `docs/hardware.md`.
   *So far:* `lib/ui/ui_gnss`: the acquisition of §3.4 — `Acquiring`, `Fix` after 3 s within 5 m,
@@ -276,8 +278,10 @@ try when one is at hand; their logic is host-tested.
   gnss task's epochs and fills the facts from the live state: the link while the module keeps
   sending, the fix, `used/seen` satellites, coordinates, hAcc, pDOP and speed while the epoch is
   fresh, the loss count into the warning mark, and the gating's fix. Holding OK on the GNSS screen
-  restarts the clock. The sample GNSS values are gone. Still to do: the bench, and the time to first
-  fix.
+  restarts the clock. The sample GNSS values are gone.
+  *Result:* at a window, `Fix 3D, 10/15 sats`, hAcc 0.75 m, pDOP 3.5. First fix cold, after two days
+  unpowered: 141 s from the hold, about 255 s from power-on; hot, after 16 s unplugged: 5 s from
+  power-on. Both in `docs/hardware.md`.
 
 ## Phase 5 — Logging core and manual sessions
 
