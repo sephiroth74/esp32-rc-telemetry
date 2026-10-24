@@ -123,6 +123,49 @@ Pins pushed through the XIAO's holes without solder make intermittent contact. T
 connected on one boot and open on the next, and the display never answered until the headers were
 soldered. Every bench result above is from soldered headers.
 
+## Bench session 2 — sessions at a window, off the 5V pad (2026-10-24)
+
+Setup: the device carried to a window and run without the computer, on a **2S LiPo through a
+step-down giving 4.90 V, 47 µF across its output, into the 5V pad and GND**. The XIAO boots and the
+GM10 runs from that pad, USB-C unplugged. The two must never be connected together: with nothing
+between them, the step-down and the computer's VBUS would meet on the 5V pad. The car has no diode
+there either, so the same rule holds in it (PLAN-ESP32.md §2.7). Firmware 0.1.0-dev; every log read
+back on a Mac by a reader written from `docs/protocol.md`.
+
+| Session | Started | Fix in the session | Filed | Log |
+| --- | --- | --- | --- | --- |
+| id 4, 176 s | Indoors, no fix; carried to the window | 3D at 111 s, hAcc ≤ 5 m at 123 s; 1.19 m and 8 satellites at the end | Moved at the close into **`N4732E00851`, a new track** made at the fix | 1,941 records, every CRC good, 0 bytes skipped; NAV-PVT at 10 Hz, NAV-SAT at 1 Hz; 0 UART errors, 0 ring overflow; 38 writes, at most 7 ms |
+| id 5, 230 s | Indoors, no fix; carried to the window | 3D at 203 s, but hAcc never under 21 m before the stop | **Stayed in `_unassigned`**, as §7.1 says: no fix as §3.4 defines it, 3D with hAcc ≤ 5 m held 3 s | 2,532 records, 0 skipped, 0 lost; 50 writes, at most 7 ms |
+| id 6, 121 s | At the window, on a 3D with hAcc 17 m: not yet a fix | hAcc ≤ 5 m at 51 s; 1.70 m and 7 satellites at the end | Moved at the close into **`N4732E00851`, the existing track**, recognised within its 300 m, as `session_002` | 1,335 records, 0 skipped, 0 lost; 28 writes, at most 7 ms |
+
+- **`start.utc` of a session begun before the clock was set** is derived at the close (§7.1): id 5
+  reads `09:57:57Z`, which is its last NAV-PVT, 10:01:47 UTC at 229.9 s, less 229.9 s.
+- **The status bar's 3D is not the fix.** At this window a first 3D comes with hAcc around 20 m, and
+  takes about 50 s to reach 5 m; the files follow the GNSS screen's `Fix`, not the status bar's `3D`.
+- **The GM10's epochs are irregular at two moments only**: when the module learns the time, from
+  its default 2021-03-07 to the GPS week and then the date, and at its first 2D fix. There, two epochs
+  are 102 and 98 ms apart in id 5, and one is 195 ms after the previous in id 4: the module skipped
+  an epoch. Every other step is 100 ms, with no error counted on our side.
+- **Two earlier sessions cut by unplugging the battery mid-run** (ids 2 and 3, no fix) read to their
+  last record. Their 4 MB extent is not cut to length and `meta.json` has no footer, as expected
+  without SAVING (§4.5).
+- **Every time on the card is UTC** (§7.1), so the Finder shows the files' dates two hours early
+  here in summer.
+
+## Bench session 3 — half an hour of logging (2026-10-24)
+
+The 30-minute session of ROADMAP.md step 5.5, on the bench: USB power, indoors with no fix, so the
+GM10 sends its NAV-PVT and NAV-SAT as on track, invalid but at the same rates. Started and stopped by
+hand; the console logged throughout, and the card was read back on a Mac.
+
+| Quantity | Value |
+| --- | --- |
+| Length | **32 min 55 s**: session id 7, `_unassigned/session_005` |
+| Records | 21,726, every CRC good, 0 bytes skipped; the file cut to its 2,386,864 bytes at the close |
+| GNSS | 19,749 NAV-PVT, each 100 ms after the last, none missing; 1,975 NAV-SAT. 0 UART overruns, 0 UART errors, 0 bad checksums; 0 lost in each of the console's 224 windows of 10 s |
+| Writes | 426, the longest **13 ms**, the 99th percentile 7 ms, none over 250 ms |
+| Ring | 0 overflow; at most **6,700 bytes** waiting, of 256 KB |
+
 ## Still to measure
 
 | Quantity | Why it matters | Value |
@@ -133,6 +176,9 @@ soldered. Every bench result above is from soldered headers.
 | JS5208 ladder: the ADC reading of each key, once the switch is fitted | UP, DOWN and RIGHT are still nominal in `KEY_MV_BOUNDS` (§3.1; ROADMAP.md, "Switching to the JS5208") | — |
 | Whether OK on the ladder wakes the chip from deep sleep, and whether the RC inputs do (with the §2.5 pull-downs) without spurious wakes | The two wake sources of §4.5 | — |
 | `DYNMODEL` 4 vs 8 on track | Whether the automotive filter lags the hardest-accelerating cars (§5.2) | — |
+| Whether the LM2940CT-5.0 holds 5.0 V on the MP9e's 5.90 V BEC | 5.9 V is under the 6.25 V from which TI guarantees it; its dropout, 0.2 V at most at 100 mA, should leave room (§2.7) | — |
+| Whether a BAT43 clamp keeps a 5 V receiver's pulse under 3.6 V on the pin | The RC inputs' protection of §2.5, worked out at about 3.5 V; to measure with a 5 V source through the 10 kΩ | — |
+| The current the device draws from the 5V pad, idle and at its peaks (card writes, radio) | It sets the LM2940's dropout and its heat on a high-voltage BEC; 200 mA is an estimate (§2.7) | — |
 
 ## Per-car measurements
 
@@ -164,6 +210,3 @@ The KiCad schematics in [`hardware/`](../hardware/README.md):
 Drawings of where each wire goes, in Italian, for building:
 [`wiring-bench.png`](../hardware/wiring-bench.png), [`wiring-car.png`](../hardware/wiring-car.png),
 and the car's power path pin by pin, [`wiring-power-ldo.png`](../hardware/wiring-power-ldo.png).
-| Whether the LM2940CT-5.0 holds 5.0 V on the MP9e's 5.90 V BEC | 5.9 V is under the 6.25 V from which TI guarantees it; its dropout, 0.2 V at most at 100 mA, should leave room (§2.7) | — |
-| Whether a BAT43 clamp keeps a 5 V receiver's pulse under 3.6 V on the pin | The RC inputs' protection of §2.5, worked out at about 3.5 V; to measure with a 5 V source through the 10 kΩ | — |
-| The current the device draws from the 5V pad, idle and at its peaks (card writes, radio) | It sets the LM2940's dropout and its heat on a high-voltage BEC; 200 mA is an estimate (§2.7) | — |

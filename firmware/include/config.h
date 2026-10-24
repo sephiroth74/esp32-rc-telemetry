@@ -131,3 +131,4 @@ constexpr int TASK_BLE_CORE = 0, TASK_BLE_PRIO = 2;
 
 // --- Track resolution (§7.1) ------------------------------------------------
 constexpr float TRACK_MATCH_RADIUS_M = 300.0f;  // track.match_radius_m default
+constexpr float TRACK_LOOKUP_MOVE_M = 50.0f;  // in IDLE, the screens' track looked up again this far on

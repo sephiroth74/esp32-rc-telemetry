@@ -46,6 +46,15 @@ void number(JsonVariantConst v, uint32_t lo, uint32_t hi, T& field, const char* 
   note(p, key);
 }
 
+void flag(JsonVariantConst v, bool& field, const char* key, Problems& p) {
+  if (v.isNull()) return;
+  if (v.is<bool>()) {
+    field = v.as<bool>();
+    return;
+  }
+  note(p, key);
+}
+
 // A section must be an object; a section that is not one counts as wrong, its keys as missing.
 JsonObjectConst section(JsonDocument& doc, const char* name, Problems& p) {
   JsonVariantConst v = doc[name];
@@ -128,14 +137,8 @@ Read read(const char* json, size_t length, const Config& defaults, Config& out,
     out.warnFreeMb = defaults.warnFreeMb > out.minFreeMb ? defaults.warnFreeMb : out.minFreeMb;
   }
   JsonObjectConst session = section(doc, "session", problems);
-  JsonVariantConst start = session["auto_start"];
-  if (!start.isNull()) {
-    if (start.is<bool>()) {
-      out.autoStart = start.as<bool>();
-    } else {
-      note(problems, "session.auto_start");
-    }
-  }
+  flag(session["auto_start"], out.autoStart, "session.auto_start", problems);
+  flag(session["require_fix"], out.requireFix, "session.require_fix", problems);
   number(session["auto_stop_min"], 1, 60, out.autoStopMin, "session.auto_stop_min", problems);
   number(section(doc, "track", problems)["match_radius_m"], 50, 2000, out.matchRadiusM,
          "track.match_radius_m", problems);
@@ -153,6 +156,7 @@ size_t write(const Config& c, char* out, size_t capacity) {
   doc["sd"]["min_free_mb"] = c.minFreeMb;
   doc["sd"]["warn_free_mb"] = c.warnFreeMb;
   doc["session"]["auto_start"] = c.autoStart;
+  doc["session"]["require_fix"] = c.requireFix;
   doc["session"]["auto_stop_min"] = c.autoStopMin;
   doc["track"]["match_radius_m"] = c.matchRadiusM;
   JsonArray profiles = doc["profiles"].to<JsonArray>();

@@ -303,7 +303,7 @@ try when one is at hand; their logic is host-tested.
   that are not ours, and payloads that grow. `rct_core` is held to the same two files when it comes.
   One rule changed in `docs/protocol.md` on the way: a length running past the end no longer ends
   the reading, since a length mangled mid-file would have cost every record after it.
-- [ ] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
+- [x] **5.3 Logger task** (§4.4): the PSRAM ring buffer, 32 KB writes, pre-allocated 4 MB extents,
   a flush every 5 s, latency statistics.
   *So far:* `lib/logbuf`, host-tested (8 tests): the ring of whole records — in entire or dropped
   and counted, out in order however the writer slices it, across the wrap and through a stall that
@@ -315,8 +315,10 @@ try when one is at hand; their logic is host-tested.
   (2026-10-22, 51 s, no fix): the first 4 MB extent in 5 ms, 11 writes of at most 8 ms, nothing
   dropped, the file cut to its 76,720 bytes. Read back on a Mac by a Python reader written from
   `docs/protocol.md`: 570 records, every CRC good, 0 bytes skipped, 514 NAV-PVT a step of 100 ms
-  each, the two markers, the footer matching `meta.json`. Still to do: the 30-minute session of
-  5.5.
+  each, the two markers, the footer matching `meta.json`.
+  *Result:* the half hour of 5.5 (2026-10-24, bench session 3 in `docs/hardware.md`): 32 min 55 s,
+  21,726 records, nothing dropped. 426 writes, the longest 13 ms and the 99th percentile 7 ms, none
+  slow, and at most 6,700 bytes waiting in the ring of 256 KB.
 - [ ] **5.4 On-card layout** (§7.1): track cell id and resolution, session numbering, `meta.json`.
   A track whose geo-fence contains the fix comes first, then the 300 m radius; among several the one
   used most recently wins, and Track › New track creates a folder at the fix with the next suffix.
@@ -331,11 +333,37 @@ try when one is at hand; their logic is host-tested.
   folder and `track.json`, `session_NNN`, the global id from NVS, `meta.json` at the start and the
   footer's numbers at the end, and the move out of `_unassigned` when a fix comes. The clock is set
   from the first fully resolved NAV-PVT, so files carry real dates and `meta.json` its UTC start.
-  Seen on the bench so far: `_unassigned/session_001` and its `meta.json`. Still to do: a session
-  with a fix, at a window, making its track.
+  Seen on the bench so far: `_unassigned/session_001` and its `meta.json`.
+  *Then:* at a window (2026-10-24, bench session 2 in `docs/hardware.md`), three sessions begun
+  without a fix. The first made its track at the close, `N4732E00851`, and moved into it. The
+  second, whose hAcc never reached 5 m, stayed in `_unassigned`. The third moved into the same track
+  as its `session_002`, recognised by the radius. Every log was whole, with nothing lost. All times
+  on the card are UTC, and `start.utc` of a session begun before the clock is derived at its close
+  (§7.1, decided on the way).
+  *Then:* the screens name the card's track. `sessionLookup()` in `src/session.cpp` reads where a
+  session started now would be filed: the track, its name from the apps, start line, geometry, how
+  many sessions and the next number; `_unassigned` without a fix. The ui task runs it in IDLE when
+  the fix comes or goes, after moving 50 m, and after any session or command. Without a track the
+  screens say why: `none, no fix`, `none, no card`, or `new here`, which the next session makes
+  (184 host tests). On the device, indoors with no fix: `none, no fix` on Home, the GNSS screen and
+  the Session entry, and `Next: session_005`, the next in `_unassigned`. Still to do: the same with
+  a fix, at a window, with a session begun **on** the fix and filed at its start; Track › New track, which makes no folder yet, and makes the new track the resolved one
+  as §7.1 says; and Track › Choose, the pick by hand where two tracks compete (§7.1, decided
+  2026-10-24).
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.
+  *So far:* the half hour, held by hand on the bench (2026-10-24): every record whole, NAV-PVT a
+  step of 100 ms each from the first to the last, 0 UART errors, 0 lost in any of the 224 windows of
+  10 s the console reported. The figures are 5.3's. After the stop the screens read the card again:
+  `_unassigned`, 5 sessions, next 6. The session's GNSS page then read as the GNSS screen does:
+  satellites used and seen, and `hAcc --` without a fix where it had shown the module's unknown as
+  `655.35 m` (185 host tests). Still to do: a look at that page on the device, where the satellites
+  seen move even indoors.
+  Decided on the way (§3.6, 2026-10-24): **a session needs the fix**, by hand or automatically —
+  the GNSS screen's `Fix`, not a bare 3D. Without it Home reads `Acquiring` and a hold brings
+  `No GNSS fix yet`; the automatic start says so once and starts when the fix comes.
+  `session.require_fix: false` in `config.json` lifts it for the bench (186 host tests).
 
 ## Phase 6 — RC inputs, car profiles, automatic sessions, sleep
 

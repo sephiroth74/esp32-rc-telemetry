@@ -50,7 +50,7 @@ static void every_key_is_read() {
     "keys": {"layout": "five"},
     "display": {"brightness": "low", "dim_after_s": 0, "text": "small"},
     "sd": {"min_free_mb": 128, "warn_free_mb": 512},
-    "session": {"auto_start": false, "auto_stop_min": 10},
+    "session": {"auto_start": false, "require_fix": false, "auto_stop_min": 10},
     "track": {"match_radius_m": 500},
     "profiles": [{"name": "Inferno"}, {"name": "Typhon"}]
   })";
@@ -63,6 +63,7 @@ static void every_key_is_read() {
   TEST_ASSERT_EQUAL_UINT32(128, c.minFreeMb);
   TEST_ASSERT_EQUAL_UINT32(512, c.warnFreeMb);
   TEST_ASSERT_FALSE(c.autoStart);
+  TEST_ASSERT_FALSE(c.requireFix);
   TEST_ASSERT_EQUAL_UINT16(10, c.autoStopMin);
   TEST_ASSERT_EQUAL_UINT16(500, c.matchRadiusM);
   TEST_ASSERT_EQUAL_UINT8(2, c.profileCount);
@@ -76,15 +77,16 @@ static void a_wrong_key_falls_back_alone_and_is_listed() {
     "keys": {"layout": "three"},
     "display": {"brightness": "bright", "dim_after_s": 45, "text": "large"},
     "sd": {"min_free_mb": -1},
-    "session": {"auto_start": "yes", "auto_stop_min": 500},
+    "session": {"auto_start": "yes", "require_fix": 0, "auto_stop_min": 500},
     "track": {"match_radius_m": 300}
   })";
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Read::Ok), static_cast<int>(readText(json, c, p)));
   for (const char* key : {"keys.layout", "display.brightness", "display.dim_after_s",
-                          "sd.min_free_mb", "session.auto_start", "session.auto_stop_min"}) {
+                          "sd.min_free_mb", "session.auto_start", "session.require_fix",
+                          "session.auto_stop_min"}) {
     TEST_ASSERT_TRUE_MESSAGE(listed(p, key), key);
   }
-  TEST_ASSERT_EQUAL_UINT8(6, p.count);
+  TEST_ASSERT_EQUAL_UINT8(7, p.count);
   Config d = defaults();
   TEST_ASSERT_EQUAL_UINT8(d.brightness, c.brightness);
   TEST_ASSERT_EQUAL_UINT32(d.minFreeMb, c.minFreeMb);
@@ -151,6 +153,7 @@ static void written_and_read_back_it_is_the_same() {
   c.minFreeMb = 100;
   c.warnFreeMb = 400;
   c.autoStart = false;
+  c.requireFix = false;
   c.autoStopMin = 7;
   c.matchRadiusM = 250;
   c.profileCount = 2;
@@ -171,6 +174,7 @@ static void written_and_read_back_it_is_the_same() {
   TEST_ASSERT_EQUAL_UINT32(c.minFreeMb, back.minFreeMb);
   TEST_ASSERT_EQUAL_UINT32(c.warnFreeMb, back.warnFreeMb);
   TEST_ASSERT_EQUAL(c.autoStart, back.autoStart);
+  TEST_ASSERT_EQUAL(c.requireFix, back.requireFix);
   TEST_ASSERT_EQUAL_UINT16(c.autoStopMin, back.autoStopMin);
   TEST_ASSERT_EQUAL_UINT16(c.matchRadiusM, back.matchRadiusM);
   TEST_ASSERT_EQUAL_UINT8(c.profileCount, back.profileCount);

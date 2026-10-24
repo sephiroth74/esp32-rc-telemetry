@@ -25,10 +25,8 @@ constexpr uint32_t kStackBytes = 6144;
 // Every screen shows plausible values until the modules that own them arrive: the card in phase 3,
 // GNSS in phase 4 (here now), sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
 
-// The profiles' names are config.json's (settings.h); the track id is writable for New track.
+// The profiles' names are config.json's (settings.h).
 const char* profileNamePtrs[CAR_PROFILES_MAX];
-char trackId[16] = "N4512E00934";
-uint8_t trackSuffix = 1;
 
 ui::Facts sampleFacts() {
   ui::Facts f;
@@ -39,10 +37,7 @@ ui::Facts sampleFacts() {
   f.freeMb = 59600;
   f.cardGb = 62;
   f.cardKbps = 3495;
-  f.trackId = trackId;
-  f.trackSessions = 3;
   f.cardSessions = 3;
-  f.nextSession = 4;
   f.laps = 12;
   f.lastLapMs = 62341;
   f.bestLapMs = 58902;
@@ -124,20 +119,49 @@ void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now, ui::Mot
   motion.speedMmS = p.gSpeedMmS > 0 ? p.gSpeedMmS : 0;
 }
 
+// The track the screens name (§3.4), and the number the next session takes: read from the card in
+// IDLE, where a session started now would be filed. Again when the fix comes or goes, after moving
+// TRACK_LOOKUP_MOVE_M, and after anything that may change the card: a session, a transfer, a command.
+TrackView trackView;
+bool trackStale = true;
+bool trackFix = false;
+geo::Point trackAt;
+
+void lookUpTrack(const ui::Board& board, bool fix) {
+  if (board.mode() != ui::Mode::Idle || !facts.menu.cardOk) {
+    trackStale = true;
+    if (!facts.menu.cardOk && trackView.found) trackView = TrackView();  // no card, no track
+  } else {
+    geo::Point here{facts.latE7, facts.lonE7};
+    if (!trackStale && fix == trackFix &&
+        (!fix || geo::distanceM(here, trackAt) < TRACK_LOOKUP_MOVE_M)) {
+      return;
+    }
+    sessionLookup(fix, here, trackView);
+    trackStale = false;
+    trackFix = fix;
+    trackAt = here;
+    Serial.printf("track: %s, %u sessions, next %lu\n",
+                  trackView.found ? trackView.id : fix ? "none here" : "_unassigned",
+                  trackView.sessions, (unsigned long)trackView.next);
+  }
+  facts.trackId = trackView.id;
+  facts.trackName = trackView.name;
+  facts.menu.hasStartLine = trackView.hasStartLine;
+  facts.hasGeometry = trackView.hasGeometry;
+  facts.trackSessions = trackView.sessions;
+  if (board.mode() == ui::Mode::Idle) {  // in a session it is the session's own, for the toasts
+    facts.nextSession = trackView.next > 65535 ? 65535 : trackView.next;
+  }
+}
+
 // Stand-ins for the modules that will carry the commands out. Each only updates the sample facts,
-// so the screens react as they will once the real thing is behind them.
+// so the screens react as they will once the real thing is behind them. A start line and a
+// geometry are the card's own (lookUpTrack), until phase 8 records them.
 void runPlaceholder(const ui::BoardOutput& o) {
   switch (o.command) {
-    case ui::Command::RecordStartLine:
-      facts.menu.hasStartLine = true;
-      break;
-    case ui::Command::StopGeometry:
-      facts.hasGeometry = true;
-      break;
-    case ui::Command::StopSession:
-      ++facts.nextSession;
+    case ui::Command::StopSession:  // the track's own numbers come from the card (lookUpTrack)
       ++facts.cardSessions;
-      ++facts.trackSessions;
       break;
     case ui::Command::SaveCalibration:
       facts.profileCalibrated = true;
@@ -151,12 +175,8 @@ void runPlaceholder(const ui::BoardOutput& o) {
       facts.menu.activeProfile = o.arg;
       facts.profileCalibrated = false;
       break;
-    case ui::Command::NewTrack:  // the next free suffix of the cell id, as in §7.1
-      snprintf(trackId, sizeof trackId, "N4512E00934-%u", ++trackSuffix);
-      facts.menu.hasStartLine = false;
-      facts.hasGeometry = false;
-      facts.trackSessions = 0;
-      facts.nextSession = 1;
+    case ui::Command::NewTrack:  // the screens name the card's tracks now, and this makes none yet
+      Serial.println("new track: not on the card yet (ROADMAP.md step 5.4)");
       break;
     case ui::Command::SetBrightness:  // the ui task applies it to the panel on the next tick
       facts.menu.brightness = o.arg;
@@ -169,7 +189,6 @@ void runPlaceholder(const ui::BoardOutput& o) {
       break;
     case ui::Command::DeleteSessions:
       facts.cardSessions = 0;
-      facts.trackSessions = 0;
       break;
     default:
       break;
@@ -249,6 +268,7 @@ void uiTask(void*) {
       runSession(out, now, automatic);
       if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
       runPlaceholder(out);
+      trackStale = true;         // whatever it did, the card is read again
       settingsSave(facts.menu);  // only what the command changed reaches NVS
     }
     if (out.swallow) keysSwallow();  // the press closed a notice and does nothing else
@@ -307,6 +327,7 @@ void uiTask(void*) {
     }
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
+    lookUpTrack(board, acq.fix());
     // The automatic start and stop (§3.6). What they do is worth seeing: a dimmed display wakes.
     ui::BoardOutput automatic = board.onMotion(motion, facts, now);
     if (automatic.command != ui::Command::None || automatic.refused != ui::Refusal::None) {
@@ -358,6 +379,7 @@ void uiStart(const ui::PostResult& post) {
   // The settings of config.json, and where they came from (§3.8).
   for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) profileNamePtrs[i] = settingsProfileName(i);
   facts.autoStart = settings().autoStart;
+  facts.menu.requireFix = settings().requireFix;  // false only for the bench (§3.6)
   static char configNote[22];
   if (settingsProblems().count) {
     snprintf(configNote, sizeof configNote, "%s, %u bad", settingsSourceName(),

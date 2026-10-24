@@ -39,6 +39,21 @@ struct SessionInfo {
   bool newTrack = false;
 };
 
+// Where a session started now would be filed, as the screens name it (§3.4): the track the fix
+// belongs to, or none, which a session would make; without a fix, _unassigned.
+struct TrackView {
+  bool found = false;  // a track on the card holds the fix
+  char id[geo::kTrackIdMax + 1] = "";
+  char name[33] = "";  // track.json's, given in the apps; empty until then
+  bool hasStartLine = false;
+  bool hasGeometry = false;
+  uint16_t sessions = 0;  // the session_NNN folders already there
+  uint32_t next = 1;      // the number the next one takes
+};
+
+// Read from the card, a few small files: for IDLE, with the card mounted and no session open.
+void sessionLookup(bool haveFix, geo::Point fix, TrackView& out);
+
 // False with nothing open: no card to write to, or a folder or a file that could not be made.
 bool sessionBegin(const SessionStart& start, SessionInfo& out);
 // `haveFix`/`fix`: what the acquisition has now, for a session that began without a fix.

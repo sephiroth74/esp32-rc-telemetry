@@ -26,7 +26,8 @@ SessionInfo current;
 bool open_ = false;
 SessionStart started;
 char dir[96];  // /sdcard/tracks/<track>/session_NNN
-char startUtc[24];  // the session's start, once the clock is set; written again at the end
+char startUtc[24];  // the session's start in UTC, once the clock is set; written again at the end
+uint32_t startMs;   // millis() at the start, to date a start that came before the clock
 
 char names[kMaxNames][40];
 const char* namePtrs[kMaxNames];
@@ -36,6 +37,11 @@ char text[kMaxJson];
 bool isDir(const char* path) {
   struct stat st;
   return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+bool isFile(const char* path) {
+  struct stat st;
+  return stat(path, &st) == 0 && S_ISREG(st.st_mode);
 }
 
 bool makeDir(const char* path) { return isDir(path) || mkdir(path, 0755) == 0; }
@@ -213,10 +219,11 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
   doc["car_profile"]["calibration"] = nullptr;  // phase 6
   doc["start"]["automatic"] = started.automatic;
   time_t now = time(nullptr);
-  if (now > 1700000000 && !footer) {  // set from the GNSS (gnss_task.cpp), not the 1970 of a boot
-    char utc[24];
-    strftime(utc, sizeof utc, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
-    snprintf(startUtc, sizeof startUtc, "%s", utc);
+  if (now > 1700000000 && !startUtc[0]) {  // set from the GNSS (gnss_task.cpp), not the 1970 of a boot
+    // The start is now less the session's length: nothing at the start, and to the second at the
+    // close of a session begun before the clock was set.
+    time_t start = now - time_t((millis() - startMs) / 1000);
+    strftime(startUtc, sizeof startUtc, "%Y-%m-%dT%H:%M:%SZ", gmtime(&start));
   }
   if (startUtc[0]) {
     doc["start"]["utc"] = startUtc;
@@ -246,11 +253,40 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
 
 }  // namespace
 
+void sessionLookup(bool haveFix, geo::Point fix, TrackView& out) {
+  out = TrackView();
+  char track[geo::kTrackIdMax + 1];
+  char path[112];
+  if (!haveFix) {
+    snprintf(track, sizeof track, "%s", kUnassigned);
+  } else if (resolveTrack(fix, track)) {
+    out.found = true;
+    snprintf(out.id, sizeof out.id, "%s", track);
+    snprintf(path, sizeof path, "%s/%s/track.json", kTracks, track);
+    JsonDocument doc;
+    if (readJson(path, doc)) snprintf(out.name, sizeof out.name, "%s", doc["name"] | "");
+    snprintf(path, sizeof path, "%s/%s/start_line.json", kTracks, track);
+    out.hasStartLine = isFile(path);
+    snprintf(path, sizeof path, "%s/%s/geometry.rcg", kTracks, track);
+    out.hasGeometry = isFile(path);
+  } else {
+    return;  // a session here makes a new track: none there yet, its first session_001
+  }
+  snprintf(path, sizeof path, "%s/%s", kTracks, track);
+  size_t n = list(path);
+  uint32_t number;
+  for (size_t i = 0; i < n; ++i) {
+    if (geo::sessionNumber(names[i], number)) ++out.sessions;
+  }
+  out.next = geo::nextSession(namePtrs, n);
+}
+
 bool sessionBegin(const SessionStart& start, SessionInfo& out) {
   if (open_) return false;
   started = start;
   current = SessionInfo();
   startUtc[0] = '\0';
+  startMs = millis();
   if (!makeDir(kTracks)) return false;
   if (start.haveFix) {
     if (!resolveTrack(start.fix, current.track)) {

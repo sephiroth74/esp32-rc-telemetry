@@ -37,6 +37,8 @@ void onUartError(hardwareSerial_error_t error) {
 
 // The system clock from the first epoch whose date and time are valid and fully resolved: files on
 // the card get real dates, and meta.json its UTC start. Once a boot; UTC, as the module gives it.
+// TZ stays UTC0 for good: FatFs dates files with localtime(), and every time on the card is UTC
+// (PLAN-ESP32.md §7.1). A time of day on the display is made local apart from it.
 void setClock(const ubx::NavPvt& pvt) {
   static bool set = false;
   if (set || !pvt.validDate() || !pvt.validTime() || !(pvt.valid & 0x04)) return;

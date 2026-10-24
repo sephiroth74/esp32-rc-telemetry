@@ -130,6 +130,7 @@ struct MenuContext {
   bool loggingAllowed = true;  // false: the POST refused logging...
   uint8_t refusingCheck = 0;   // ...and this is the check that did, for the toast
   bool hasFix = false;
+  bool requireFix = true;  // session.require_fix: a session needs the fix (§3.6); off for the bench
   bool rcSignal = false;  // edges on the RC inputs: calibration needs them
   bool hasStartLine = false;
   uint8_t profileCount = 1;  // 1..profileMax
@@ -208,8 +209,8 @@ class Menu {
   uint32_t lastKeyMs_ = 0;
 };
 
-// Why a session cannot start now, by hand or automatically (§3.6): no card, or the POST refused
-// logging, `arg` naming the check. Refusal::None when it can.
+// Why a session cannot start now, by hand or automatically (§3.6): no card, the POST refused
+// logging, `arg` naming the check, or no fix while one is required. Refusal::None when it can.
 Refusal sessionRefusal(const MenuContext& context, uint8_t& arg);
 
 }  // namespace ui

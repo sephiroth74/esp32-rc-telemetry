@@ -30,6 +30,7 @@ struct Config {
   uint32_t minFreeMb = 64;      // sd.min_free_mb: below it, logging is refused (POST check 4)
   uint32_t warnFreeMb = 256;    // sd.warn_free_mb: below it, a warning
   bool autoStart = true;        // session.auto_start, §3.6
+  bool requireFix = true;       // session.require_fix: false lets a session start without a fix
   uint16_t autoStopMin = 5;     // session.auto_stop_min: standing still this long ends a session
   uint16_t matchRadiusM = 300;  // track.match_radius_m, §7.1
   uint8_t profileCount = 1;     // profiles[]: 1 to kMaxProfiles, each with its name

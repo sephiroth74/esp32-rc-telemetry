@@ -462,7 +462,8 @@ count, and whether the automatic start is on (§3.6) — with large text also th
 free space, which its status line has no room for. Holding OK on Home starts a session by hand.
 When a session cannot start — no card, or the POST refused logging — Home opens on the reason
 instead (`GNSS not found`, then `No logging (check 8)`), on the first page even with large text, and
-its status line reads `No logging` rather than `Ready`.
+its status line reads `No logging` rather than `Ready`. While it waits for the fix (§3.6) the
+status line reads `Acquiring`, and holding OK brings the notice `No GNSS fix yet`.
 
 The menu, each list ending in Back:
 
@@ -473,6 +474,7 @@ The menu, each list ending in Back:
 | **Track › Geometry** | Whether the resolved track has a geometry, and where it came from (§7.5) | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. **Optional**: the desktop app builds the geometry from the sessions anyway |
 | **Track › Info** | Cell id, the name in `track.json`, how many sessions were recorded there | — |
 | **Track › New track** | The resolved track, and what a new one is for | Hold OK: create a track at the current position although one is resolved there — for a new layout at a known venue. It starts with no start line and no geometry, its folder takes the cell id with the next suffix, and the apps name it (§7.1) |
+| **Track › Choose** | The tracks within reach of the fix, the resolved one marked | OK: make the highlighted one the resolved track, for where two compete (§7.1) |
 | **GNSS** | First page: whether the module is linked — found by POST check 8 and still sending — and at what baud; the fix and the satellites; the **track recognised** (§7.1), by its name from the apps or else its cell id. Then the coordinates, hAcc, pDOP, and the time since acquisition started: `Acquiring`, then `Fix` once a 3D fix with hAcc ≤ 5 m has held for 3 s, or `Timeout` after 90 s. The satellites read `used/seen`: in the solution, of those with a signal, so that indoors `0/3` says the antenna hears something. An acquisition starts at boot, on the hold, and when the fix is lost — an epoch with no 3D fix, or 2 s without one; a worse hAcc does not end a fix, so one near the limit does not flap. That fix, not the bare 3D, is what the menu's gating and the laps trust. A **3D fix** has latitude, longitude and altitude, from four satellites or more; a **2D** one lacks the altitude, from three, and is not trusted for laps | Hold OK: restart acquisition |
 | **Transfer** | — | OK: enter TRANSFER (§3.7, §7.3) |
 | **Settings › Car profile** | The profiles in `config.json`, the active one marked, then **New car** | OK: make the highlighted one active. New car adds a profile named `Car N`, makes it active and lands on Calibrate; the apps rename it (§3.8) |
@@ -488,9 +490,9 @@ nothing else. A refusal is never a toast, which is gone before it is read.
 
 | To | Needs |
 | --- | --- |
-| Open Track › Start line, Geometry, Info or New track, Settings › Delete sessions, or Transfer | The card: they read what is on it |
-| Open Track › Info or New track | The GNSS module too: they are about the track the position names |
-| Start a session | The card, and logging allowed by the POST: checks 4, 5 and 8 |
+| Open Track › Start line, Geometry, Info, New track or Choose, Settings › Delete sessions, or Transfer | The card: they read what is on it |
+| Open Track › Info, New track or Choose | The GNSS module too: they are about the track the position names |
+| Start a session | The card, logging allowed by the POST (checks 4, 5 and 8), and the fix (§3.6) unless `session.require_fix` is off |
 | Record a start line, a geometry or a new track | A card that took the write probe (check 5), the GNSS module, and a fix: each writes a position; a session does not (§7.1) |
 | Add a car, delete sessions | A card that took the write probe |
 
@@ -520,7 +522,7 @@ matters. Errors take the body until a key is pressed; warnings stay in the statu
 | Capability withdrawn by the POST (§3.3) | Warning mark; Home names the reason when logging is refused | The affected entries are refused with a notice naming what is missing (§3.4); details under Settings › About, in `/post.log` and over BLE |
 | Card lost **after** boot (removed, or mount dropped) | Error `Card lost` | Entries that write to the card are refused. A card missing **at** boot is instead the fatal check 3 of §3.3 — there is nothing on it to rescue, so refusing to start is the honest answer |
 | Write error or card full | Error `Write error` or `Card full` | Session closed as cleanly as possible |
-| Fix lost during a session | Status bar shows `no fix`; the session screen carries on | Logging **continues** — invalid epochs are still recorded (§5.3) |
+| Fix lost during a session | Status bar shows `no fix`; the session screen carries on | Logging **continues** — invalid epochs are still recorded (§5.3). The laps it touches are left out or flagged: to decide with phase 8 |
 | GNSS data loss counted | Warning mark, and the loss count on the session's GNSS page | A UART overrun, queue overflow or checksum failure occurred; counters go to the session footer |
 | Acquisition timeout | `Timeout` on the GNSS screen | Holding OK there retries |
 | Backup LiPo low | LiPo mark in the status bar | Advisory only |
@@ -531,17 +533,23 @@ matters. Errors take the body until a key is pressed; warnings stay in the statu
 A session is one run. It starts when the car moves and ends when the car stops or is switched off,
 without a key press; the keys remain for doing either by hand.
 
-- **Automatic start**, from IDLE only (§3.7), on whichever comes first:
-  - a 3D fix and more than 5 km/h for 2 s;
+- **A session needs the fix**, by hand or automatically (decided 2026-10-24): the GNSS screen's
+  `Fix`, a 3D fix with hAcc ≤ 5 m held 3 s (§3.4), not the status bar's bare `3D`. A run with no
+  decent position is no use, and the fix is also what files the session under its track (§7.1).
+  Lost during the session, it no longer matters: logging continues (§3.5). `session.require_fix`
+  in `config.json`, on by default, is turned off only for the bench, where indoors no fix comes.
+- **Automatic start**, from IDLE only (§3.7), on whichever comes first, the fix present:
+  - more than 5 km/h for 2 s;
   - throttle more than ±10 % from neutral for 1 s, which needs the active profile to be calibrated
-    (§3.8) — so a session also starts without a fix.
+    (§3.8).
 
-  A dialog that is open is cancelled. If the POST refused logging, the trigger shows the reason once,
-  as the notice of §3.4.
+  A dialog that is open is cancelled. If the POST refused logging, or there is no fix yet, the
+  trigger shows the reason once, as the notice of §3.4, and starts when it can.
 - **Automatic stop**: the car is switched off (§4.5, through SAVING), or it has stood still — below
   2 km/h with the throttle within ±5 % of neutral — for 5 minutes (`session.auto_stop_min`). The
   device returns to Home with `Session N saved`, and the next run starts a new session.
-- **Manual start**: hold OK on Home or on the Session entry.
+- **Manual start**: hold OK on Home or on the Session entry; without the fix, the notice
+  `No GNSS fix yet`.
 - **Manual stop**: hold OK on the session screen, then confirm in the dialog. Two holds by design:
   the automatic stop covers the normal case, and a knock on the switch must not end a run.
 - `session.auto_start` in `config.json` turns the automatic start off, for the bench or for runs
@@ -1055,6 +1063,12 @@ does, with the next free suffix, and makes it the resolved track. Being the one 
 keeps winning step 2 at that venue from then on. The desktop app names it, and re-files a session
 into the other track if the old layout comes back.
 
+Tracks close enough to compete are not expected. Where two do, the user picks one by hand (decided
+2026-10-24). On the device, **Track › Choose** lists the tracks within reach of the fix and makes
+the chosen one the resolved track, as New track does; in the apps, the user re-files the session.
+What the device shows is a simple view for the pits: the apps compute the real figures from the
+logs.
+
 300 m is far larger than any GNSS error and comfortably covers a 1/8 track (100–200 m across) from its
 centre, while staying well below the separation between genuinely distinct venues. Scanning a handful
 of small JSON files costs milliseconds, and it makes the scheme immune both to boundary effects and to
@@ -1068,10 +1082,25 @@ rather than wrapping and overwriting something. `meta.json` additionally carries
 session id from NVS**, which is the stable identity the apps key on — folder names can be renamed or
 moved, that id cannot.
 
-**Sessions that start without a fix** go to `/tracks/_unassigned/session_NNN/`, because logging must
-never be blocked on GNSS (§5.3). If a fix arrives before the session closes, the device relocates the
-folder into the resolved track at close time — on FAT that is a rename, not a copy. If no fix ever
-arrives it stays there, and the desktop app can re-file it or leave it alone.
+**A session starts on the fix** (§3.6), so it is filed under its track from the start. Only with
+`session.require_fix` off, on the bench, does one start without a fix: it goes to
+`/tracks/_unassigned/session_NNN/`, and if a fix arrives before it closes, the device relocates the
+folder into the resolved track at close time — on FAT a rename, not a copy. If no fix ever arrives
+it stays there, and the desktop app can re-file it or leave it alone.
+
+#### Times
+
+**Every time on the card is UTC**: the files' dates, `meta.json`'s start, and the GNSS time in the
+records. FAT keeps no time zone; the apps show each time in the viewer's own (decided 2026-10-24).
+The device's time zone stays `UTC0` for good, since FatFs dates files with `localtime()`.
+`start.utc` in `meta.json` is the session's start to the second: taken at the start when the clock
+is set, otherwise at the close, as the close less the session's length. It is `null` only when no
+fully resolved NAV-PVT came in the whole session.
+
+**On the display, a time of day is local.** None is shown yet: the screens show durations only, the
+session's `REC` time and the acquisition's. The first screen to show one converts it with a time-zone
+setting in `config.json`, a POSIX TZ string so that summer time comes with it, and does so apart
+from the device's `UTC0`.
 
 **Confirmed on the bench:** all of this needs long-filename support in the Arduino FATFS build — an
 8.3-only build would break `session_001` and `start_line.json` alike. The core enables it

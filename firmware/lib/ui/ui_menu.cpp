@@ -111,7 +111,8 @@ MenuResult startSession(const MenuContext& c) {
 
 }  // namespace
 
-// A session needs a card it may write to; the POST can have refused logging for other reasons too.
+// A session needs a card it may write to; the POST can have refused logging for other reasons too;
+// and, unless session.require_fix is off, the fix (§3.6).
 Refusal sessionRefusal(const MenuContext& c, uint8_t& arg) {
   arg = 0;
   if (!c.cardOk) return Refusal::NoCard;
@@ -119,6 +120,7 @@ Refusal sessionRefusal(const MenuContext& c, uint8_t& arg) {
     arg = c.refusingCheck;
     return Refusal::LoggingRefused;
   }
+  if (c.requireFix && !c.hasFix) return Refusal::NoFix;  // a run with no position is no use
   return Refusal::None;
 }
 

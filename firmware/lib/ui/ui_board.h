@@ -44,7 +44,7 @@ struct Facts {
   uint16_t cardGb = 0;
   uint16_t cardKbps = 0;
 
-  const char* trackId = "";    // the resolved track's cell id, empty without a fix
+  const char* trackId = "";    // the resolved track's folder; empty without a fix, or with none here
   const char* trackName = "";  // its name in track.json, given in the apps; empty until then
   bool hasGeometry = false;
   uint16_t trackSessions = 0;  // recorded at this track

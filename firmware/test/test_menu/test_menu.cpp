@@ -271,6 +271,7 @@ static void new_car_needs_the_card_and_a_free_profile() {
 
 static void holding_ok_on_home_or_session_starts_a_session() {
   Walk w;
+  w.context.hasFix = true;  // what a session needs besides the card (§3.6)
   ASSERT_COMMAND(StartSession, w.key(Event::Hold));
   w.keys({Event::Open, Event::Open});  // Menu › Session
   ASSERT_SCREEN(Session, w.menu);
@@ -289,6 +290,10 @@ static void a_session_needs_the_card_and_logging() {
   r = w.key(Event::Hold);
   ASSERT_REFUSAL(LoggingRefused, r);
   TEST_ASSERT_EQUAL_UINT8(8, r.arg);
+  w.context.loggingAllowed = true;
+  ASSERT_REFUSAL(NoFix, w.key(Event::Hold));  // and the fix, unless session.require_fix is off
+  w.context.requireFix = false;
+  ASSERT_COMMAND(StartSession, w.key(Event::Hold));
 }
 
 static void start_line_is_recorded_directly_when_there_is_none() {

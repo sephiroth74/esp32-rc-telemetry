@@ -133,6 +133,7 @@ struct Run {
   Run() {
     board.setAutoTiming(autoSessionTiming(5));
     facts.nextSession = 4;
+    facts.menu.hasFix = true;  // what a session needs to start (§3.6)
   }
   // `m` every tick for `ms`; the last output that did something.
   BoardOutput drive(const Motion& m, uint32_t ms) {

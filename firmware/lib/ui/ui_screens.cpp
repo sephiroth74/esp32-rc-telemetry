@@ -44,6 +44,12 @@ void put(ScreenText& out, uint8_t row, const char* fmt, ...) {
   if (n > kScreenCols) ++out.overflow;
 }
 
+// Why no track is named: no fix, no card to look on, or none here yet, which a session would make.
+const char* noTrackText(const Facts& f) {
+  if (!f.menu.hasFix) return "none, no fix";
+  return f.menu.cardOk ? "new here" : "none, no card";
+}
+
 // The resolved track as the screens name it: its name from the apps, cut to the 14 columns its cell
 // id can take (N4512E00934-99) so that every screen tested with the id still fits, else the id.
 const char* trackText(const Facts& f) {
@@ -52,7 +58,7 @@ const char* trackText(const Facts& f) {
     snprintf(name, sizeof name, "%s", f.trackName);
     return name;
   }
-  return f.trackId && *f.trackId ? f.trackId : "none, no fix";
+  return f.trackId && *f.trackId ? f.trackId : noTrackText(f);
 }
 
 // Six decimals of a degree, a tenth of a metre, from degrees × 1e7; the hemisphere last.
@@ -182,6 +188,8 @@ void stateText(const Board& b, const Facts& f, uint32_t nowMs, char (&out)[24]) 
       // Home says at once when a session cannot start: the status line is the first thing read.
       if (b.menu().screen() == ScreenId::Home && loggingBlocked(f.menu)) {
         snprintf(out, sizeof out, "No logging");
+      } else if (b.menu().screen() == ScreenId::Home && f.menu.requireFix && !f.menu.hasFix) {
+        snprintf(out, sizeof out, "Acquiring");  // a session waits for the fix (§3.6)
       } else {
         snprintf(out, sizeof out, "%s", screenTitle(b.menu().screen()));
       }
@@ -427,7 +435,7 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       c.setHint("OK back  hold: record");
       return;
     case ScreenId::TrackInfo:
-      c.add("Cell %s", f.trackId && *f.trackId ? f.trackId : "none, no fix");
+      c.add("Cell %s", f.trackId && *f.trackId ? f.trackId : noTrackText(f));
       c.add("Name %s", f.trackName && *f.trackName ? trackText(f) : "set in the app");
       c.add("Sessions here %u", f.trackSessions);
       c.setHint("OK: back");
@@ -530,8 +538,13 @@ void session(const Board& b, const Facts& f, Content& c) {
   deltaText(f.deltaMs, a);
   c.add("Delta  %s", f.lastLapMs ? a : "--");
   c.add("Markers %u", b.markers());
-  c.add("Fix %s  %u sats", fixName(f.fixType), f.sats);
-  c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
+  if (f.fixType >= 2) {  // as the GNSS screen has them: used/seen, and no hAcc without a fix
+    c.add("Fix %s, %u/%u sats", fixName(f.fixType), f.sats, f.satsSeen);
+    c.add("hAcc %u.%02u m", f.hAccCm / 100, f.hAccCm % 100);
+  } else {
+    c.add("No fix, %u/%u sats", f.sats, f.satsSeen);
+    c.add("hAcc --");
+  }
   c.add("Speed %u km/h", f.speedKmh);
   c.add("GNSS loss %lu", (unsigned long)f.gnssLoss);
   c.add("Steering %+4d %%", f.steeringPct);

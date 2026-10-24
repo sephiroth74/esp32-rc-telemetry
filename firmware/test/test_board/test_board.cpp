@@ -173,6 +173,24 @@ static void the_session_screen_wraps_its_pages() {
   TEST_ASSERT_EQUAL_UINT8(9, t.scrollFirst);
 }
 
+// The session's GNSS lines read as the GNSS screen's: satellites used and seen, which move even
+// indoors, and no hAcc without a fix rather than the module's 4295 km of no estimate.
+static void the_session_gnss_page_reads_as_the_gnss_screen() {
+  Walk w;
+  w.key(Event::Hold);
+  w.down(1);  // small text, the second page of five
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Fix 3D, 32/99 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("hAcc 99.99 m", t.lines[3]);
+  w.facts.fixType = 0;
+  w.facts.sats = 0;
+  w.facts.satsSeen = 3;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("No fix, 0/3 sats", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("hAcc --", t.lines[3]);
+}
+
 static void down_on_home_scrolls_and_keeps_the_menu_awake() {
   Walk w;
   w.key(Event::Open);
@@ -346,6 +364,44 @@ static void home_says_why_a_session_cannot_start() {
   w.facts.menu.loggingAllowed = true;
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING_LEN("Ready", t.lines[0], 5);
+}
+
+// A session needs the fix (§3.6). By hand it is refused with the notice, and Home says it waits;
+// the automatic start is refused too, once, and starts when the fix comes. With
+// session.require_fix off, as on the bench, a session starts without one.
+static void a_session_waits_for_the_fix() {
+  Walk w;
+  w.facts.menu.hasFix = false;
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("Acquiring", t.lines[0], 9);
+  BoardOutput o = w.key(Event::Hold);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::NoFix), static_cast<int>(o.refused));
+  ASSERT_COMMAND(None, o);
+  w.key(Event::Press);  // closes the notice
+
+  ui::Motion moving;
+  moving.speedKnown = true;
+  moving.speedMmS = 3000;
+  int refusals = 0;
+  for (int i = 0; i < 40; ++i) {  // 4 s at 11 km/h, twice the start's 2 s
+    w.nowMs += 100;
+    o = w.board.onMotion(moving, w.facts, w.nowMs);
+    ASSERT_COMMAND(None, o);
+    if (o.refused == ui::Refusal::NoFix) ++refusals;
+  }
+  TEST_ASSERT_EQUAL_INT(1, refusals);
+  w.key(Event::Press);
+  w.facts.menu.hasFix = true;
+  w.nowMs += 100;
+  ASSERT_COMMAND(StartSession, w.board.onMotion(moving, w.facts, w.nowMs));
+
+  Walk bench;
+  bench.facts.menu.hasFix = false;
+  bench.facts.menu.requireFix = false;
+  ui::render(bench.board, bench.facts, Layout::TwoButtons, TextSize::Large, bench.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("Ready", t.lines[0], 5);
+  ASSERT_COMMAND(StartSession, bench.key(Event::Hold));
 }
 
 static void expectFits(const Walk& w, Layout layout, TextSize size, const char* where);
@@ -625,6 +681,24 @@ static void the_gnss_screen_reads_as_designed() {
   TEST_ASSERT_EQUAL_STRING("hAcc --", t.lines[3]);  // not the module's 4295 km of no estimate
 }
 
+// Without a track the screens say why: no fix, no card to look on, or none here yet, which the
+// next session makes.
+static void a_screen_without_a_track_says_why() {
+  Walk w;
+  w.keys({Event::Open, Event::Down, Event::Down, Event::Open});  // Menu › GNSS
+  w.facts.trackId = "";
+  ScreenText t;
+  w.facts.menu.hasFix = false;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Track none, no fix", t.lines[3]);
+  w.facts.menu.hasFix = true;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Track new here", t.lines[3]);
+  w.facts.menu.cardOk = false;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Track none, no card", t.lines[3]);
+}
+
 static void about_lists_the_post_check_by_check() {
   Walk w;
   ui::PostResult post;
@@ -679,6 +753,7 @@ int main(int, char**) {
   RUN_TEST(a_session_starts_from_home_and_stops_after_confirming);
   RUN_TEST(a_session_locks_the_menu);
   RUN_TEST(the_session_screen_wraps_its_pages);
+  RUN_TEST(the_session_gnss_page_reads_as_the_gnss_screen);
   RUN_TEST(down_on_home_scrolls_and_keeps_the_menu_awake);
   RUN_TEST(the_stop_dialog_times_out_into_the_session);
   RUN_TEST(geometry_records_until_held);
@@ -689,12 +764,14 @@ int main(int, char**) {
   RUN_TEST(ok_leaves_transfer_as_well);
   RUN_TEST(a_refusal_is_a_notice_that_a_key_closes);
   RUN_TEST(home_says_why_a_session_cannot_start);
+  RUN_TEST(a_session_waits_for_the_fix);
   RUN_TEST(notices_and_the_blocked_home_fit_in_21_columns);
   RUN_TEST(settings_still_come_back_as_toasts);
   RUN_TEST(the_menu_timeout_counts_from_the_end_of_a_mode);
   RUN_TEST(every_screen_fits_in_21_columns);
   RUN_TEST(the_home_screen_reads_as_designed);
   RUN_TEST(the_gnss_screen_reads_as_designed);
+  RUN_TEST(a_screen_without_a_track_says_why);
   RUN_TEST(about_lists_the_post_check_by_check);
   RUN_TEST(hints_follow_the_layout);
   RUN_TEST(a_list_keeps_its_cursor_in_view);
