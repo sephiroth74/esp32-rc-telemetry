@@ -423,8 +423,15 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 9 — Transfer
 
-- [ ] **9.1 USB MSC** from Menu › Transfer. Leaving it while a host is attached needs a confirmation
+- [x] **9.1 USB MSC** from Menu › Transfer. Leaving it while a host is attached needs a confirmation
   (§7.3).
+  *Result:* `src/transfer.cpp` and the raw sector access of `src/card.cpp`. The disk is part of the
+  composite USB device from boot, with no medium until TRANSFER; entering unmounts SD_MMC and hands
+  the card's sectors to the host, leaving takes the medium away and mounts the card again. A host
+  that ejected the disk is let go without a confirmation (§7.3, refined); a card that does not
+  answer ends TRANSFER with a notice (189 host tests). On the bench (2026-10-24, bench session 4 in
+  `docs/hardware.md`), against macOS: the disk mounted, read, ejected and left, and the
+  confirmation when leaving without the eject.
 - [ ] **9.2 BLE GATT**, only in TRANSFER: status, control and download per `docs/protocol.md`
   (§7.4), verified against the phone and desktop apps.
 

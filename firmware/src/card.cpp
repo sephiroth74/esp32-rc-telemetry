@@ -18,24 +18,32 @@ constexpr size_t kChunk = LOG_WRITE_CHUNK;  // the logger's write size (§4.4)
 
 bool mounted = false;
 CardProbe lastProbe;
+sdmmc_card_t rawCard;  // the card as Transfer hands it out, with no FAT volume on top
+bool raw = false;
 
-// Why a card that SD_MMC would not mount is unusable, from the card itself: whether it answers at
-// all, and if it does, what its first sector holds. Only on the failure path, where the time spent
-// does not matter.
-CardMount diagnose() {
+// The SDMMC host and the card on it, without SD_MMC and its FAT volume. On failure the host is
+// left initialised: the caller deinitialises it either way.
+bool rawInit(sdmmc_card_t& card, int freqKhz) {
   sdmmc_host_t host = SDMMC_HOST_DEFAULT();
   host.flags = SDMMC_HOST_FLAG_1BIT;
-  host.max_freq_khz = SDMMC_FREQ_DEFAULT;
+  host.max_freq_khz = freqKhz;
   sdmmc_slot_config_t slot = SDMMC_SLOT_CONFIG_DEFAULT();
   slot.width = 1;
   slot.clk = static_cast<gpio_num_t>(PIN_SD_CLK);
   slot.cmd = static_cast<gpio_num_t>(PIN_SD_CMD);
   slot.d0 = static_cast<gpio_num_t>(PIN_SD_D0);
   slot.d1 = slot.d2 = slot.d3 = GPIO_NUM_NC;
-  if (sdmmc_host_init() != ESP_OK) return CardMount::NoCard;
+  if (sdmmc_host_init() != ESP_OK) return false;
+  return sdmmc_host_init_slot(host.slot, &slot) == ESP_OK && sdmmc_card_init(&host, &card) == ESP_OK;
+}
+
+// Why a card that SD_MMC would not mount is unusable, from the card itself: whether it answers at
+// all, and if it does, what its first sector holds. Only on the failure path, where the time spent
+// does not matter.
+CardMount diagnose() {
   CardMount why = CardMount::NoCard;
   sdmmc_card_t card;
-  if (sdmmc_host_init_slot(host.slot, &slot) == ESP_OK && sdmmc_card_init(&host, &card) == ESP_OK) {
+  if (rawInit(card, SDMMC_FREQ_DEFAULT)) {
     why = CardMount::NoFat32;
     uint8_t* sector = static_cast<uint8_t*>(heap_caps_malloc(512, MALLOC_CAP_DMA));
     if (sector && sdmmc_read_sectors(&card, sector, 0, 1) == ESP_OK && sector[510] == 0x55 &&
@@ -80,6 +88,32 @@ uint32_t cardFreeMb() {
 }
 
 const CardProbe& cardLastProbe() { return lastProbe; }
+
+bool cardRawBegin(uint32_t& sectors) {
+  if (mounted) SD_MMC.end();
+  mounted = false;
+  if (raw) sdmmc_host_deinit();
+  raw = rawInit(rawCard, SDMMC_FREQ_HIGHSPEED) && rawCard.csd.sector_size == 512;
+  if (!raw) {
+    sdmmc_host_deinit();
+    return false;
+  }
+  sectors = rawCard.csd.capacity;
+  return true;
+}
+
+bool cardRawRead(uint32_t sector, void* buf, uint32_t count) {
+  return raw && sdmmc_read_sectors(&rawCard, buf, sector, count) == ESP_OK;
+}
+
+bool cardRawWrite(uint32_t sector, const void* buf, uint32_t count) {
+  return raw && sdmmc_write_sectors(&rawCard, buf, sector, count) == ESP_OK;
+}
+
+void cardRawEnd() {
+  if (raw) sdmmc_host_deinit();
+  raw = false;
+}
 
 CardProbe cardProbe(size_t bytes) {
   CardProbe& result = lastProbe;

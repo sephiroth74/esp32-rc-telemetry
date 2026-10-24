@@ -292,7 +292,7 @@ BoardOutput Board::inCalibration(Event event, const Facts& f, uint32_t nowMs) {
 // layout must not need NAV held to get out.
 BoardOutput Board::inTransfer(Event event, const Facts& f, uint32_t nowMs) {
   if (event != Event::Back && event != Event::Open) return {};
-  if (f.usbHost) {
+  if (f.usbHost && !f.usbEjected) {  // a disk the host has ejected is safe to take away
     confirm_.open(DialogKind::LeaveTransfer, nowMs);
     return {};
   }
@@ -309,6 +309,15 @@ void Board::enter(Mode mode, uint32_t nowMs) {
     markers_ = 0;
     auto_.restartStill(nowMs);
   }
+}
+
+void Board::abortTransfer(Refusal why, uint32_t nowMs) {
+  if (mode_ == Mode::Transfer) {
+    confirm_.close();
+    backToIdle(nowMs);
+  }
+  notice_ = why;
+  noticeArg_ = 0;
 }
 
 void Board::abortSession(Refusal why, uint8_t arg, uint32_t nowMs) {

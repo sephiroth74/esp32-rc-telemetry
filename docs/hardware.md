@@ -166,6 +166,16 @@ hand; the console logged throughout, and the card was read back on a Mac.
 | Writes | 426, the longest **13 ms**, the 99th percentile 7 ms, none over 250 ms |
 | Ring | 0 overflow; at most **6,700 bytes** waiting, of 256 KB |
 
+## Bench session 4 — the card as a USB disk (2026-10-24)
+
+ROADMAP.md step 9.1, on USB power, against macOS. Menu › Transfer hands the card over as
+122,265,600 sectors of 512 bytes, the 58 GB of the Lexar card: the Finder mounts it as
+`TELEMETRY`, and its files open. Ejecting it in the Finder turns the display to `Ejected: OK to
+exit`, and OK leaves at once; leaving without the eject brings the confirmation, which another key
+declines and holding OK accepts. Each time the board mounted the card again and read its tracks.
+The serial port works throughout, the device being a composite of the two; the port's name changes
+with that, to `/dev/cu.usbmodem…C2`.
+
 ## Still to measure
 
 | Quantity | Why it matters | Value |
@@ -179,6 +189,7 @@ hand; the console logged throughout, and the card was read back on a Mac.
 | Whether the LM2940CT-5.0 holds 5.0 V on the MP9e's 5.90 V BEC | 5.9 V is under the 6.25 V from which TI guarantees it; its dropout, 0.2 V at most at 100 mA, should leave room (§2.7) | — |
 | Whether a BAT43 clamp keeps a 5 V receiver's pulse under 3.6 V on the pin | The RC inputs' protection of §2.5, worked out at about 3.5 V; to measure with a 5 V source through the 10 kΩ | — |
 | The current the device draws from the 5V pad, idle and at its peaks (card writes, radio) | It sets the LM2940's dropout and its heat on a high-voltage BEC; 200 mA is an estimate (§2.7) | — |
+| How fast the card reads over USB, copying a long session to the Mac | Full-speed USB tops out near 1 MB/s; a race day's logs are tens of MB (§7.3) | — |
 
 ## Per-car measurements
 

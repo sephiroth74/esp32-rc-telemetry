@@ -13,6 +13,7 @@
 #include "logger.h"
 #include "session.h"
 #include "settings.h"
+#include "transfer.h"
 #include "ui_board.h"
 #include "ui_config.h"
 #include "ui_screens.h"
@@ -269,6 +270,14 @@ void uiTask(void*) {
                     out.arg);
       runSession(out, now, automatic);
       if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
+      // TRANSFER (§7.3): the card to the USB host and back; one that will not go, a notice.
+      if (out.command == ui::Command::EnterTransfer && !transferEnter()) {
+        board.abortTransfer(ui::Refusal::NoCard, now);
+      }
+      if (out.command == ui::Command::LeaveTransfer) {
+        facts.menu.cardOk = transferLeave();
+        facts.freeMb = cardFreeMb();  // the host may have deleted or copied files
+      }
       // Track › New track and Track › Choose (§7.1): the card's, read again below like any change.
       if (out.command == ui::Command::NewTrack) {
         char id[geo::kTrackIdMax + 1];
@@ -340,6 +349,8 @@ void uiTask(void*) {
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
     lookUpTrack(board, acq.fix());
+    facts.usbHost = transferHostAttached();
+    facts.usbEjected = transferEjected();
     // The automatic start and stop (§3.6). What they do is worth seeing: a dimmed display wakes.
     ui::BoardOutput automatic = board.onMotion(motion, facts, now);
     if (automatic.command != ui::Command::None || automatic.refused != ui::Refusal::None) {

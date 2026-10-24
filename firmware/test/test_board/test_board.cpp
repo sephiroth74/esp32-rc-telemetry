@@ -304,6 +304,26 @@ static void transfer_asks_before_leaving_a_host() {
   ASSERT_MODE(Transfer, w.board);
   ASSERT_COMMAND(LeaveTransfer, w.key(Event::Back));
   ASSERT_MODE(Idle, w.board);
+
+  w.facts.usbHost = true;  // a host that ejected the disk: straight out, and the screen says so
+  w.facts.usbEjected = true;
+  w.key(Event::Open);
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Ejected: OK to exit", t.lines[3]);
+  ASSERT_COMMAND(LeaveTransfer, w.key(Event::Back));
+  ASSERT_MODE(Idle, w.board);
+}
+
+// A card that would not go to USB: back to IDLE, the reason on screen until a key.
+static void transfer_the_card_refuses_ends_with_a_notice() {
+  Walk w;
+  w.key(Event::Open);
+  w.down(3);
+  ASSERT_COMMAND(EnterTransfer, w.key(Event::Open));
+  w.board.abortTransfer(ui::Refusal::NoCard, w.nowMs);
+  ASSERT_MODE(Idle, w.board);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ui::Refusal::NoCard), static_cast<int>(w.board.notice()));
 }
 
 // OK gets out of Transfer too, so that the two buttons never need NAV held; with a host attached it
@@ -789,6 +809,7 @@ int main(int, char**) {
   RUN_TEST(an_uncalibrated_profile_saves_without_asking);
   RUN_TEST(transfer_asks_before_leaving_a_host);
   RUN_TEST(ok_leaves_transfer_as_well);
+  RUN_TEST(transfer_the_card_refuses_ends_with_a_notice);
   RUN_TEST(a_refusal_is_a_notice_that_a_key_closes);
   RUN_TEST(home_says_why_a_session_cannot_start);
   RUN_TEST(a_session_waits_for_the_fix);

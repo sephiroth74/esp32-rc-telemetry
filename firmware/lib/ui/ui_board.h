@@ -68,6 +68,7 @@ struct Facts {
   uint16_t geometryPoints = 0;
 
   bool usbHost = false;
+  bool usbEjected = false;  // TRANSFER: the host ejected the disk, so leaving is safe (§7.3)
   bool bleConnected = false;
   bool lipoLow = false;
   bool warning = false;  // a capability withdrawn, or a loss counted (§3.2)
@@ -103,6 +104,8 @@ class Board {
   // A session the card could not take, at its start or in its middle: back to IDLE, and the
   // reason on screen until a key (§3.5).
   void abortSession(Refusal why, uint8_t arg, uint32_t nowMs);
+  // TRANSFER the card could not enter: back to IDLE, and the reason on screen until a key.
+  void abortTransfer(Refusal why, uint32_t nowMs);
   const AutoSession& autoSession() const { return auto_; }
   // A key that only woke the dimmed display (§3.2): activity for the menu's timeout, nothing more,
   // so that it does not close a notice before it was read.

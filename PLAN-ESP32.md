@@ -1138,7 +1138,9 @@ session open.
   (§3.4).
 - Exiting: LEFT, confirmed by holding OK while a host is attached, detaches MSC and remounts the
   card. The display tells the user to eject on the host first (§3.4) — pulling a volume out from
-  under macOS is how filesystems get damaged.
+  under macOS is how filesystems get damaged. A host that has ejected the disk (a START STOP UNIT
+  with eject) has let go of it: the display then reads `Ejected: OK to exit`, and leaving asks
+  nothing. The disk's medium goes with the eject, so the host does not mount it again unasked.
 - **Connecting USB during a session does not auto-mount MSC.** Logging continues and the pack simply
   charges. MSC is entered explicitly, never implicitly.
 - With `ARDUINO_USB_MODE=0` the device is a composite CDC + MSC device, so the serial monitor keeps
