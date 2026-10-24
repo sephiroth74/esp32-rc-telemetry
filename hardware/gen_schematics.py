@@ -157,8 +157,9 @@ class Sheet:
         return f"{prefix}{self.counters[prefix]}"
 
     def place(self, sym, x, y, value, ref=None, rot=0, unit=1, refpos=None, valpos=None, hide_ref=False,
-              hide_val=False):
-        """Places a symbol; returns {pin number: ((x, y), outward direction)}."""
+              hide_val=False, dnp=False):
+        """Places a symbol; returns {pin number: ((x, y), outward direction)}. `dnp`: drawn, but not
+        to be fitted — KiCad crosses it out."""
         self.use(sym)
         ref = ref or self.ref(sym.block.split('"Reference" "')[1].split('"')[0])
         pins = {}
@@ -174,7 +175,7 @@ class Sheet:
         props = [("Reference", ref, rp, hide_ref), ("Value", value, vp, hide_val), ("Footprint", "", (x, y), True),
                  ("Datasheet", "~", (x, y), True)]
         text = [f'(symbol (lib_id {q(sym.lib_id)}) (at {fmt(x)} {fmt(y)} {rot}) (unit {unit}) (exclude_from_sim no) '
-                f'(in_bom yes) (on_board yes) (dnp no) (uuid {q(uid())})']
+                f'(in_bom yes) (on_board yes) (dnp {"yes" if dnp else "no"}) (uuid {q(uid())})']
         fa = 90 if rot in (90, 270) else 0
         for key, val, (px, py), hide in props:
             text.append(f'(property {q(key)} {q(val)} (at {fmt(px)} {fmt(py)} {fa}) (effects (font (size 1.27 1.27))'
@@ -448,7 +449,9 @@ def car():
     s.wire((nx, ny), (nx, bt["2"][0][1] + 2.54), (tx, bt["2"][0][1] + 2.54), bt["2"][0])
 
     oled(s, 63.5, 50.8)
-    i = s.place(IMU, 63.5, 93.98, "LSM6DSO32 IMU breakout", ref="U5", **props(IMU, 63.5, 93.98))
+    # Optional (§2.6): not fitted until it is bought, so drawn crossed out. It needs no GPIO.
+    i = s.place(IMU, 63.5, 93.98, "LSM6DSO32 IMU breakout, optional", ref="U5", dnp=True,
+                **props(IMU, 63.5, 93.98))
     s.to_power(i["1"], V3)
     s.to_power(i["2"], GND)
     s.label(i["3"], "SCL")
@@ -505,8 +508,9 @@ def car():
     s.to_power(u["2"], GND)
     (ox, oy), _ = u["3"]
     # C3 keeps the LM2940 stable: 22 u or more, with an ESR between 0.1 and 1 ohm (its datasheet, 8.2.2.1).
+    # A Panasonic EEU-FR1C101 is 0.3 ohm at 100 kHz; the small dipped tantalums run 1.3 to 2 ohm.
     c3x = ox + 5.08
-    c3 = s.place(CP, c3x, oy + 6.35, "47u tantalum", ref="C3", refpos=(c3x + 5.08, oy + 5.08),
+    c3 = s.place(CP, c3x, oy + 6.35, "100u EEU-FR1C101", ref="C3", refpos=(c3x + 5.08, oy + 5.08),
                  valpos=(c3x + 8.89, oy + 7.62))
     s.wire((c3x, oy), c3["1"][0])
     s.junction((c3x, oy))
@@ -519,16 +523,18 @@ def car():
     s.text(20.32, 193.04, PADS)
     s.text(20.32, 208.28, "Keys: the bench's two buttons (PLAN-ESP32.md 3.1): a 10 k pull-up on D0, OK straight to\n"
                           "ground, NAV through 10 k; 0 V, 1.62 V, and 3.12 V at rest.\n"
-                          "The IMU shares the I2C bus with the display; the GM10 runs from the LM2940's 5 V.")
+                          "The IMU is optional (DNP): on the I2C bus with the display, at 0x6A, it needs no GPIO.\n"
+                          "The GM10 runs from the LM2940's 5 V.")
     s.text(236.22, 190.5, "RC inputs, per channel: 10 k in series; a BAT43 to 3V3 that holds a 5 V receiver's pulse\n"
                            "under the pin's 3.6 V; 100 k to ground that holds the pin low with the receiver off, as the\n"
                            "RC inputs wake the chip. A 3.3 V receiver's high reads about 3.0 V, over the 2.48 V needed.")
     s.text(20.32, 226.06, "Power: never the receiver rail straight into the 5V pad. C1, low ESR, and C2 soak up the\n"
                          "servo's spikes, and the LM2940 holds 5 V for the 5V pad and the GM10. It is guaranteed from\n"
                          "6.25 V in; on a 5.9 V BEC its dropout, 0.2 V at most at 100 mA, leaves room, to confirm on\n"
-                         "the bench. C3 keeps it stable: 22 u or more, ESR 0.1 to 1 ohm, so a tantalum or a low-ESR\n"
-                         "electrolytic, never a ceramic alone. No diodes (decided 2026-10-24), so the USB is never\n"
-                         "plugged in while the car or a LiPo powers the board: the two 5 V would meet on the 5V pad.\n"
+                         "the bench. C3 keeps it stable: 22 u or more, ESR 0.1 to 1 ohm: a low-ESR electrolytic, the\n"
+                         "EEU-FR1C101, as small tantalums run over 1 ohm. No diodes (decided 2026-10-24), so the\n"
+                         "USB is never plugged in while the car or a LiPo powers the board: the two 5 V would meet\n"
+                         "on the 5V pad.\n"
                          "The LiPo on the BAT pads carries the shutdown when the car is switched off.")
     s.write(f"{OUT}/car.kicad_sch")
 

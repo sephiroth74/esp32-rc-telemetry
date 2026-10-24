@@ -199,6 +199,15 @@ more common ICM-42688-P and LSM6DSOX would clip on exactly the events most worth
 ±16 g part is used anyway, document the clipping in `docs/hardware.md` rather than pretending the data
 is clean.
 
+**Optional** (decided 2026-10-24). The device works without it, as it does today: POST check 7 is
+degraded and the boot goes on, and a session's header gives the ranges as 0. Fitting it later costs
+no pin: it shares the I²C bus with the display, at 0x6A against the display's 0x3C, and is read
+through its FIFO, so its interrupt lines stay unwired — an interrupt would take D1, the aux
+channel's. Mounting is the harder part in a car with little room: it must sit rigid on the
+chassis, its axes along the car's, so inside the device's enclosure only if that is screwed to the
+chassis rather than on foam; a breakout is about 25 × 18 mm. `car.kicad_sch` draws it crossed out,
+not fitted (DNP).
+
 ### 2.7 Power
 
 The ESC's BEC feeds the receiver rail, and its voltage depends on the ESC and on how it is
@@ -213,10 +222,11 @@ input limit and wastes it as heat.
   high-voltage BEC: about (8.4 − 5.0) V × 200 mA ≈ 0.7 W, the current being an estimate until it is
   measured. TI guarantees it from 6.25 V in, so on the MP9e's 5.90 V BEC its 5.0 V is to be
   confirmed on the bench (`docs/hardware.md`). Its output needs **22 µF or more with an ESR of
-  0.1–1 Ω**, or it oscillates: a tantalum or a low-ESR electrolytic, never a ceramic alone. The CT
-  grade is rated from 0 °C; the LM2940T-5.0 is the same part from −40 °C. Add 470 µF low-ESR bulk +
-  100 nF at the input. The servo rail is electrically filthy — the steering servo draws large
-  current spikes.
+  0.1–1 Ω**, or it oscillates: a low-ESR electrolytic, the Panasonic EEU-FR1C101 (100 µF 16 V,
+  0.3 Ω at 100 kHz), never a ceramic alone, whose ESR is too low; the small dipped tantalums, 1.3–2 Ω
+  at 47 µF, are too high. The CT grade is rated from 0 °C; the LM2940T-5.0 is the same part from
+  −40 °C. Add 470 µF low-ESR bulk (EEU-FR1C471) + 100 nF at the input. The servo rail is
+  electrically filthy — the steering servo draws large current spikes.
 - **No diodes in the power path** (decided 2026-10-24). A servo plug cannot swap + and −, a LiPo's
   connector is keyed, and the LM2940 survives a reversed input on its own; nothing sits between its
   output and the 5V pad either. Hence one rule: **the USB is never plugged in while the car or a

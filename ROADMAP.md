@@ -406,7 +406,8 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 7 — IMU
 
-- [ ] **7.1 LSM6DSO32**, read through its FIFO and sharing the bus with the display under the mutex.
+- [ ] **7.1 LSM6DSO32**, optional (§2.6), read through its FIFO and sharing the bus with the display
+  under the mutex.
   POST check 7; per-epoch aggregates in the log. Decide on the raw stream (§9 question 7).
 
 ## Phase 8 — Track and laps

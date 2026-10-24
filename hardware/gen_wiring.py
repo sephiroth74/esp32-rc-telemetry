@@ -11,7 +11,7 @@ Usage: gen_wiring.py <output directory>, then render each with
 import sys
 
 OUT = sys.argv[1]
-W, H = 1700, 1220
+W, H = 1700, 1250
 
 POS, NEG, SIG = "#d62828", "#222", "#e0a100"
 SDA, SCL, UART, V33 = "#2e7d32", "#8e24aa", "#00897b", "#1f6feb"
@@ -216,6 +216,21 @@ def display(s):
     s.text(880, 946, "ordine dei pin: vedi serigrafia", 10, color="#555", anchor="middle")
 
 
+def imu(s):
+    """The optional IMU (§2.6): on the display's I²C bus, so no pin of its own; drawn dashed."""
+    s.rect(360, 830, 260, 100, "#f5f5f5", stroke="#888", width=1.5, dash="6 4")
+    for (name, x), (label, color) in zip((("GND", 400), ("VIN", 440), ("SDA", 480), ("SCL", 520)),
+                                         (("GND", NEG), ("3V3", V33), ("SDA", SDA), ("SCL", SCL))):
+        s.rect(x - 4, 822, 8, 8, "#333", rx=1)
+        s.text(x, 846, name, 9, bold=True, anchor="middle")
+        s.path(f"M{x},822 V814", color)
+        s.tag(x, 806, label, color)
+    s.text(490, 868, "IMU LSM6DSO32: opzionale (Fase 7)", 12, bold=True, anchor="middle")
+    s.text(490, 885, "SDA e SCL in parallelo al display: nessun pin in più", 10, anchor="middle")
+    s.text(490, 900, "rigido sul telaio, assi allineati alla macchina", 10, anchor="middle")
+    s.text(490, 915, "breakout di circa 25 × 18 mm", 10, color="#555", anchor="middle")
+
+
 def gm10(s):
     """The GNSS module: its TX to D7, its RX from D6 (a swapped pair looks like a dead module)."""
     s.rect(1350, 400, 200, 140, "#fde8d8")
@@ -252,7 +267,7 @@ def legend(s, warnings):
             s.rect(49, y - 13, 22, 18, "#555", rx=3)
             s.text(60, y + 1, "Y", 11, bold=True, color="#fff", anchor="middle")
         s.text(92, y, label, 12)
-    s.rect(900, 975, 760, 215, "#fff1f1", stroke="#c62828", rx=8)
+    s.rect(900, 975, 760, 240, "#fff1f1", stroke="#c62828", rx=8)
     s.text(916, 1000, "ATTENZIONE", 14, bold=True, color="#c62828")
     for k, line in enumerate(warnings):
         s.text(916, 1026 + 24 * k, line, 13)
@@ -350,7 +365,7 @@ def car():
     s.path(f"M{out},265 V{rail} H1450 V400", POS)
     s.path(f"M1250,{rail} V{pad_y('5V')} H{XR}", POS)
     s.dot(1250, rail, POS)
-    s.cap(730, rail, 340, "C3 47 µF", "tantalio, ≥ 10 V", polar=True)
+    s.cap(730, rail, 340, "C3 100 µF", "low-ESR, EEU-FR1C101", polar=True)
     s.text(780, rail - 8, "+5 V", 12, bold=True, color=POS)
     s.text(1460, 380, "5V del GM10", 11, bold=True, color=POS)
 
@@ -379,6 +394,7 @@ def car():
     s.text(1100, 398, "USB-C: mai con la macchina accesa", 11, bold=True, color="#c62828", anchor="middle")
     keys(s)
     display(s)
+    imu(s)
     gm10(s)
     s.text(1000, 830, "Sul retro: BAT+ / BAT− → LiPo 1S 150–300 mAh", 12, bold=True)
     s.text(1000, 846, "backup, opzionale: chiude bene il file quando spegni la macchina", 11, color="#555")
@@ -387,7 +403,8 @@ def car():
                "✗  Mai il 3V3 della XIAO verso il + della ricevente",
                "✓  Massa in comune: senza, i segnali non si leggono",
                "✓  Ordine dei pin S / + / −: controlla la serigrafia della ricevente",
-               "✓  C3 al tantalio (o elettrolitico low-ESR), mai un ceramico da solo",
+               "✓  C3 elettrolitico low-ESR (EEU-FR1C101): mai un ceramico da solo",
+               "✓  Prima della XIAO: a macchina accesa, 5,0 V sull'OUT dell'LM2940",
                "✓  BAT43: la fascia sul corpo è il catodo, verso il 3V3"])
     s.save(f"{OUT}/wiring-car.svg")
 

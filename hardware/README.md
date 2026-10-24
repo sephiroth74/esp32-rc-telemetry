@@ -5,7 +5,7 @@ KiCad schematics of the device, one sheet each:
 | Sheet | What | Status |
 | --- | --- | --- |
 | [`bench.kicad_sch`](bench.kicad_sch) ([PDF](bench.pdf)) | The bench build: the XIAO, the display, the two keys, the GM10, and the taps on the receiver's channels | **As wired** on 2026-10-19 |
-| [`car.kicad_sch`](car.kicad_sch) ([PDF](car.pdf)) | In the car: the power path from the receiver rail through an LM2940CT-5.0, no diodes, the backup LiPo, the RC inputs through 10 k with a BAT43 clamp and 100 k down, the two keys, the IMU | **Planned**, from PLAN-ESP32.md §2.5, §2.7 and §3.1. Rev 2, 2026-10-24: the LM2940 in place of the buck, the clamps in place of the 74LVC2G17, the bench's two keys in place of the JS5208 |
+| [`car.kicad_sch`](car.kicad_sch) ([PDF](car.pdf)) | In the car: the power path from the receiver rail through an LM2940CT-5.0, no diodes, the backup LiPo, the RC inputs through 10 k with a BAT43 clamp and 100 k down, the two keys, the optional IMU (not fitted, DNP) | **Planned**, from PLAN-ESP32.md §2.5, §2.7 and §3.1. Rev 2, 2026-10-24: the LM2940 in place of the buck, the clamps in place of the 74LVC2G17, the bench's two keys in place of the JS5208 |
 
 ![Bench build](bench.png)
 
@@ -26,16 +26,13 @@ sheets above remain the reference.
 | --- | --- |
 | [`wiring-bench.png`](wiring-bench.png) | The bench as wired today: each channel's signal from a Y-cable through 10 k to D2 or D3, one receiver − to GND, no receiver +; the keys, the display and the GM10, all on the USB's power |
 | [`wiring-car.png`](wiring-car.png) | The car, as `car.kicad_sch`: power from the receiver's free VCC port through the LM2940CT-5.0, the Y-cables on CH1 and CH2, the RC inputs' protection, the keys, the display and the GM10 |
-| [`wiring-power-ldo.png`](wiring-power-ldo.png) | The car's power path pin by pin — C1, C2, the LM2940CT-5.0 with C3 — and the checks to make before the XIAO goes on |
 
 `gen_wiring.py` writes `wiring-bench.svg` and `wiring-car.svg`, which share their parts; edit it
-and run it again rather than the SVGs. `wiring-power-ldo.svg` is drawn by hand. Each `.png` is
-rendered from its `.svg`:
+and run it again rather than the SVGs. Each `.png` is rendered from its `.svg`:
 
 ```sh
 cd hardware && python3 gen_wiring.py .
 rsvg-convert -w 2550 wiring-car.svg > wiring-car.png      # and wiring-bench
-rsvg-convert -w 2100 wiring-power-ldo.svg > wiring-power-ldo.png
 ```
 
 ## Reading and editing

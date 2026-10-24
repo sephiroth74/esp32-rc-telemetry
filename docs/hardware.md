@@ -214,10 +214,11 @@ The KiCad schematics in [`hardware/`](../hardware/README.md):
   display on I²C, the two-button ladder on D0, the GM10 on UART1, and the receiver's CH1 and CH2
   through 10 kΩ to D3 and D2, ground common, the receiver's + rail off the XIAO.
 - [`car.kicad_sch`](../hardware/car.pdf) — **in the car, planned**: the BEC → bulk capacitors →
-  LM2940CT-5.0 with its 47 µF tantalum → 5V pad path, no diodes, the 1S backup LiPo on the BAT pads
-  (§2.7), each RC input through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ to ground (§2.5), the
-  bench's two keys (§3.1), and the IMU sharing the I²C bus with the display (§2.4, §2.6).
+  LM2940CT-5.0 with its 100 µF low-ESR electrolytic → 5V pad path, no diodes, the 1S backup LiPo on
+  the BAT pads (§2.7), each RC input through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ to ground
+  (§2.5), the bench's two keys (§3.1), and the optional IMU sharing the I²C bus with the display
+  (§2.4, §2.6), drawn but not fitted.
 
 Drawings of where each wire goes, in Italian, for building:
-[`wiring-bench.png`](../hardware/wiring-bench.png), [`wiring-car.png`](../hardware/wiring-car.png),
-and the car's power path pin by pin, [`wiring-power-ldo.png`](../hardware/wiring-power-ldo.png).
+[`wiring-bench.png`](../hardware/wiring-bench.png) and [`wiring-car.png`](../hardware/wiring-car.png),
+the LM2940's pins included.

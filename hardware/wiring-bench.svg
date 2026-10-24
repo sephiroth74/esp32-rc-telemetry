@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1220" viewBox="0 0 1700 1220">
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1250" viewBox="0 0 1700 1250">
   <style>text { font-family: Helvetica, Arial, sans-serif; }</style>
-  <rect width="1700" height="1220" fill="#fff"/>
+  <rect width="1700" height="1250" fill="#fff"/>
   <text x="30" y="40" font-size="24" fill="#222" text-anchor="start" font-weight="bold">Oggi, al banco (come hardware/bench.kicad_sch)</text>
   <text x="30" y="66" font-size="15" fill="#444" text-anchor="start">La XIAO va con l'USB, che alimenta anche display e GM10. Dalla ricevente prendi solo segnali e massa: il suo + NON si collega.</text>
   <text x="40" y="112" font-size="14" fill="#222" text-anchor="start">• Per leggere un canale servono due fili: il segnale S e la massa −. Il + non serve.</text>
@@ -198,7 +198,7 @@
   <rect x="49" y="1166" width="22" height="18" rx="3" fill="#555" stroke="#333" stroke-width="2"/>
   <text x="60" y="1180" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">Y</text>
   <text x="92" y="1179" font-size="12" fill="#222" text-anchor="start">cavo a Y: il maschio va nella ricevente</text>
-  <rect x="900" y="975" width="760" height="215" rx="8" fill="#fff1f1" stroke="#c62828" stroke-width="2"/>
+  <rect x="900" y="975" width="760" height="240" rx="8" fill="#fff1f1" stroke="#c62828" stroke-width="2"/>
   <text x="916" y="1000" font-size="14" fill="#c62828" text-anchor="start" font-weight="bold">ATTENZIONE</text>
   <text x="916" y="1026" font-size="13" fill="#222" text-anchor="start">✗  Non collegare il + della ricevente: la XIAO va con l'USB</text>
   <text x="916" y="1050" font-size="13" fill="#222" text-anchor="start">✗  Mai il 3V3 della XIAO verso il + della ricevente</text>
