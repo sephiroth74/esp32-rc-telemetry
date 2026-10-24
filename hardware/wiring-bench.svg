@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1220" viewBox="0 0 1700 1220">
+  <style>text { font-family: Helvetica, Arial, sans-serif; }</style>
+  <rect width="1700" height="1220" fill="#fff"/>
+  <text x="30" y="40" font-size="24" fill="#222" text-anchor="start" font-weight="bold">Oggi, al banco (come hardware/bench.kicad_sch)</text>
+  <text x="30" y="66" font-size="15" fill="#444" text-anchor="start">La XIAO va con l'USB, che alimenta anche display e GM10. Dalla ricevente prendi solo segnali e massa: il suo + NON si collega.</text>
+  <text x="40" y="112" font-size="14" fill="#222" text-anchor="start">• Per leggere un canale servono due fili: il segnale S e la massa −. Il + non serve.</text>
+  <text x="40" y="136" font-size="14" fill="#222" text-anchor="start">• Il cavo a Y lascia servo ed ESC collegati come sempre e ti dà una presa in parallelo.</text>
+  <text x="40" y="160" font-size="14" fill="#222" text-anchor="start">• Basta un − solo: dentro la ricevente tutti i − sono già collegati tra loro.</text>
+  <text x="40" y="184" font-size="14" fill="#222" text-anchor="start">• I 10 kΩ in serie vanno bene solo con riceventi a 3,3 V, come la KR-331 (misurata).</text>
+  <text x="40" y="208" font-size="14" fill="#222" text-anchor="start">• La ricevente deve essere accesa: batteria della macchina collegata all'ESC, ESC acceso.</text>
+  <rect x="40" y="360" width="222" height="360" rx="6" fill="#e8eef8" stroke="#333" stroke-width="2"/>
+  <text x="56" y="386" font-size="15" fill="#222" text-anchor="start" font-weight="bold">Ricevente</text>
+  <text x="56" y="404" font-size="12" fill="#222" text-anchor="start">Kyosho KR-331</text>
+  <text x="56" y="424" font-size="13" fill="#222" text-anchor="start" font-weight="bold">VCC</text>
+  <text x="56" y="439" font-size="11" fill="#555" text-anchor="start">libera</text>
+  <rect x="246" y="402" width="16" height="36" rx="2" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="242" y="413" font-size="9" fill="#333" text-anchor="end">−</text>
+  <text x="242" y="423" font-size="9" fill="#333" text-anchor="end">+</text>
+  <text x="242" y="433" font-size="9" fill="#333" text-anchor="end">S</text>
+  <text x="56" y="484" font-size="13" fill="#222" text-anchor="start" font-weight="bold">CH3</text>
+  <text x="56" y="499" font-size="11" fill="#555" text-anchor="start">libero</text>
+  <rect x="246" y="462" width="16" height="36" rx="2" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="242" y="473" font-size="9" fill="#333" text-anchor="end">−</text>
+  <text x="242" y="483" font-size="9" fill="#333" text-anchor="end">+</text>
+  <text x="242" y="493" font-size="9" fill="#333" text-anchor="end">S</text>
+  <text x="56" y="544" font-size="13" fill="#222" text-anchor="start" font-weight="bold">CH2</text>
+  <text x="56" y="559" font-size="11" fill="#555" text-anchor="start">gas → ESC</text>
+  <rect x="246" y="522" width="16" height="36" rx="2" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="242" y="533" font-size="9" fill="#333" text-anchor="end">−</text>
+  <text x="242" y="543" font-size="9" fill="#333" text-anchor="end">+</text>
+  <text x="242" y="553" font-size="9" fill="#333" text-anchor="end">S</text>
+  <text x="56" y="644" font-size="13" fill="#222" text-anchor="start" font-weight="bold">CH1</text>
+  <text x="56" y="659" font-size="11" fill="#555" text-anchor="start">sterzo → servo</text>
+  <rect x="246" y="622" width="16" height="36" rx="2" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="242" y="633" font-size="9" fill="#333" text-anchor="end">−</text>
+  <text x="242" y="643" font-size="9" fill="#333" text-anchor="end">+</text>
+  <text x="242" y="653" font-size="9" fill="#333" text-anchor="end">S</text>
+  <path d="M262,530 H330" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M262,540 H330" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M262,550 H330" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M338,520 V505" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M346,520 V505" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M354,520 V505" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="330" y="520" width="32" height="40" rx="4" fill="#555" stroke="#333" stroke-width="2"/>
+  <text x="346" y="545" font-size="14" fill="#fff" text-anchor="middle" font-weight="bold">Y</text>
+  <rect x="300" y="450" width="180" height="55" rx="6" fill="#f3f3f3" stroke="#333" stroke-width="2"/>
+  <text x="390" y="472" font-size="13" fill="#222" text-anchor="middle" font-weight="bold">ESC Brainz 8</text>
+  <text x="390" y="490" font-size="10" fill="#222" text-anchor="middle">BEC 5,9 V: alimenta la ricevente</text>
+  <path d="M262,630 H330" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M262,640 H330" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M262,650 H330" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M338,660 V690" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M346,660 V690" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M354,660 V690" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="330" y="620" width="32" height="40" rx="4" fill="#555" stroke="#333" stroke-width="2"/>
+  <text x="346" y="645" font-size="14" fill="#fff" text-anchor="middle" font-weight="bold">Y</text>
+  <rect x="300" y="690" width="180" height="55" rx="6" fill="#f3f3f3" stroke="#333" stroke-width="2"/>
+  <text x="390" y="712" font-size="13" fill="#222" text-anchor="middle" font-weight="bold">Servo sterzo</text>
+  <path d="M362,530 H470" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="477.5" y="522" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="492" y="534" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <path d="M362,540 H414" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#666" stroke-width="2.5" stroke-linecap="round"><line x1="414" y1="534" x2="426" y2="546"/><line x1="414" y1="546" x2="426" y2="534"/></g>
+  <text x="440" y="570" font-size="12" fill="#9a6b00" text-anchor="start" font-weight="bold">GAS (CH2)</text>
+  <path d="M362,630 H398" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#666" stroke-width="2.5" stroke-linecap="round"><line x1="398" y1="624" x2="410" y2="636"/><line x1="398" y1="636" x2="410" y2="624"/></g>
+  <path d="M362,640 H414" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#666" stroke-width="2.5" stroke-linecap="round"><line x1="414" y1="634" x2="426" y2="646"/><line x1="414" y1="646" x2="426" y2="634"/></g>
+  <text x="440" y="670" font-size="12" fill="#9a6b00" text-anchor="start" font-weight="bold">STERZO (CH1)</text>
+  <path d="M362,550 H560 M610,550 H1014" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="560.0" y="543" width="50" height="14" rx="0" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="585.0" y="538" font-size="11" fill="#222" text-anchor="middle" font-weight="bold">R4 10 kΩ</text>
+  <path d="M362,650 H560 M610,650 H800 V590 H1014" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="560.0" y="643" width="50" height="14" rx="0" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="585.0" y="638" font-size="11" fill="#222" text-anchor="middle" font-weight="bold">R3 10 kΩ</text>
+  <text x="940" y="544" font-size="11" fill="#9a6b00" text-anchor="start" font-weight="bold">gas</text>
+  <text x="930" y="584" font-size="11" fill="#9a6b00" text-anchor="start" font-weight="bold">sterzo</text>
+  <rect x="1000" y="430" width="200" height="320" rx="10" fill="#2d6a4f" stroke="#1b4332" stroke-width="2"/>
+  <rect x="1070" y="412" width="60" height="24" rx="6" fill="#c9c9c9" stroke="#555" stroke-width="1.5"/>
+  <text x="1100" y="428" font-size="10" fill="#222" text-anchor="middle">USB-C</text>
+  <text x="1100" y="580" font-size="17" fill="#fff" text-anchor="middle" font-weight="bold">XIAO</text>
+  <text x="1100" y="598" font-size="12" fill="#fff" text-anchor="middle">ESP32-S3</text>
+  <text x="1100" y="614" font-size="12" fill="#fff" text-anchor="middle">Sense</text>
+  <circle cx="1014" cy="470" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="474" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D0</text>
+  <circle cx="1014" cy="510" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="514" font-size="12" fill="#a8c8b8" text-anchor="start">D1</text>
+  <circle cx="1014" cy="550" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="554" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D2</text>
+  <circle cx="1014" cy="590" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="594" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D3</text>
+  <circle cx="1014" cy="630" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="634" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D4</text>
+  <circle cx="1014" cy="670" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="674" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D5</text>
+  <circle cx="1014" cy="710" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1030" y="714" font-size="12" fill="#fff" text-anchor="start" font-weight="bold">D6</text>
+  <circle cx="1186" cy="470" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="474" font-size="12" fill="#fff" text-anchor="end" font-weight="bold">5V</text>
+  <circle cx="1186" cy="510" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="514" font-size="12" fill="#fff" text-anchor="end" font-weight="bold">GND</text>
+  <circle cx="1186" cy="550" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="554" font-size="12" fill="#fff" text-anchor="end" font-weight="bold">3V3</text>
+  <circle cx="1186" cy="590" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="594" font-size="12" fill="#a8c8b8" text-anchor="end">D10</text>
+  <circle cx="1186" cy="630" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="634" font-size="12" fill="#a8c8b8" text-anchor="end">D9</text>
+  <circle cx="1186" cy="670" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="674" font-size="12" fill="#a8c8b8" text-anchor="end">D8</text>
+  <circle cx="1186" cy="710" r="8" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1170" y="714" font-size="12" fill="#fff" text-anchor="end" font-weight="bold">D7</text>
+  <path d="M1186,510 H1215" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1221.5" y="502" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="1236" y="514" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <path d="M1186,550 H1215" fill="none" stroke="#1f6feb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1221.5" y="542" width="29" height="16" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1"/>
+  <text x="1236" y="554" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">3V3</text>
+  <path d="M1014,470 H760" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="900" cy="470" r="4" fill="#333"/>
+  <circle cx="840" cy="470" r="4" fill="#333"/>
+  <path d="M900,415 V428.5 M900,456.5 V470" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="894" y="428.5" width="12" height="28" rx="0" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="912" y="446.5" font-size="11" fill="#222" text-anchor="start">R1 10 kΩ</text>
+  <rect x="885.5" y="399" width="29" height="16" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1"/>
+  <text x="900" y="411" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">3V3</text>
+  <path d="M840,470 V455 M840,430 V420" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="822" y="430" width="36" height="25" rx="4" fill="#fff4d6" stroke="#333" stroke-width="2"/>
+  <text x="840" y="447" font-size="11" fill="#222" text-anchor="middle" font-weight="bold">OK</text>
+  <path d="M780,470 V455 M780,430 V422" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="762" y="430" width="36" height="25" rx="4" fill="#fff4d6" stroke="#333" stroke-width="2"/>
+  <text x="780" y="447" font-size="11" fill="#222" text-anchor="middle" font-weight="bold">NAV</text>
+  <rect x="825.5" y="404" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="840" y="416" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <path d="M780,384 V389.0 M780,417.0 V422" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="774" y="389.0" width="12" height="28" rx="0" fill="#fff" stroke="#333" stroke-width="2"/>
+  <text x="768" y="407.0" font-size="11" fill="#222" text-anchor="end">R2 10 kΩ</text>
+  <rect x="765.5" y="368" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="780" y="380" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="752" y="474" font-size="11" fill="#555" text-anchor="end">tasti su D0</text>
+  <rect x="800" y="850" width="160" height="80" rx="6" fill="#e3f2fd" stroke="#333" stroke-width="2"/>
+  <rect x="826" y="842" width="8" height="8" rx="1" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="830" y="866" font-size="9" fill="#222" text-anchor="middle" font-weight="bold">GND</text>
+  <rect x="856" y="842" width="8" height="8" rx="1" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="860" y="866" font-size="9" fill="#222" text-anchor="middle" font-weight="bold">VCC</text>
+  <rect x="886" y="842" width="8" height="8" rx="1" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="890" y="866" font-size="9" fill="#222" text-anchor="middle" font-weight="bold">SDA</text>
+  <rect x="916" y="842" width="8" height="8" rx="1" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="920" y="866" font-size="9" fill="#222" text-anchor="middle" font-weight="bold">SCL</text>
+  <path d="M830,842 V820" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="815.5" y="804" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="830" y="816" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <path d="M860,842 V790" fill="none" stroke="#1f6feb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="845.5" y="774" width="29" height="16" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1"/>
+  <text x="860" y="786" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">3V3</text>
+  <path d="M890,842 V630 H1014" fill="none" stroke="#2e7d32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M920,842 V670 H1014" fill="none" stroke="#8e24aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="880" y="892" font-size="12" fill="#222" text-anchor="middle" font-weight="bold">Display OLED 0,96"</text>
+  <text x="880" y="910" font-size="10" fill="#222" text-anchor="middle">SSD1306, I²C 0x3C</text>
+  <text x="880" y="946" font-size="10" fill="#555" text-anchor="middle">ordine dei pin: vedi serigrafia</text>
+  <rect x="1350" y="400" width="200" height="140" rx="6" fill="#fde8d8" stroke="#333" stroke-width="2"/>
+  <text x="1450" y="446" font-size="15" fill="#222" text-anchor="middle" font-weight="bold">GM10</text>
+  <text x="1450" y="464" font-size="10" fill="#222" text-anchor="middle">Flywoo GOKU (u-blox M10)</text>
+  <text x="1458" y="416" font-size="10" fill="#222" text-anchor="start" font-weight="bold">5V</text>
+  <text x="1360" y="484" font-size="10" fill="#222" text-anchor="start" font-weight="bold">TX</text>
+  <text x="1360" y="504" font-size="10" fill="#222" text-anchor="start" font-weight="bold">RX</text>
+  <path d="M1450,540 V552" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1435.5" y="552" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="1450" y="564" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <path d="M1350,480 H1290 V710 H1186" fill="none" stroke="#00897b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1014,710 H990 V780 H1320 V500 H1350" fill="none" stroke="#00897b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1284" y="600" font-size="11" fill="#00897b" text-anchor="end" font-weight="bold">TX → D7</text>
+  <text x="1326" y="650" font-size="11" fill="#00897b" text-anchor="start" font-weight="bold">RX ← D6</text>
+  <path d="M1186,470 H1250 V380 H1450 V400" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1300" y="372" font-size="11" fill="#d62828" text-anchor="start" font-weight="bold">5V del GM10 dal pad 5V</text>
+  <path d="M1100,412 V386" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <polygon points="1092,392 1108,392 1100,380" fill="#555"/>
+  <text x="1100" y="372" font-size="12" fill="#222" text-anchor="middle" font-weight="bold">USB-C → computer</text>
+  <path d="M40,986 H80" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="990" font-size="12" fill="#222" text-anchor="start">+ positivo (BEC o 5 V)</text>
+  <path d="M40,1007 H80" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="1011" font-size="12" fill="#222" text-anchor="start">− negativo / massa</text>
+  <path d="M40,1028 H80" fill="none" stroke="#e0a100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="1032" font-size="12" fill="#222" text-anchor="start">segnale RC (PWM)</text>
+  <path d="M40,1049 H80" fill="none" stroke="#2e7d32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="1053" font-size="12" fill="#222" text-anchor="start">SDA, dati I²C</text>
+  <path d="M40,1070 H80" fill="none" stroke="#8e24aa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="1074" font-size="12" fill="#222" text-anchor="start">SCL, clock I²C</text>
+  <path d="M40,1091 H80" fill="none" stroke="#00897b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="92" y="1095" font-size="12" fill="#222" text-anchor="start">seriale del GNSS</text>
+  <rect x="45.5" y="1104" width="29" height="16" rx="3" fill="#222" stroke="#222" stroke-width="1"/>
+  <text x="60" y="1116" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">GND</text>
+  <text x="92" y="1116" font-size="12" fill="#222" text-anchor="start">tutti i GND sono lo stesso filo (− ricevente = GND XIAO)</text>
+  <rect x="45.5" y="1125" width="29" height="16" rx="3" fill="#1f6feb" stroke="#1f6feb" stroke-width="1"/>
+  <text x="60" y="1137" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">3V3</text>
+  <text x="92" y="1137" font-size="12" fill="#222" text-anchor="start">tutti i 3V3 sono il pad 3V3 della XIAO</text>
+  <g stroke="#666" stroke-width="2.5" stroke-linecap="round"><line x1="54" y1="1148" x2="66" y2="1160"/><line x1="54" y1="1160" x2="66" y2="1148"/></g>
+  <text x="92" y="1158" font-size="12" fill="#222" text-anchor="start">filo non usato: taglialo e isolalo</text>
+  <rect x="49" y="1166" width="22" height="18" rx="3" fill="#555" stroke="#333" stroke-width="2"/>
+  <text x="60" y="1180" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">Y</text>
+  <text x="92" y="1179" font-size="12" fill="#222" text-anchor="start">cavo a Y: il maschio va nella ricevente</text>
+  <rect x="900" y="975" width="760" height="215" rx="8" fill="#fff1f1" stroke="#c62828" stroke-width="2"/>
+  <text x="916" y="1000" font-size="14" fill="#c62828" text-anchor="start" font-weight="bold">ATTENZIONE</text>
+  <text x="916" y="1026" font-size="13" fill="#222" text-anchor="start">✗  Non collegare il + della ricevente: la XIAO va con l'USB</text>
+  <text x="916" y="1050" font-size="13" fill="#222" text-anchor="start">✗  Mai il 3V3 della XIAO verso il + della ricevente</text>
+  <text x="916" y="1074" font-size="13" fill="#222" text-anchor="start">✓  Massa in comune: senza, i segnali non si leggono</text>
+  <text x="916" y="1098" font-size="13" fill="#222" text-anchor="start">✓  Ordine dei pin S / + / −: controlla la serigrafia della ricevente</text>
+  <text x="916" y="1122" font-size="13" fill="#222" text-anchor="start">✓  Display e GM10: i loro pin hanno nomi stampati, segui quelli</text>
+  <text x="916" y="1146" font-size="13" fill="#222" text-anchor="start">In macchina gli ingressi RC hanno anche BAT43 e 100 kΩ (wiring-car)</text>
+</svg>

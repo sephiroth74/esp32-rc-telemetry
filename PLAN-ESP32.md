@@ -171,16 +171,22 @@ must accept both without any adjustment.
 
 1. **Measure each new receiver once** with a multimeter or scope on the steering signal pin while it
    is powered, and record it per car in `docs/hardware.md`. This is a check, not a design input: it
-   catches the unexpected receiver whose signal swings above the 5.5 V the buffer below tolerates.
-2. Whatever the result, interpose a **74LVC2G17** dual Schmitt buffer powered from 3V3 — its
-   inputs tolerate 5.5 V independently of VCC, edges come out clean, and both channels are in one
-   part. Minimum acceptable alternative: 1 kΩ series resistor + BAT54 clamp to 3V3.
+   catches the unexpected receiver whose signal swings far above 5 V, past what the clamp below is
+   sized for.
+2. Whatever the result, protect each input with **10 kΩ in series and a Schottky clamp to 3V3, a
+   BAT43** (decided 2026-10-24, over the 74LVC2G17 buffer first planned: through-hole parts,
+   solderable by hand on stripboard). A 5 V pulse drives about 0.15 mA through the BAT43 and holds
+   the pin near 3.5 V, under its 3.6 V; the pin's own protection diode, with the higher forward drop,
+   takes almost none of it. A receiver's PWM has clean edges, and 10 kΩ against the pin's few pF
+   delays them by tens of nanoseconds, nothing against 1–2 ms pulses. The 74LVC2G17, a Schmitt
+   buffer whose inputs tolerate 5.5 V, remains the alternative where a board is made.
 3. A fixed resistor divider is **not** acceptable: sized for 5 V it produces ~2.0 V from a 3.3 V
    source, below the ESP32's ~2.48 V V_IH.
 4. Share ground with the receiver. Do **not** connect the XIAO's 3V3 to the receiver's +V rail.
-5. Fit a **~100 kΩ pull-down on each buffer input**. With the car switched off the receiver is
+5. Fit a **~100 kΩ pull-down from each pin to ground**. With the car switched off the receiver is
    unpowered and its outputs float, and the RC inputs double as deep-sleep wake sources (§4.5): a
-   floating Schmitt input would wake the chip on noise.
+   floating input would wake the chip on noise. With the 10 kΩ in series it makes a divider, which
+   leaves a 3.3 V receiver's high at about 3.0 V, still over the 2.48 V V_IH.
 
 ### 2.6 IMU
 
@@ -201,10 +207,22 @@ and record it in `docs/hardware.md`. Anything above about 6 V is at or above the
 input limit and wastes it as heat.
 
 - **A regulator for the whole range, 5–8.4 V in → 5.0 V out**, feeding the XIAO's 5V pad, which keeps
-  the onboard LDO and USB coexistence normal. Use a buck converter rated for **100 % duty cycle**, so
-  that a 5 V BEC passes straight through with only the switch drop instead of falling out of
-  regulation. Add a reverse-polarity diode, 470 µF low-ESR bulk + 100 nF at the input. The servo rail
-  is electrically filthy — the steering servo draws large current spikes.
+  the onboard LDO normal. **An LM2940CT-5.0**, a low-dropout linear regulator in
+  TO-220, chosen on 2026-10-24 over the 100 %-duty buck first planned. Its dropout, 0.2 V at most at
+  100 mA, lets a 5 V BEC through with little loss, as the buck would have. What it costs is heat on a
+  high-voltage BEC: about (8.4 − 5.0) V × 200 mA ≈ 0.7 W, the current being an estimate until it is
+  measured. TI guarantees it from 6.25 V in, so on the MP9e's 5.90 V BEC its 5.0 V is to be
+  confirmed on the bench (`docs/hardware.md`). Its output needs **22 µF or more with an ESR of
+  0.1–1 Ω**, or it oscillates: a tantalum or a low-ESR electrolytic, never a ceramic alone. The CT
+  grade is rated from 0 °C; the LM2940T-5.0 is the same part from −40 °C. Add 470 µF low-ESR bulk +
+  100 nF at the input. The servo rail is electrically filthy — the steering servo draws large
+  current spikes.
+- **No diodes in the power path** (decided 2026-10-24). A servo plug cannot swap + and −, a LiPo's
+  connector is keyed, and the LM2940 survives a reversed input on its own; nothing sits between its
+  output and the 5V pad either. Hence one rule: **the USB is never plugged in while the car or a
+  LiPo powers the board.** The two 5 V would meet on the 5V pad, and with the car off the USB would
+  reach the receiver backwards through the LM2940, whose datasheet does not say what it does then.
+  Unplug the board from the car to flash it or to read the card over USB.
 - **Fit a small 1S LiPo (150–300 mAh) on the BAT pads.** This is the single highest-value reliability
   addition: it turns power-off into a graceful shutdown instead of a truncated, possibly corrupted SD
   file, and it keeps the GNSS BBR alive between runs — seconds to a hot fix instead of a 1–2 minute
@@ -295,6 +313,9 @@ under a rubber boot.
 **Getting back never needs a held key.** Every list and every editor ends with a **Back** entry, and
 on a screen that is neither — an information screen such as GNSS or About — OK goes back, while its
 action, if it has one, is a hold. LEFT, or NAV held with the two buttons, remains a shortcut.
+
+**Two buttons, in the car too** (decided 2026-10-24): the layout below, first meant as the interim
+one, is the one built; the JS5208 stays a later option, a resistor and a setting away.
 
 **Interim layout: two buttons.** Until the JS5208 is fitted, the device runs on two push buttons on
 the same ladder: **OK** straight to GND, and **NAV** through 10 kΩ — the LEFT level, so the windows

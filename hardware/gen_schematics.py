@@ -2,8 +2,9 @@
 """Writes the two wiring schematics of esp32-rc-telemetry as KiCad files: the bench build and the car.
 
 The standard symbols are copied from KiCad's own libraries; the modules (XIAO, display, GNSS,
-receiver, ESC, servo, JS5208, IMU, buck) are drawn here. Pins connect through short stubs that end
-in a net label or a power symbol, and series chains through direct wires.
+receiver, ESC, servo, IMU) are drawn here, and the LM2940CT-5.0 is KiCad's TO-220
+regulator under its own name. Pins connect through short stubs that end in a net label or a power
+symbol, and series chains through direct wires.
 
 It wrote the first version of bench.kicad_sch and car.kicad_sch. Running it again overwrites them,
 edits made in KiCad included: from now on, edit the schematics in KiCad, and keep this only to
@@ -82,6 +83,17 @@ def library(lib, name):
     return Sym(f"{lib}:{name}", lib_block(lib, name), name)
 
 
+def renamed(lib, name, new, **props):
+    """A library symbol as rct:<new>, its sub-symbols renamed to match and the given properties
+    replaced: for a part that shares a stock symbol's pins but not its name."""
+    block = lib_block(lib, name).replace(q(f"{lib}:{name}"), q(f"rct:{new}"), 1)
+    block = block.replace(f'(symbol "{name}_', f'(symbol "{new}_')
+    for key, val in props.items():
+        block = re.sub(r'\(property ' + q(key) + r' "[^"]*"', lambda m: f"(property {q(key)} {q(val)}", block,
+                       count=1)
+    return Sym(f"rct:{new}", block, new)
+
+
 def module(name, left=(), right=(), top=(), bottom=(), width=10, value="", ref="U", types=None, spread=2,
            pitch=1):
     """A box with named pins: lists of (number, name) on each side; top and bottom ones `spread` grid
@@ -129,8 +141,9 @@ OUTWARD = {0: (-1, 0), 180: (1, 0), 90: (0, 1), 270: (0, -1)}  # pin angle -> aw
 
 
 class Sheet:
-    def __init__(self, name, title, comments, paper="A4"):
+    def __init__(self, name, title, comments, paper="A4", date="2026-10-19", rev="1"):
         self.name, self.title, self.comments, self.paper = name, title, comments, paper
+        self.date, self.rev = date, rev
         self.root = uid()
         self.syms, self.items = {}, []
         self.counters = {}
@@ -224,7 +237,8 @@ class Sheet:
                           f'(effects (font (size {size} {size}){b}) (justify left top)) (uuid {q(uid())}))')
 
     def write(self, path):
-        tb = (f'(title_block (title {q(self.title)}) (date "2026-10-19") (rev "1") (company "esp32-rc-telemetry")'
+        tb = (f'(title_block (title {q(self.title)}) (date {q(self.date)}) (rev {q(self.rev)}) '
+              '(company "esp32-rc-telemetry")'
               + "".join(f" (comment {i + 1} {q(c)})" for i, c in enumerate(reversed(self.comments))) + ")")
         libs = " ".join(s.block for s in self.syms.values())
         body = "\n\t".join(self.items)
@@ -246,7 +260,6 @@ GND = library("power", "GND")
 V3 = library("power", "+3V3")
 V5 = library("power", "+5V")
 FLAG = library("power", "PWR_FLAG")
-BUF = library("74xGxx", "74LVC2G17")
 
 # Power on top, ground and the battery pads below, the GPIOs on the sides; the pin numbers are the
 # pads', 1-7 down the left and 8-14 up the right with USB-C at the top.
@@ -268,12 +281,12 @@ SERVO = module("Servo", right=[("1", "S")], top=[("2", "+")], bottom=[("3", "-")
                ref="M")
 ESC = module("ESC", right=[("1", "S")], top=[("2", "BEC+")], bottom=[("3", "-")], width=6,
              value="ESC with BEC")
-JOY = module("JS5208", right=[("2", "CENTER"), ("3", "UP"), ("4", "DOWN"), ("5", "LEFT"), ("6", "RIGHT")],
-             bottom=[("1", "COM")], width=8, value="E-Switch JS5208 five-way", ref="SW", pitch=2)
 IMU = module("LSM6DSO32_breakout", right=[("3", "SCL"), ("4", "SDA")], top=[("1", "VIN")], bottom=[("2", "GND")],
              width=8, value="LSM6DSO32 IMU breakout")
-BUCK = module("Buck_5V", left=[("1", "VIN")], right=[("3", "VOUT")], bottom=[("2", "GND")], width=8,
-              value="5 V buck, 100 % duty", types={"3": "power_out"})
+# The LM2940CT-5.0 has the 7805's TO-220 pins, 1 IN, 2 GND, 3 OUT, and the tab on GND.
+LDO = renamed("Regulator_Linear", "LM7805_TO220", "LM2940CT-5.0", Value="LM2940CT-5.0",
+              Datasheet="https://www.ti.com/lit/ds/symlink/lm2940-n.pdf",
+              Description="1 A low-dropout regulator, fixed 5 V output, TO-220")
 
 
 def props(sym, x, y):
@@ -418,13 +431,12 @@ def bench():
 # --- Car --------------------------------------------------------------------------------------------
 
 def car():
-    s = Sheet("car", "In the car: power, backup LiPo, buffered RC inputs, JS5208, IMU",
+    s = Sheet("car", "In the car: power, backup LiPo, protected RC inputs, two keys, IMU",
               ["The design of PLAN-ESP32.md 2.5, 2.7 and 3.1: not built yet.",
-               "To confirm on the bench: the buck module, the Schottky diodes, the IMU breakout.",
-               "Signals as on bench.kicad_sch; power, the RC front end and the keys change."], paper="A3")
-    def five_volt(pin):
-        s.label(pin, "XIAO_5V")
-    p = xiao(s, 200.66, 101.6, five_volt)
+               "To confirm on the bench: the LM2940 on a 5.9 V BEC, the RC inputs' clamps, the IMU.",
+               "Signals and keys as on bench.kicad_sch; the power and the RC inputs' protection change."],
+              paper="A3", date="2026-10-24", rev="2")
+    p = xiao(s, 200.66, 101.6, lambda pin: s.to_power(pin, V5))
     # The backup LiPo across the BAT pads (§2.7).
     # BAT+ is the right-most bottom pad, so its wire and BAT-'s never cross nor touch the ground.
     (bx, by), _ = p["15"]
@@ -443,91 +455,81 @@ def car():
     s.label(i["4"], "SDA")
     gnss(s, 312.42, 50.8)
 
-    # The JS5208 ladder: the 10 k pull-up, the centre straight to D0, the four directions through
-    # 2.2 k, 4.7 k, 10 k and 22 k, the common to ground (§3.1).
-    x0, y0 = 50.8, 127
-    r = s.place(R, x0, y0, "10k", ref="R1", refpos=(x0 + 2.54, y0 - 1.27), valpos=(x0 + 2.54, y0 + 1.27))
-    s.to_power(r["1"], V3)
-    s.label(r["2"], "KEYS")
-    j = s.place(JOY, x0 + 7.62, y0 + 33.02, "E-Switch JS5208 five-way", ref="SW1", **props(JOY, x0 + 7.62, y0 + 33.02))
-    s.to_power(j["1"], GND)
-    s.label(j["2"], "KEYS", length=17.78)
-    for k, (pin, val) in enumerate((("3", "2k2"), ("4", "4k7"), ("5", "10k"), ("6", "22k"))):
-        (px, py), _ = j[pin]
-        rx = px + 8.89
-        rr = s.place(R, rx, py, val, ref=f"R{k + 2}", rot=90, refpos=(rx, py - 2.54), valpos=(rx, py + 2.54),
-                     hide_ref=True)
-        s.wire((px, py), rr["1"][0])
-        s.label(rr["2"], "KEYS")
+    # The keys as on the bench, two buttons on the D0 ladder (§3.1); the JS5208 can come later.
+    keys_two_buttons(s, 50.8, 127)
 
-    # The RC front end: a 74LVC2G17 on 3V3, 100 k pull-downs on its inputs, 100 n across it (§2.5).
+    # The RC inputs (§2.5), per channel: 10 k in series from the receiver, a BAT43 Schottky from the
+    # pin to 3V3 that clamps a 5 V receiver's pulse, and 100 k from the pin to ground that holds it
+    # low with the receiver off. The second channel's pin sits further right, so that its clamp
+    # clears the first one's pull-down.
     car_side(s, 368.3, 137.16)
-    ux, uy = 271.78, 129.54
-    for k, (unit, a_pin, y_pin, src, dst, rv) in enumerate(((1, "1", "6", "CH1_STEER", "RC_STEER", "R6"),
-                                                            (2, "3", "4", "CH2_THROTTLE", "RC_THROTTLE", "R7"))):
-        y = uy + k * 17.78
-        g = s.place(BUF, ux, y, "74LVC2G17", ref="U7", unit=unit, refpos=(ux, y - 6.35), valpos=(ux, y + 6.35),
-                    hide_val=k == 1)
-        (ax, ay), _ = g[a_pin]
-        s.wire((ax, ay), (ax - 10.16, ay))
-        s.label(((ax - 10.16, ay), (-1, 0)), src, length=0)
-        pd = s.place(R, ax - 5.08, ay + 6.35, "100k", ref=rv, refpos=(ax - 2.54, ay + 5.08),
-                     valpos=(ax - 2.54, ay + 7.62))
-        s.wire(pd["1"][0], (ax - 5.08, ay))
-        s.junction((ax - 5.08, ay))
+    ux = 266.7
+    for k, (src, dst, rs, d, rp) in enumerate((("CH1_STEER", "RC_STEER", "R3", "D1", "R5"),
+                                                ("CH2_THROTTLE", "RC_THROTTLE", "R4", "D2", "R6"))):
+        y = 129.54 + k * 22.86
+        r = s.place(R, ux, y, "10k", ref=rs, rot=90, refpos=(ux, y - 2.54), valpos=(ux, y + 2.54))
+        s.label(r["1"], src, length=7.62)
+        nx = r["2"][0][0] + 5.08 + k * 10.16
+        s.wire(r["2"][0], (nx + 7.62, y))
+        s.label(((nx + 7.62, y), (1, 0)), dst, length=0)
+        s.junction((nx, y))
+        cl = s.place(DS, nx, y - 6.35, "BAT43", ref=d, rot=270, refpos=(nx + 3.81, y - 7.62),
+                     valpos=(nx + 3.81, y - 5.08))
+        s.wire((nx, y), cl["2"][0])
+        s.to_power(cl["1"], V3)
+        pd = s.place(R, nx, y + 6.35, "100k", ref=rp, refpos=(nx + 3.81, y + 5.08), valpos=(nx + 3.81, y + 7.62))
+        s.wire((nx, y), pd["1"][0])
         s.to_power(pd["2"], GND)
-        s.label(g[y_pin], dst)
-    py3 = uy + 43.18
-    g = s.place(BUF, ux, py3, "74LVC2G17", ref="U7", unit=3, refpos=(ux + 3.81, py3 - 5.08),
-                valpos=(ux + 3.81, py3 + 5.08), hide_val=True)
-    s.to_power(g["5"], V3)
-    s.to_power(g["2"], GND)
-    cb = s.place(C, ux + 12.7, py3, "100n", ref="C3", refpos=(ux + 15.24, py3 - 1.27),
-                 valpos=(ux + 15.24, py3 + 1.27))
-    s.to_power(cb["1"], V3)
-    s.to_power(cb["2"], GND)
 
-    # Power: the receiver rail through a reverse-polarity diode and the bulk caps into the buck,
-    # whose 5 V reaches the 5V pad through a Schottky that keeps it and the USB's apart (§2.7).
-    px, py = 254.0, 215.9
-    d1 = s.place(DS, px, py, "SS14", ref="D1", rot=180, refpos=(px, py - 3.81), valpos=(px, py + 3.81))
-    s.label(d1["2"], "RX_RAIL")
-    bus = d1["1"][0]
+    # Power: the receiver rail through the bulk caps into the LM2940, whose 5 V goes straight to the
+    # 5V pad and the GM10 (§2.7). No diodes: a servo plug cannot swap + and -, and the LM2940
+    # survives a reversed input on its own.
+    bus = (257.81, 215.9)
     cx = bus[0] + 7.62
-    s.wire(bus, (cx + 20.32, bus[1]))
-    for k, (sym, val, ref) in enumerate(((CP, "470u low ESR", "C1"), (C, "100n", "C2"))):
+    s.label(((bus[0] - 2.54, bus[1]), (-1, 0)), "RX_RAIL", length=0)
+    s.wire((bus[0] - 2.54, bus[1]), (cx + 20.32, bus[1]))
+    # The values sit clear of the bodies, where a crossing lead would make 470u read 4700.
+    for k, (sym, val, ref) in enumerate(((CP, "470u", "C1"), (C, "100n", "C2"))):
         x = cx + k * 12.7
-        c = s.place(sym, x, bus[1] + 6.35, val, ref=ref, refpos=(x + 2.54, bus[1] + 5.08), valpos=(x + 2.54, bus[1] + 7.62))
+        c = s.place(sym, x, bus[1] + 6.35, val, ref=ref, refpos=(x + 5.08, bus[1] + 5.08), valpos=(x + 5.08, bus[1] + 7.62))
         s.wire((x, bus[1]), c["1"][0])
         s.junction((x, bus[1]))
         s.to_power(c["2"], GND)
-    b = s.place(BUCK, cx + 35.56, bus[1] + G, "5 V buck, 100 % duty, 5-8.4 V in", ref="U6",
-                **props(BUCK, cx + 35.56, bus[1] + G))  # VIN, a grid step above the centre, on the bus
-    s.wire((cx + 20.32, bus[1]), b["1"][0])
-    s.to_power(b["2"], GND)
-    (ox, oy), _ = b["3"]
-    d2 = s.place(DS, ox + 12.7, oy, "SS14", ref="D2", rot=180, refpos=(ox + 12.7, oy - 3.81), valpos=(ox + 12.7, oy + 3.81))
-    s.wire((ox, oy), d2["2"][0])
-    s.label(d2["1"], "XIAO_5V")
-    s.wire((ox + 5.08, oy), (ox + 5.08, oy - 5.08))
-    s.junction((ox + 5.08, oy))
-    s.power(V5, (ox + 5.08, oy - 5.08))
+    # The LM2940's IN is a power input, and only passive parts feed it: a flag says the rail does.
+    s.power(FLAG, (cx + 20.32, bus[1] - 5.08))
+    s.wire((cx + 20.32, bus[1] - 5.08), (cx + 20.32, bus[1]))
+    s.junction((cx + 20.32, bus[1]))
+    lx = cx + 35.56
+    u = s.place(LDO, lx, bus[1], "LM2940CT-5.0", ref="U6", refpos=(lx, bus[1] - 6.35), valpos=(lx, bus[1] - 3.81))
+    s.wire((cx + 20.32, bus[1]), u["1"][0])
+    s.to_power(u["2"], GND)
+    (ox, oy), _ = u["3"]
+    # C3 keeps the LM2940 stable: 22 u or more, with an ESR between 0.1 and 1 ohm (its datasheet, 8.2.2.1).
+    c3x = ox + 5.08
+    c3 = s.place(CP, c3x, oy + 6.35, "47u tantalum", ref="C3", refpos=(c3x + 5.08, oy + 5.08),
+                 valpos=(c3x + 8.89, oy + 7.62))
+    s.wire((c3x, oy), c3["1"][0])
+    s.junction((c3x, oy))
+    s.to_power(c3["2"], GND)
+    s.wire((ox, oy), (ox + 12.7, oy), (ox + 12.7, oy - 5.08))
+    s.power(V5, (ox + 12.7, oy - 5.08))
 
     flag(s, 25.4, 25.4, GND)
-    s.power(FLAG, (35.56, 25.4))
-    s.wire((35.56, 25.4), (35.56, 27.94))
-    s.label(((35.56, 27.94), (0, 1)), "XIAO_5V", length=0)
 
     s.text(20.32, 193.04, PADS)
-    s.text(20.32, 208.28, "Keys: the JS5208's centre pulls D0 to ground; each direction does so through its resistor,\n"
-                          "against the 10 k pull-up: about 0.6, 1.05, 1.65 and 2.27 V (PLAN-ESP32.md 3.1).\n"
-                          "The IMU shares the I2C bus with the display; the GM10 runs from the buck's 5 V.")
-    s.text(236.22, 190.5, "RC front end: the buffer takes 3.3 V or 5 V logic and gives D2 and D3 a clean 3.3 V; the\n"
-                           "100 k pull-downs hold its inputs low with the receiver off, as the RC inputs wake the chip.")
-    s.text(20.32, 226.06, "Power: never the receiver rail straight into the 5V pad. D1 guards against reverse polarity,\n"
-                         "C1 and C2 soak up the servo's spikes, and the buck holds 5 V from 5 to 8.4 V in. D2 keeps\n"
-                         "the car's 5 V and the USB's apart: to confirm against the XIAO's schematic, which may already\n"
-                         "isolate VBUS. The LiPo on the BAT pads carries the shutdown when the car is switched off.")
+    s.text(20.32, 208.28, "Keys: the bench's two buttons (PLAN-ESP32.md 3.1): a 10 k pull-up on D0, OK straight to\n"
+                          "ground, NAV through 10 k; 0 V, 1.62 V, and 3.12 V at rest.\n"
+                          "The IMU shares the I2C bus with the display; the GM10 runs from the LM2940's 5 V.")
+    s.text(236.22, 190.5, "RC inputs, per channel: 10 k in series; a BAT43 to 3V3 that holds a 5 V receiver's pulse\n"
+                           "under the pin's 3.6 V; 100 k to ground that holds the pin low with the receiver off, as the\n"
+                           "RC inputs wake the chip. A 3.3 V receiver's high reads about 3.0 V, over the 2.48 V needed.")
+    s.text(20.32, 226.06, "Power: never the receiver rail straight into the 5V pad. C1, low ESR, and C2 soak up the\n"
+                         "servo's spikes, and the LM2940 holds 5 V for the 5V pad and the GM10. It is guaranteed from\n"
+                         "6.25 V in; on a 5.9 V BEC its dropout, 0.2 V at most at 100 mA, leaves room, to confirm on\n"
+                         "the bench. C3 keeps it stable: 22 u or more, ESR 0.1 to 1 ohm, so a tantalum or a low-ESR\n"
+                         "electrolytic, never a ceramic alone. No diodes (decided 2026-10-24), so the USB is never\n"
+                         "plugged in while the car or a LiPo powers the board: the two 5 V would meet on the 5V pad.\n"
+                         "The LiPo on the BAT pads carries the shutdown when the car is switched off.")
     s.write(f"{OUT}/car.kicad_sch")
 
 

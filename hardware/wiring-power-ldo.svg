@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1400" height="760" viewBox="0 0 1400 760">
+  <defs>
+    <style>
+      text { font-family: Helvetica, Arial, sans-serif; }
+      .w { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .pos { stroke: #d62828; }
+      .neg { stroke: #222; }
+      .sig { stroke: #e0a100; }
+    </style>
+    <g id="xk" stroke="#666" stroke-width="2.5" stroke-linecap="round">
+      <line x1="-6" y1="-6" x2="6" y2="6"/><line x1="-6" y1="6" x2="6" y2="-6"/>
+    </g>
+    <g id="dot"><circle r="4" fill="#222"/></g>
+    <g id="dotr"><circle r="4" fill="#d62828"/></g>
+    <!-- TO-220, vista dal lato della scritta, piedini in basso; origine al centro del corpo in alto -->
+    <g id="to220">
+      <rect x="-45" y="-40" width="90" height="42" rx="3" fill="#b8bec6" stroke="#666" stroke-width="1.5"/>
+      <circle cx="0" cy="-20" r="9" fill="#fff" stroke="#666" stroke-width="1.5"/>
+      <rect x="-45" y="0" width="90" height="80" rx="3" fill="#1e1e1e"/>
+      <rect x="-30" y="80" width="6" height="35" fill="#9aa0a6"/>
+      <rect x="-3" y="80" width="6" height="35" fill="#9aa0a6"/>
+      <rect x="24" y="80" width="6" height="35" fill="#9aa0a6"/>
+    </g>
+  </defs>
+
+  <rect width="1400" height="760" fill="#fff"/>
+
+  <text x="30" y="40" font-size="24" font-weight="bold">Alimentazione in dettaglio: LM2940CT-5.0</text>
+  <text x="30" y="66" font-size="15" fill="#444">La parte di alimentazione di wiring-car.png e di car.kicad_sch (C3 come nello schema), piedino per piedino.</text>
+
+  <text x="40" y="108" font-size="14">• Niente diodi: una spina servo non può scambiare + e −, e l'LM2940 regge da solo un ingresso invertito.</text>
+  <text x="40" y="132" font-size="14">• LM2940CT-5.0, regolatore lineare a bassa caduta. Il condensatore in uscita C3 deve avere almeno 22 µF e ESR tra 0,1 e 1 Ω (datasheet TI):</text>
+  <text x="54" y="152" font-size="14">tantalio o elettrolitico low-ESR. Un ceramico da solo ha ESR troppo bassa e il regolatore oscilla.</text>
+  <text x="40" y="176" font-size="14">• Il TO-220 è visto dal lato della scritta, piedini in basso: 1 IN, 2 GND, 3 OUT. L'aletta è collegata a GND.</text>
+
+  <!-- ===== Ricevente, presa VCC ===== -->
+  <rect x="40" y="450" width="130" height="120" rx="8" fill="#e8eef8" stroke="#333" stroke-width="2"/>
+  <text x="54" y="476" font-size="14" font-weight="bold">Ricevente</text>
+  <text x="54" y="494" font-size="12">presa VCC</text>
+  <text x="54" y="510" font-size="11" fill="#555">(libera)</text>
+  <rect x="170" y="486" width="16" height="48" rx="2" fill="#333"/>
+
+  <path class="w sig" d="M186,494 H196"/>
+  <use xlink:href="#xk" x="202" y="494"/>
+  <path class="w pos" d="M186,510 H220 V440 H673 V405"/>
+  <path class="w neg" d="M186,526 H230 V560 H1250"/>
+  <text x="230" y="432" font-size="12" font-weight="bold" fill="#d62828">≈ 5,9 V</text>
+
+
+  <!-- C1 -->
+  <path class="w pos" d="M480,440 V493"/>
+  <line x1="468" y1="493" x2="492" y2="493" stroke="#333" stroke-width="3"/>
+  <path d="M468,507 Q480,499 492,507" fill="none" stroke="#333" stroke-width="3"/>
+  <path class="w neg" d="M480,503 V560"/>
+  <text x="461" y="490" font-size="11" fill="#d62828">+</text>
+  <text x="498" y="498" font-size="11" font-weight="bold">C1 470 µF</text>
+  <text x="498" y="511" font-size="10" fill="#555">low-ESR</text>
+  <use xlink:href="#dotr" x="480" y="440"/><use xlink:href="#dot" x="480" y="560"/>
+
+  <!-- C2 -->
+  <path class="w pos" d="M590,440 V495"/>
+  <line x1="578" y1="495" x2="602" y2="495" stroke="#333" stroke-width="3"/>
+  <line x1="578" y1="503" x2="602" y2="503" stroke="#333" stroke-width="3"/>
+  <path class="w neg" d="M590,503 V560"/>
+  <text x="608" y="498" font-size="11" font-weight="bold">C2</text>
+  <text x="608" y="511" font-size="10" fill="#555">100 nF</text>
+  <use xlink:href="#dotr" x="590" y="440"/><use xlink:href="#dot" x="590" y="560"/>
+
+  <!-- ===== LM2940CT-5.0 ===== -->
+  <use xlink:href="#to220" x="700" y="290"/>
+  <text x="700" y="318" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">LM2940</text>
+  <text x="700" y="334" font-size="10" fill="#ccc" text-anchor="middle">CT-5.0</text>
+  <g font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">
+    <text x="673" y="364">IN</text><text x="700" y="364">GND</text><text x="727" y="364">OUT</text>
+  </g>
+  <text x="752" y="274" font-size="11" fill="#555">aletta = GND</text>
+
+  <path class="w neg" d="M700,405 V560"/>
+  <use xlink:href="#dot" x="700" y="560"/>
+  <path class="w pos" d="M727,405 V440 H1250"/>
+  <text x="752" y="434" font-size="12" font-weight="bold" fill="#d62828">5,0 V</text>
+
+  <!-- C3 -->
+  <path class="w pos" d="M830,440 V493"/>
+  <line x1="818" y1="493" x2="842" y2="493" stroke="#333" stroke-width="3"/>
+  <path d="M818,507 Q830,499 842,507" fill="none" stroke="#333" stroke-width="3"/>
+  <path class="w neg" d="M830,503 V560"/>
+  <text x="811" y="490" font-size="11" fill="#d62828">+</text>
+  <text x="848" y="498" font-size="11" font-weight="bold">C3 47 µF</text>
+  <text x="848" y="511" font-size="10" fill="#555">tantalio, ≥ 10 V</text>
+  <use xlink:href="#dotr" x="830" y="440"/><use xlink:href="#dot" x="830" y="560"/>
+
+  <!-- GM10 -->
+  <path class="w pos" d="M920,440 V385"/>
+  <use xlink:href="#dotr" x="920" y="440"/>
+  <text x="928" y="389" font-size="12" font-weight="bold">→ 5V del GM10</text>
+
+
+  <!-- Pad della XIAO -->
+  <circle cx="1250" cy="440" r="9" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1266" y="445" font-size="13" font-weight="bold">pad 5V della XIAO</text>
+  <circle cx="1250" cy="560" r="9" fill="#d4a017" stroke="#7a5c00" stroke-width="1.5"/>
+  <text x="1266" y="565" font-size="13" font-weight="bold">pad GND della XIAO</text>
+
+  <!-- ===== Legenda ===== -->
+  <path class="w pos" d="M40,626 H80"/><text x="92" y="630" font-size="13">+ positivo</text>
+  <path class="w neg" d="M40,651 H80"/><text x="92" y="655" font-size="13">− negativo / massa</text>
+  <use xlink:href="#xk" x="60" y="676"/><text x="92" y="680" font-size="13">segnale della presa VCC: non usato, isolalo</text>
+  <text x="40" y="710" font-size="12" fill="#555">L'ordine dei tre fili della presa è indicativo: controlla la serigrafia della ricevente.</text>
+
+  <rect x="700" y="606" width="670" height="136" rx="8" fill="#f1f7ff" stroke="#1f6feb" stroke-width="2"/>
+  <text x="716" y="631" font-size="14" font-weight="bold" fill="#1f6feb">PRIMA DI COLLEGARE LA XIAO</text>
+  <text x="716" y="656" font-size="13">1.  Monta solo questo circuito, accendi la macchina e misura col multimetro:</text>
+  <text x="736" y="675" font-size="13">circa 5,0 V sull'OUT dell'LM2940, cioè sul pad 5V.</text>
+  <text x="716" y="699" font-size="13">2.  Mai la USB mentre questo circuito alimenta la board: i due 5 V si scontrano.</text>
+  <text x="716" y="723" font-size="13">3.  Solo dopo collega la XIAO al pad 5V e al pad GND.</text>
+</svg>

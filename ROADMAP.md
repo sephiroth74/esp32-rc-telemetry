@@ -339,7 +339,8 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 6 — RC inputs, car profiles, automatic sessions, sleep
 
-- [ ] **6.1 RC front end.** The 74LVC2G17 with the input pull-downs of §2.5. For each car, the logic
+- [ ] **6.1 RC front end.** Per input, 10 kΩ in series, a BAT43 clamp to 3V3 and a 100 kΩ pull-down
+  (§2.5; the 74LVC2G17 first planned gave way to through-hole parts). For each car, the logic
   level and the BEC voltage go into `docs/hardware.md`.
 - [ ] **6.2 RC capture.** MCPWM capture with pulse validation and reject counters; RC samples in the
   log; POST check 10 (§4.3).

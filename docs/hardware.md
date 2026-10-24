@@ -156,7 +156,14 @@ The KiCad schematics in [`hardware/`](../hardware/README.md):
 - [`bench.kicad_sch`](../hardware/bench.pdf) — **the bench build, as wired on 2026-10-19**: the
   display on I²C, the two-button ladder on D0, the GM10 on UART1, and the receiver's CH1 and CH2
   through 10 kΩ to D3 and D2, ground common, the receiver's + rail off the XIAO.
-- [`car.kicad_sch`](../hardware/car.pdf) — **in the car, planned**: the BEC → reverse-polarity
-  diode → bulk capacitors → 5 V buck → Schottky → 5V pad path, the 1S backup LiPo on the BAT pads
-  (§2.7), the 74LVC2G17 with its pull-downs on the RC inputs (§2.5), the JS5208 ladder (§3.1), and
-  the IMU sharing the I²C bus with the display (§2.4, §2.6).
+- [`car.kicad_sch`](../hardware/car.pdf) — **in the car, planned**: the BEC → bulk capacitors →
+  LM2940CT-5.0 with its 47 µF tantalum → 5V pad path, no diodes, the 1S backup LiPo on the BAT pads
+  (§2.7), each RC input through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ to ground (§2.5), the
+  bench's two keys (§3.1), and the IMU sharing the I²C bus with the display (§2.4, §2.6).
+
+Drawings of where each wire goes, in Italian, for building:
+[`wiring-bench.png`](../hardware/wiring-bench.png), [`wiring-car.png`](../hardware/wiring-car.png),
+and the car's power path pin by pin, [`wiring-power-ldo.png`](../hardware/wiring-power-ldo.png).
+| Whether the LM2940CT-5.0 holds 5.0 V on the MP9e's 5.90 V BEC | 5.9 V is under the 6.25 V from which TI guarantees it; its dropout, 0.2 V at most at 100 mA, should leave room (§2.7) | — |
+| Whether a BAT43 clamp keeps a 5 V receiver's pulse under 3.6 V on the pin | The RC inputs' protection of §2.5, worked out at about 3.5 V; to measure with a 5 V source through the 10 kΩ | — |
+| The current the device draws from the 5V pad, idle and at its peaks (card writes, radio) | It sets the LM2940's dropout and its heat on a high-voltage BEC; 200 mA is an estimate (§2.7) | — |
