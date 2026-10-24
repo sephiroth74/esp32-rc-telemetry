@@ -94,7 +94,7 @@ OK menu  hold: start     < back   OK open         OK mark  hold: stop
 | --- | --- |
 | **POST** | One check per line as they run; a fatal failure with `hold OK: retry` |
 | **Home** | Track, start line, last and best lap, automatic start on or off; hold OK starts a session |
-| **Menu** | Session · Track (Start line, Geometry, Info, New track) · GNSS · Transfer · Settings (Car profile and New car, Calibrate, Display, Delete sessions, About, Restart) |
+| **Menu** | Session · Track (Start line, Geometry, Info, New track) · GNSS · Transfer · Settings (Car profile and New car, Calibrate, Display, Require fix, Delete sessions, About, Restart) |
 | **Session** | Three pages: laps · GNSS · steering and throttle inputs |
 | **Calibration** | Six steps — neutral, left, right, full throttle, full brake, aux — then a summary to save |
 | **Geometry** | Distance, laps, points; hold OK stops and saves |

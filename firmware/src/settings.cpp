@@ -151,12 +151,15 @@ void settingsFill(ui::MenuContext& menu) {
   menu.brightness = current.brightness;
   menu.dimDelay = current.dimDelay;
   menu.textSize = current.textSize;
+  menu.requireFix = current.requireFix;
   menu.profileCount = current.profileCount;
   menu.activeProfile = activeProfile;
-  Serial.printf("settings: %s; brightness %s, dim after %s, text %s, profile %u of %u\n",
+  Serial.printf("settings: %s; brightness %s, dim after %s, text %s, require fix %s, "
+                "profile %u of %u\n",
                 settingsSourceName(), ui::kBrightnessLabels[menu.brightness],
                 ui::kDimDelayLabels[menu.dimDelay], ui::kTextSizeLabels[menu.textSize],
-                menu.activeProfile + 1, menu.profileCount);
+                ui::kRequireFixLabels[menu.requireFix ? 1 : 0], menu.activeProfile + 1,
+                menu.profileCount);
 }
 
 const char* settingsProfileName(uint8_t index) {
@@ -172,11 +175,13 @@ void settingsSave(const ui::MenuContext& menu) {
     nvs.end();
   }
   bool changed = current.brightness != menu.brightness || current.dimDelay != menu.dimDelay ||
-                 current.textSize != menu.textSize || current.profileCount != menu.profileCount;
+                 current.textSize != menu.textSize || current.profileCount != menu.profileCount ||
+                 current.requireFix != menu.requireFix;
   if (!changed) return;
   current.brightness = menu.brightness;
   current.dimDelay = menu.dimDelay;
   current.textSize = menu.textSize;
+  current.requireFix = menu.requireFix;
   for (uint8_t i = current.profileCount; i < menu.profileCount && i < cfg::kMaxProfiles; ++i) {
     cfg::defaultName(i, current.profiles[i].name);  // New car
   }

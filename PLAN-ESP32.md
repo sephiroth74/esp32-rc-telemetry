@@ -490,6 +490,7 @@ The menu, each list ending in Back:
 | **Settings › Car profile** | The profiles in `config.json`, the active one marked, then **New car** | OK: make the highlighted one active. New car adds a profile named `Car N`, makes it active and lands on Calibrate; the apps rename it (§3.8) |
 | **Settings › Calibrate** | Whether the active profile is calibrated | Hold OK: enter CALIBRATION (§3.7, §3.8) |
 | **Settings › Display** | Brightness (low, medium, high), dim delay (15, 30, 60 s, never) and text size (small, large — §3.2) | UP/DOWN change, OK saves, LEFT cancels |
+| **Settings › Require fix** | Whether a session needs the fix, `on` or `off`, shown in the Settings list beside it: `session.require_fix` (§3.6) | UP/DOWN change, OK saves, LEFT cancels. Off lets the bench, indoors, start a session without a fix |
 | **Settings › Delete sessions** | How many sessions the card holds | Hold OK, then confirm: deletes **every `session_*` folder**, keeping tracks, geometries and start lines (§7.1). `Deleting` while it runs, a toast on completion |
 | **Settings › About** | Firmware version, the POST result by check number, card size and speed | — |
 | **Settings › Restart** | What it does | Hold OK: restart, and the POST runs again (§3.3), e.g. after a card goes in. Settings is reached from IDLE only, so no session is open. The ladder cannot read two keys at once — OK pulls D0 to ground whatever else is pressed — so there is no two-key reset, and a held-key gesture would sit too close to holding OK for a session |
@@ -547,7 +548,8 @@ without a key press; the keys remain for doing either by hand.
   `Fix`, a 3D fix with hAcc ≤ 5 m held 3 s (§3.4), not the status bar's bare `3D`. A run with no
   decent position is no use, and the fix is also what files the session under its track (§7.1).
   Lost during the session, it no longer matters: logging continues (§3.5). `session.require_fix`
-  in `config.json`, on by default, is turned off only for the bench, where indoors no fix comes.
+  in `config.json`, on by default, is turned off only for the bench, where indoors no fix comes;
+  Settings › Require fix turns it off and on again on the device.
 - **Automatic start**, from IDLE only (§3.7), on whichever comes first, the fix present:
   - more than 5 km/h for 2 s;
   - throttle more than ±10 % from neutral for 1 s, which needs the active profile to be calibrated
@@ -635,9 +637,10 @@ Rules across the states:
   to its default on its own and is listed in `/post.log`, so one typo does not discard the whole
   file. Hardware choices live there too, such as `keys.layout` (§3.1), so a hardware swap needs no
   reflash.
-- **On the device, only two things are edited**, the ones changed in the pits: the active car profile
-  and the display (brightness, dim delay, text size). Those edits are written to both copies. The
-  one thing added on the device is a car profile, with New car.
+- **On the device, only three things are edited**: the two changed in the pits, the active car
+  profile and the display (brightness, dim delay, text size), and the bench's
+  `session.require_fix` (§3.6). Those edits are written to both copies. The one thing added on the
+  device is a car profile, with New car.
 - **Car profiles**: up to eight, `profiles[0..7]` in `config.json`, each with a name — shown in the
   status bar, up to 8 characters — and its aux-channel band mapping (§8). Each profile's RC
   calibration lives in NVS, keyed by profile index, so it survives a card swap; the active index is

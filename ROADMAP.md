@@ -366,6 +366,9 @@ try when one is at hand; their logic is host-tested.
   the GNSS screen's `Fix`, not a bare 3D. Without it Home reads `Acquiring` and a hold brings
   `No GNSS fix yet`; the automatic start says so once and starts when the fix comes.
   `session.require_fix: false` in `config.json` lifts it for the bench (186 host tests).
+  Settings › Require fix sets it on the device, written to both copies of `config.json` as the
+  display settings are; its value shows in the Settings list. On the device: `on` brought
+  `Acquiring` and the refusal at once, and held across a restart (197 host tests).
 
 ## Phase 6 — RC inputs, car profiles, automatic sessions, sleep
 

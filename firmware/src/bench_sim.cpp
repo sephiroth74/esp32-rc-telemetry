@@ -15,13 +15,16 @@ constexpr uint16_t kBrake = 1002, kThrottleNeutral = 1498, kFullThrottle = 1956;
 
 char line[48];
 uint8_t used = 0;
-ui::Event events[8];
+constexpr uint8_t kQueue = 16;
+ui::Event events[kQueue];
 uint8_t head = 0, count = 0;
 bool screenWanted = false;
 
+// A key as the keys give it: a Press, then the gesture's own event.
 void queue(ui::Event e) {
-  if (count == sizeof events / sizeof events[0]) return;
-  events[(head + count++) % 8] = e;
+  if (count + 2 > kQueue) return;
+  events[(head + count++) % kQueue] = ui::Event::Press;
+  events[(head + count++) % kQueue] = e;
 }
 
 void run(const char* cmd) {
@@ -93,9 +96,16 @@ void benchSimPoll() {
 bool benchSimNextEvent(ui::Event& event) {
   if (!count) return false;
   event = events[head];
-  head = (head + 1) % 8;
+  head = (head + 1) % kQueue;
   --count;
   return true;
+}
+
+void benchSimSwallow() {
+  while (count && events[head] != ui::Event::Press) {
+    head = (head + 1) % kQueue;
+    --count;
+  }
 }
 
 bool benchSimTakeScreenRequest() {

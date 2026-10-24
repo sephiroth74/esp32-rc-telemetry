@@ -127,12 +127,34 @@ static void back_keeps_each_lists_cursor() {
   w.key(Event::Open);
   w.down(4);
   w.key(Event::Open);  // Settings
-  w.down(3);           // Delete sessions
+  w.down(4);           // Delete sessions
   w.key(Event::Back);
   ASSERT_SCREEN(Menu, w.menu);
   TEST_ASSERT_EQUAL_UINT8(4, w.menu.cursor());
   w.key(Event::Open);
-  TEST_ASSERT_EQUAL_UINT8(3, w.menu.cursor());
+  TEST_ASSERT_EQUAL_UINT8(4, w.menu.cursor());
+}
+
+// Settings › Require fix, session.require_fix on the device (§3.6): an editor like the display's,
+// off and on, that opens on the value in force.
+static void require_fix_is_a_setting() {
+  Walk w;
+  w.key(Event::Open);
+  w.down(4);
+  w.key(Event::Open);
+  w.down(3);
+  w.key(Event::Open);
+  ASSERT_SCREEN(RequireFix, w.menu);
+  TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());  // on, the default
+  w.key(Event::Up);
+  MenuResult r = w.key(Event::Open);
+  ASSERT_COMMAND(SetRequireFix, r);
+  TEST_ASSERT_EQUAL_UINT8(0, r.arg);
+  ASSERT_SCREEN(Settings, w.menu);
+  w.context.requireFix = false;  // as the device keeps it
+  w.key(Event::Open);
+  TEST_ASSERT_EQUAL_UINT8(0, w.menu.cursor());
+  ASSERT_COMMAND(None, w.key(Event::Back));
 }
 
 static void transfer_is_a_command_not_a_screen() {
@@ -180,7 +202,7 @@ static void every_list_and_editor_ends_in_back() {
   w.down(3);
   w.key(Event::Open);
   ASSERT_SCREEN(Settings, w.menu);
-  w.down(4);  // from Display to Back
+  w.down(5);  // from Display to Back
   w.key(Event::Open);
   ASSERT_SCREEN(Menu, w.menu);
   w.down(1);  // from Settings to Back
@@ -375,7 +397,7 @@ static void screens_that_read_the_card_need_it_to_open() {
   w.key(Event::Open);
   w.down(4);
   w.key(Event::Open);
-  w.down(3);
+  w.down(4);
   ASSERT_REFUSAL(NoCard, w.key(Event::Open));
   ASSERT_SCREEN(Settings, w.menu);
 }
@@ -410,7 +432,7 @@ static void writes_need_a_card_that_took_the_probe() {
   d.key(Event::Open);
   d.down(4);
   d.key(Event::Open);
-  d.down(3);
+  d.down(4);
   d.key(Event::Open);
   ASSERT_SCREEN(DeleteSessions, d.menu);
   ASSERT_REFUSAL(CardNotWritable, d.key(Event::Hold));
@@ -466,7 +488,7 @@ static void restart_is_a_hold_on_its_own_screen() {
   w.key(Event::Open);
   w.down(4);
   w.key(Event::Open);
-  w.down(5);
+  w.down(6);
   w.key(Event::Open);  // Settings › Restart
   ASSERT_SCREEN(Restart, w.menu);
   ASSERT_COMMAND(Restart, w.key(Event::Hold));
@@ -479,7 +501,7 @@ static void deleting_sessions_always_asks() {
   w.key(Event::Open);
   w.down(4);
   w.key(Event::Open);
-  w.down(3);
+  w.down(4);
   w.key(Event::Open);  // Settings › Delete sessions
   ASSERT_SCREEN(DeleteSessions, w.menu);
   w.key(Event::Hold);
@@ -594,6 +616,7 @@ int main(int, char**) {
   RUN_TEST(walk_to_brightness_and_save);
   RUN_TEST(back_in_an_editor_cancels);
   RUN_TEST(back_keeps_each_lists_cursor);
+  RUN_TEST(require_fix_is_a_setting);
   RUN_TEST(transfer_is_a_command_not_a_screen);
   RUN_TEST(text_size_is_a_display_setting);
   RUN_TEST(every_list_and_editor_ends_in_back);

@@ -172,6 +172,9 @@ BoardOutput Board::fromMenu(const MenuResult& r, const Facts& f, uint32_t nowMs)
     case Command::SetTextSize:
       toast(o, "Text size: %s", kTextSizeLabels[r.arg % 2]);
       break;
+    case Command::SetRequireFix:
+      toast(o, "Require fix: %s", kRequireFixLabels[r.arg % 2]);
+      break;
     case Command::DeleteSessions:
       toast(o, "Sessions deleted");
       break;

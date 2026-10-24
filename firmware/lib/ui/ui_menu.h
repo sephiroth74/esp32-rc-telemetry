@@ -35,6 +35,7 @@ enum class ScreenId : uint8_t {
   Brightness,
   DimDelay,
   TextSize,
+  RequireFix,
   DeleteSessions,
   About,
   Restart,
@@ -67,7 +68,8 @@ enum class Command : uint8_t {
   SetTextSize,
   DeleteSessions,
   Restart,
-  ChooseTrack,  // arg: which of the tracks within reach (§7.1)
+  ChooseTrack,    // arg: which of the tracks within reach (§7.1)
+  SetRequireFix,  // arg: 1 for a session to need the fix, 0 for the bench (§3.6)
 };
 
 const char* commandName(Command command);  // for logs
@@ -165,6 +167,7 @@ extern const char* const kBrightnessLabels[3];  // low, medium, high
 extern const char* const kDimDelayLabels[4];    // 15 s, 30 s, 60 s, never
 extern const uint32_t kDimDelayMs[4];           // the same delays; 0 for never
 extern const char* const kTextSizeLabels[2];    // small, large
+extern const char* const kRequireFixLabels[2];  // off, on: the index is session.require_fix
 
 struct MenuResult {
   Command command = Command::None;

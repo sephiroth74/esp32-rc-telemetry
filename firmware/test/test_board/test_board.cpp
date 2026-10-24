@@ -588,6 +588,38 @@ static void settings_still_come_back_as_toasts() {
   TEST_ASSERT_EQUAL_STRING("Profile: Outcast8", o.toast);
 }
 
+// Require fix shows its value in Settings, as Display's entries do theirs, and turning it off lifts
+// Home's Acquiring at once: the bench without a fix (§3.6).
+static void require_fix_shows_in_settings_and_takes_effect() {
+  Walk w;
+  w.facts.menu.hasFix = false;
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Acquiring", strtok(t.lines[1], " "));
+  w.toSettings();
+  w.down(3);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("> Require fix on", t.lines[5]);
+  w.key(Event::Open);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING_LEN("Require fix ", t.lines[1], 12);
+  TEST_ASSERT_EQUAL_STRING("  off", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("> on *", t.lines[3]);
+  w.key(Event::Down);
+  w.key(Event::Down);  // Back, then wraps to off
+  BoardOutput o = w.key(Event::Open);
+  ASSERT_COMMAND(SetRequireFix, o);
+  TEST_ASSERT_EQUAL_UINT8(0, o.arg);
+  TEST_ASSERT_EQUAL_STRING("Require fix: off", o.toast);
+  w.facts.menu.requireFix = false;  // as the device applies it
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("> Require fix off", t.lines[5]);
+  w.nowMs += UI_MENU_TIMEOUT_MS;
+  w.board.tick(w.nowMs);  // back to Home
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Ready", strtok(t.lines[1], " "));
+}
+
 static void the_menu_timeout_counts_from_the_end_of_a_mode() {
   Walk w;
   w.key(Event::Open);
@@ -671,18 +703,21 @@ static void every_screen_fits_in_21_columns() {
       {"Text size",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Down, Event::Open, Event::Down, Event::Down, Event::Open}},
-      {"Delete sessions",
+      {"Require fix",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Down, Event::Down, Event::Open}},
-      {"Delete dialog",
-       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
-        Event::Down, Event::Down, Event::Open, Event::Hold}},
-      {"About",
+      {"Delete sessions",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Down, Event::Down, Event::Down, Event::Open}},
-      {"Restart",
+      {"Delete dialog",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Down, Event::Down, Event::Open, Event::Hold}},
+      {"About",
        {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
         Event::Down, Event::Down, Event::Down, Event::Down, Event::Open}},
+      {"Restart",
+       {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open, Event::Down,
+        Event::Down, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open}},
       {"Session, laps", {Event::Hold}},
       {"Session, page 2", {Event::Hold, Event::Down}},
       {"Session, page 3", {Event::Hold, Event::Down, Event::Down}},
@@ -826,7 +861,7 @@ static void about_lists_the_post_check_by_check() {
   post.checks[9] = ui::CheckReport::skipped();
   w.facts.post = &post;
   w.toSettings();
-  w.down(4);
+  w.down(5);
   w.key(Event::Open);  // About
   ASSERT_SCREEN(About, w.board);
   ScreenText t;
@@ -907,6 +942,7 @@ int main(int, char**) {
   RUN_TEST(a_session_waits_for_the_fix);
   RUN_TEST(notices_and_the_blocked_home_fit_in_21_columns);
   RUN_TEST(settings_still_come_back_as_toasts);
+  RUN_TEST(require_fix_shows_in_settings_and_takes_effect);
   RUN_TEST(the_menu_timeout_counts_from_the_end_of_a_mode);
   RUN_TEST(every_screen_fits_in_21_columns);
   RUN_TEST(the_home_screen_reads_as_designed);

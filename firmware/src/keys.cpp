@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include "bench_sim.h"
 #include "pins.h"
 #include "ui_config.h"
 
@@ -38,7 +39,12 @@ ui::Layout keysLayout() { return config.layout; }
 
 bool keysNext(ui::Event& event) { return gestures.next(event); }
 
-void keysSwallow() { gestures.swallow(); }
+void keysSwallow() {
+  gestures.swallow();
+#ifdef BENCH_SIM
+  benchSimSwallow();  // and the console's gesture, whichever the Press came from
+#endif
+}
 
 uint8_t keysHoldPercent(uint32_t nowMs) { return gestures.holdPercent(nowMs); }
 

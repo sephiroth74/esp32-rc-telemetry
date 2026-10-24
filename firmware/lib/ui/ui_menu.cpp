@@ -29,6 +29,7 @@ const Entry kSettings[] = {
     {"Car profile", ScreenId::CarProfile, Command::None},
     {"Calibrate", ScreenId::Calibrate, Command::None},
     {"Display", ScreenId::DisplaySettings, Command::None},
+    {"Require fix", ScreenId::RequireFix, Command::None},
     {"Delete sessions", ScreenId::DeleteSessions, Command::None},
     {"About", ScreenId::About, Command::None},
     {"Restart", ScreenId::Restart, Command::None},
@@ -136,7 +137,7 @@ const char* commandName(Command command) {
       "calib capture",  "save calib",        "cancel calib",
       "select profile", "new profile",       "set brightness",
       "set dim delay",  "set text size",     "delete sessions",
-      "restart",        "choose track",
+      "restart",        "choose track",      "set require fix",
   };
   return kNames[static_cast<uint8_t>(command)];
 }
@@ -145,6 +146,7 @@ const char* const kBrightnessLabels[3] = {"low", "medium", "high"};
 const char* const kDimDelayLabels[4] = {"15 s", "30 s", "60 s", "never"};
 const uint32_t kDimDelayMs[4] = {15000, 30000, 60000, 0};
 const char* const kTextSizeLabels[2] = {"small", "large"};
+const char* const kRequireFixLabels[2] = {"off", "on"};
 
 const Entry* Menu::entries(ScreenId screen, uint8_t& count) {
   switch (screen) {
@@ -182,6 +184,7 @@ ScreenId Menu::parent(ScreenId screen) {
     case ScreenId::CarProfile:
     case ScreenId::Calibrate:
     case ScreenId::DisplaySettings:
+    case ScreenId::RequireFix:
     case ScreenId::DeleteSessions:
     case ScreenId::About:
     case ScreenId::Restart:
@@ -204,6 +207,7 @@ bool Menu::scrolls(ScreenId screen) {
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize:
+    case ScreenId::RequireFix:
     case ScreenId::Dialog:
       return false;
     default:
@@ -222,6 +226,7 @@ uint8_t Menu::valueCount(ScreenId screen, const MenuContext& c) {
     case ScreenId::DimDelay:
       return 4;
     case ScreenId::TextSize:
+    case ScreenId::RequireFix:
       return 2;
     default:
       return 0;
@@ -287,7 +292,8 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
     case ScreenId::ChooseTrack:
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
-    case ScreenId::TextSize: {
+    case ScreenId::TextSize:
+    case ScreenId::RequireFix: {
       // An editor: the highlighted choice is saved and the editor closes; its Back saves nothing.
       uint8_t choice = cursor();
       uint8_t values = valueCount(current, c);
@@ -307,7 +313,8 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
                         : current == ScreenId::ChooseTrack ? Command::ChooseTrack
                         : current == ScreenId::Brightness  ? Command::SetBrightness
                         : current == ScreenId::DimDelay    ? Command::SetDimDelay
-                                                           : Command::SetTextSize;
+                        : current == ScreenId::TextSize    ? Command::SetTextSize
+                                                           : Command::SetRequireFix;
       return issue(command, choice);
     }
     default:
@@ -347,6 +354,9 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       break;
     case ScreenId::TextSize:
       cursorOf(entry.screen) = c.textSize;
+      break;
+    case ScreenId::RequireFix:
+      cursorOf(entry.screen) = c.requireFix ? 1 : 0;
       break;
     default:
       break;

@@ -30,7 +30,8 @@ const cfg::Problems& settingsProblems();  // the keys of the card's file that fe
 SettingsSource settingsSource();
 const char* settingsSourceName();  // up to 13 characters, for About and /post.log
 
-// The display settings, the profiles and the active one, into what the menu reads.
+// The display settings, whether a session needs the fix, the profiles and the active one, into
+// what the menu reads.
 void settingsFill(ui::MenuContext& menu);
 const char* settingsProfileName(uint8_t index);
 // After a command: what changed goes to both copies of config.json, the active profile to NVS. The

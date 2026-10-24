@@ -177,7 +177,7 @@ static void a_start_closes_the_menu_and_its_dialog() {
   r.key(Event::Open);  // Menu
   for (int i = 0; i < 4; ++i) r.key(Event::Down);
   r.key(Event::Open);  // Settings
-  for (int i = 0; i < 3; ++i) r.key(Event::Down);
+  for (int i = 0; i < 4; ++i) r.key(Event::Down);
   r.key(Event::Open);  // Delete sessions
   r.key(Event::Hold);  // its dialog
   TEST_ASSERT_EQUAL_INT(static_cast<int>(DialogKind::DeleteSessions),

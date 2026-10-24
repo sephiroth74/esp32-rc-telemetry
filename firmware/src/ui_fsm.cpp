@@ -229,6 +229,9 @@ void runPlaceholder(const ui::BoardOutput& o) {
     case ui::Command::SetTextSize:  // the ui task applies it to the display on the next tick
       facts.menu.textSize = o.arg;
       break;
+    case ui::Command::SetRequireFix:  // Home and the next start read it from there (§3.6)
+      facts.menu.requireFix = o.arg != 0;
+      break;
     case ui::Command::DeleteSessions:
       facts.cardSessions = 0;
       break;
@@ -488,7 +491,6 @@ void uiStart(const ui::PostResult& post) {
   // The settings of config.json, and where they came from (§3.8).
   for (uint8_t i = 0; i < CAR_PROFILES_MAX; ++i) profileNamePtrs[i] = settingsProfileName(i);
   facts.autoStart = settings().autoStart;
-  facts.menu.requireFix = settings().requireFix;  // false only for the bench (§3.6)
   static char configNote[22];
   if (settingsProblems().count) {
     snprintf(configNote, sizeof configNote, "%s, %u bad", settingsSourceName(),

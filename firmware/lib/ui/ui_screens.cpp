@@ -148,6 +148,8 @@ const char* screenTitle(ScreenId s) {
       return "Dim after";
     case ScreenId::TextSize:
       return "Text size";
+    case ScreenId::RequireFix:
+      return "Require fix";
     case ScreenId::DeleteSessions:
       return "Delete";
     case ScreenId::About:
@@ -263,6 +265,8 @@ void list(const Board& b, const Facts& f, ScreenId screen, Layout layout, Conten
           : entries[i].screen == ScreenId::DimDelay ? kDimDelayLabels[f.menu.dimDelay % 4]
                                                     : kTextSizeLabels[f.menu.textSize % 2];
       c.add("%s %-11s %s", mark, entries[i].label, value);
+    } else if (entries[i].screen == ScreenId::RequireFix) {  // a setting among Settings' actions
+      c.add("%s %-11s %s", mark, entries[i].label, kRequireFixLabels[f.menu.requireFix ? 1 : 0]);
     } else {
       c.add("%s %s", mark, entries[i].label);
     }
@@ -287,6 +291,9 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
     case ScreenId::DimDelay:
       active = f.menu.dimDelay;
       break;
+    case ScreenId::RequireFix:
+      active = f.menu.requireFix ? 1 : 0;
+      break;
     default:
       active = f.menu.textSize;
       break;
@@ -297,7 +304,8 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
                         : screen == ScreenId::ChooseTrack ? trackChoiceName(f, i)
                         : screen == ScreenId::Brightness  ? kBrightnessLabels[i]
                         : screen == ScreenId::DimDelay    ? kDimDelayLabels[i]
-                                                          : kTextSizeLabels[i];
+                        : screen == ScreenId::TextSize    ? kTextSizeLabels[i]
+                                                          : kRequireFixLabels[i];
     c.add("%s %s%s", i == cursor ? ">" : " ", label, i == active ? " *" : "");
   }
   if (screen == ScreenId::ChooseTrack && count == 0) c.add("  No track in reach");
@@ -430,6 +438,7 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize:
+    case ScreenId::RequireFix:
       editor(b, f, screen, layout, c);
       return;
     case ScreenId::Dialog:
