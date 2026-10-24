@@ -46,6 +46,8 @@ struct Facts {
 
   const char* trackId = "";    // the resolved track's folder; empty without a fix, or with none here
   const char* trackName = "";  // its name in track.json, given in the apps; empty until then
+  // Track › Choose: menu.trackChoices of them, each as the screens name a track, up to 14 columns.
+  const char* const* trackChoiceNames = nullptr;
   bool hasGeometry = false;
   uint16_t trackSessions = 0;  // recorded at this track
   uint16_t cardSessions = 0;   // on the card, for Delete sessions
@@ -152,6 +154,7 @@ const char* checkReason(uint8_t check);
 // Whether a session cannot start now, and so Home says why (§3.4).
 inline bool loggingBlocked(const MenuContext& m) { return !m.cardOk || !m.loggingAllowed; }
 const char* profileName(const Facts& facts, uint8_t index);  // "?" if there is no such profile
+const char* trackChoiceName(const Facts& facts, uint8_t index);  // "?" if there is no such track
 // The name New car gives profile `index`, "Car 4" for index 3, until an app renames it (§3.8).
 void newProfileName(uint8_t index, char (&out)[9]);
 

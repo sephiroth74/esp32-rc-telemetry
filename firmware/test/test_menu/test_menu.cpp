@@ -434,6 +434,33 @@ static void new_track_is_a_hold_and_needs_card_and_fix() {
   TEST_ASSERT_EQUAL_UINT8(3, w.menu.cursor());
 }
 
+// Track › Choose (§7.1): an editor of the tracks within reach of the fix, opening on the resolved
+// one; OK makes the highlighted one resolved, Back keeps things as they are.
+static void choose_track_is_an_editor_of_the_tracks_in_reach() {
+  Walk w;
+  w.keys({Event::Open, Event::Down, Event::Open});
+  w.down(4);
+  ASSERT_REFUSAL(NoFix, w.key(Event::Open));  // within reach of nothing
+  ASSERT_SCREEN(Track, w.menu);
+  w.context.hasFix = true;
+  w.context.trackChoices = 3;
+  w.context.trackResolved = 1;
+  w.key(Event::Open);
+  ASSERT_SCREEN(ChooseTrack, w.menu);
+  TEST_ASSERT_EQUAL_UINT8(1, w.menu.cursor());
+  w.key(Event::Down);
+  MenuResult r = w.key(Event::Open);
+  ASSERT_COMMAND(ChooseTrack, r);
+  TEST_ASSERT_EQUAL_UINT8(2, r.arg);
+  ASSERT_SCREEN(Track, w.menu);
+  w.context.trackChoices = 0;  // none here: only Back
+  w.context.trackResolved = 0;
+  w.key(Event::Open);
+  ASSERT_SCREEN(ChooseTrack, w.menu);
+  ASSERT_COMMAND(None, w.key(Event::Open));
+  ASSERT_SCREEN(Track, w.menu);
+}
+
 static void restart_is_a_hold_on_its_own_screen() {
   Walk w;
   w.key(Event::Open);
@@ -585,6 +612,7 @@ int main(int, char**) {
   RUN_TEST(track_info_and_new_track_need_the_gnss);
   RUN_TEST(writes_need_a_card_that_took_the_probe);
   RUN_TEST(new_track_is_a_hold_and_needs_card_and_fix);
+  RUN_TEST(choose_track_is_an_editor_of_the_tracks_in_reach);
   RUN_TEST(restart_is_a_hold_on_its_own_screen);
   RUN_TEST(deleting_sessions_always_asks);
   RUN_TEST(calibrate_needs_an_rc_signal);

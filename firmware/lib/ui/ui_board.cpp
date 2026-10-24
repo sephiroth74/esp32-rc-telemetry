@@ -27,6 +27,11 @@ const char* profileName(const Facts& f, uint8_t index) {
   return f.profileNames[index];
 }
 
+const char* trackChoiceName(const Facts& f, uint8_t index) {
+  if (!f.trackChoiceNames || index >= f.menu.trackChoices) return "?";
+  return f.trackChoiceNames[index];
+}
+
 void newProfileName(uint8_t index, char (&out)[9]) {
   snprintf(out, sizeof out, "Car %u", index + 1);
 }
@@ -154,6 +159,9 @@ BoardOutput Board::fromMenu(const MenuResult& r, const Facts& f, uint32_t nowMs)
     }
     case Command::NewTrack:
       toast(o, "New track created");
+      break;
+    case Command::ChooseTrack:
+      toast(o, "Track %s", trackChoiceName(f, r.arg));
       break;
     case Command::SetBrightness:
       toast(o, "Brightness: %s", kBrightnessLabels[r.arg % 3]);

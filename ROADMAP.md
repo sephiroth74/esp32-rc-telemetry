@@ -346,10 +346,12 @@ try when one is at hand; their logic is host-tested.
   the fix comes or goes, after moving 50 m, and after any session or command. Without a track the
   screens say why: `none, no fix`, `none, no card`, or `new here`, which the next session makes
   (184 host tests). On the device, indoors with no fix: `none, no fix` on Home, the GNSS screen and
-  the Session entry, and `Next: session_005`, the next in `_unassigned`. Still to do: the same with
-  a fix, at a window, with a session begun **on** the fix and filed at its start; Track › New track, which makes no folder yet, and makes the new track the resolved one
-  as §7.1 says; and Track › Choose, the pick by hand where two tracks compete (§7.1, decided
-  2026-10-24).
+  the Session entry, and `Next: session_005`, the next in `_unassigned`.
+  *Then:* Track › New track makes its folder at the fix, with the next free suffix, and Track ›
+  Choose lists the tracks within reach of the fix, for where two compete (§7.1, decided
+  2026-10-24); either makes its track the resolved one while the fix stays within reach, until
+  another is chosen or the device restarts (188 host tests). Still to do, at a window: the screens
+  with a fix, a session begun **on** the fix and filed at its start, New track and Choose.
 - [ ] **5.5 Manual sessions** (§3.6): hold OK to start, hold OK and confirm to stop; markers; the
   session screen's GNSS page live.
   *Test:* a 30-minute bench session with clean latency and loss numbers.

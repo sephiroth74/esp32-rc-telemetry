@@ -26,6 +26,7 @@ enum class ScreenId : uint8_t {
   Geometry,
   TrackInfo,
   NewTrack,
+  ChooseTrack,
   Gnss,
   Settings,
   CarProfile,
@@ -66,6 +67,7 @@ enum class Command : uint8_t {
   SetTextSize,
   DeleteSessions,
   Restart,
+  ChooseTrack,  // arg: which of the tracks within reach (§7.1)
 };
 
 const char* commandName(Command command);  // for logs
@@ -133,6 +135,8 @@ struct MenuContext {
   bool requireFix = true;  // session.require_fix: a session needs the fix (§3.6); off for the bench
   bool rcSignal = false;  // edges on the RC inputs: calibration needs them
   bool hasStartLine = false;
+  uint8_t trackChoices = 0;   // tracks within reach of the fix, for Track › Choose (§7.1)
+  uint8_t trackResolved = 0;  // which of them a session would be filed in
   uint8_t profileCount = 1;  // 1..profileMax
   uint8_t profileMax = 8;    // CAR_PROFILES_MAX: New car is refused once there are this many
   uint8_t activeProfile = 0;
@@ -185,7 +189,8 @@ class Menu {
   // The entries of a list screen, or nullptr and 0 for any other screen.
   static const Entry* entries(ScreenId screen, uint8_t& count);
   static ScreenId parent(ScreenId screen);
-  // An editor's values, without its New and Back choices; 0 for any other screen.
+  // An editor's values, without its New and Back choices; 0 for any other screen. Track › Choose
+  // is one, its values the tracks within reach of the fix.
   static uint8_t valueCount(ScreenId screen, const MenuContext& context);
   // Whether the choice after an editor's values adds one: New car, in Car profile (§3.8).
   static bool hasNewChoice(ScreenId screen) { return screen == ScreenId::CarProfile; }

@@ -1059,13 +1059,16 @@ session and shows on the GNSS screen and on Home (§3.4).
 A track never has to be registered beforehand: a new venue gets its folder from step 3 on its own.
 What step 2 cannot tell is a **new layout at a known venue**, which matches the old track by position.
 For that, **Track › New track** (§3.4) skips step 2: it creates a folder at the current fix as step 3
-does, with the next free suffix, and makes it the resolved track. Being the one used most recently, it
-keeps winning step 2 at that venue from then on. The desktop app names it, and re-files a session
-into the other track if the old layout comes back.
+does, with the next free suffix, and makes it the resolved track. Its first session makes it the one
+used most recently, so it keeps winning step 2 at that venue from then on. The desktop app names it,
+and re-files a session into the other track if the old layout comes back.
 
 Tracks close enough to compete are not expected. Where two do, the user picks one by hand (decided
 2026-10-24). On the device, **Track › Choose** lists the tracks within reach of the fix and makes
 the chosen one the resolved track, as New track does; in the apps, the user re-files the session.
+A track resolved by hand, by either entry, holds while the fix stays within its reach, until another
+is chosen or the device restarts; a session filed there makes it the one used most recently, which
+step 2 then picks on its own.
 What the device shows is a simple view for the pits: the apps compute the real figures from the
 logs.
 

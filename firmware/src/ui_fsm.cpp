@@ -123,6 +123,7 @@ void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now, ui::Mot
 // IDLE, where a session started now would be filed. Again when the fix comes or goes, after moving
 // TRACK_LOOKUP_MOVE_M, and after anything that may change the card: a session, a transfer, a command.
 TrackView trackView;
+const char* trackChoicePtrs[kTrackChoicesMax];
 bool trackStale = true;
 bool trackFix = false;
 geo::Point trackAt;
@@ -150,6 +151,10 @@ void lookUpTrack(const ui::Board& board, bool fix) {
   facts.menu.hasStartLine = trackView.hasStartLine;
   facts.hasGeometry = trackView.hasGeometry;
   facts.trackSessions = trackView.sessions;
+  for (uint8_t i = 0; i < trackView.choices; ++i) trackChoicePtrs[i] = trackView.choiceNames[i];
+  facts.trackChoiceNames = trackChoicePtrs;
+  facts.menu.trackChoices = trackView.choices;
+  facts.menu.trackResolved = trackView.resolved;
   if (board.mode() == ui::Mode::Idle) {  // in a session it is the session's own, for the toasts
     facts.nextSession = trackView.next > 65535 ? 65535 : trackView.next;
   }
@@ -174,9 +179,6 @@ void runPlaceholder(const ui::BoardOutput& o) {
       facts.menu.profileCount = o.arg + 1;
       facts.menu.activeProfile = o.arg;
       facts.profileCalibrated = false;
-      break;
-    case ui::Command::NewTrack:  // the screens name the card's tracks now, and this makes none yet
-      Serial.println("new track: not on the card yet (ROADMAP.md step 5.4)");
       break;
     case ui::Command::SetBrightness:  // the ui task applies it to the panel on the next tick
       facts.menu.brightness = o.arg;
@@ -267,6 +269,16 @@ void uiTask(void*) {
                     out.arg);
       runSession(out, now, automatic);
       if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
+      // Track › New track and Track › Choose (§7.1): the card's, read again below like any change.
+      if (out.command == ui::Command::NewTrack) {
+        char id[geo::kTrackIdMax + 1];
+        bool made = acq.fix() && sessionNewTrack({facts.latE7, facts.lonE7}, id);
+        Serial.printf("[%7lu] new track: %s\n", (unsigned long)now, made ? id : "none made");
+      }
+      if (out.command == ui::Command::ChooseTrack && out.arg < trackView.choices) {
+        sessionChoose(trackView.choiceIds[out.arg]);
+        Serial.printf("[%7lu] track chosen: %s\n", (unsigned long)now, trackView.choiceIds[out.arg]);
+      }
       runPlaceholder(out);
       trackStale = true;         // whatever it did, the card is read again
       settingsSave(facts.menu);  // only what the command changed reaches NVS

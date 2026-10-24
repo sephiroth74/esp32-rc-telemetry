@@ -22,6 +22,7 @@ const Entry kTrack[] = {
     {"Geometry", ScreenId::Geometry, Command::None},
     {"Info", ScreenId::TrackInfo, Command::None},
     {"New track", ScreenId::NewTrack, Command::None},
+    {"Choose", ScreenId::ChooseTrack, Command::None},
     {"Back", kBackEntry, Command::None},
 };
 const Entry kSettings[] = {
@@ -75,15 +76,17 @@ Refusal openRefusal(ScreenId screen, const MenuContext& c) {
     case ScreenId::Geometry:
     case ScreenId::TrackInfo:
     case ScreenId::NewTrack:
+    case ScreenId::ChooseTrack:
     case ScreenId::DeleteSessions:
       if (!c.cardOk) return Refusal::NoCard;
       break;
     default:
       return Refusal::None;
   }
-  if ((screen == ScreenId::TrackInfo || screen == ScreenId::NewTrack) && !c.gnssOk) {
-    return Refusal::NoGnss;
-  }
+  bool position = screen == ScreenId::TrackInfo || screen == ScreenId::NewTrack ||
+                  screen == ScreenId::ChooseTrack;
+  if (position && !c.gnssOk) return Refusal::NoGnss;
+  if (screen == ScreenId::ChooseTrack && !c.hasFix) return Refusal::NoFix;  // within reach of what?
   return Refusal::None;
 }
 
@@ -133,7 +136,7 @@ const char* commandName(Command command) {
       "calib capture",  "save calib",        "cancel calib",
       "select profile", "new profile",       "set brightness",
       "set dim delay",  "set text size",     "delete sessions",
-      "restart",
+      "restart",        "choose track",
   };
   return kNames[static_cast<uint8_t>(command)];
 }
@@ -174,6 +177,7 @@ ScreenId Menu::parent(ScreenId screen) {
     case ScreenId::Geometry:
     case ScreenId::TrackInfo:
     case ScreenId::NewTrack:
+    case ScreenId::ChooseTrack:
       return ScreenId::Track;
     case ScreenId::CarProfile:
     case ScreenId::Calibrate:
@@ -196,6 +200,7 @@ bool Menu::scrolls(ScreenId screen) {
   if (entries(screen, count)) return false;
   switch (screen) {
     case ScreenId::CarProfile:
+    case ScreenId::ChooseTrack:
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize:
@@ -210,6 +215,8 @@ uint8_t Menu::valueCount(ScreenId screen, const MenuContext& c) {
   switch (screen) {
     case ScreenId::CarProfile:
       return c.profileCount ? c.profileCount : 1;
+    case ScreenId::ChooseTrack:
+      return c.trackChoices;
     case ScreenId::Brightness:
       return 3;
     case ScreenId::DimDelay:
@@ -277,6 +284,7 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       screen_ = ScreenId::Menu;
       return {};
     case ScreenId::CarProfile:
+    case ScreenId::ChooseTrack:
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize: {
@@ -295,10 +303,11 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
       }
       screen_ = parent(current);
       if (choice >= values) return {};
-      Command command = current == ScreenId::CarProfile   ? Command::SelectProfile
-                        : current == ScreenId::Brightness ? Command::SetBrightness
-                        : current == ScreenId::DimDelay   ? Command::SetDimDelay
-                                                          : Command::SetTextSize;
+      Command command = current == ScreenId::CarProfile    ? Command::SelectProfile
+                        : current == ScreenId::ChooseTrack ? Command::ChooseTrack
+                        : current == ScreenId::Brightness  ? Command::SetBrightness
+                        : current == ScreenId::DimDelay    ? Command::SetDimDelay
+                                                           : Command::SetTextSize;
       return issue(command, choice);
     }
     default:
@@ -326,6 +335,9 @@ MenuResult Menu::open(ScreenId current, const MenuContext& c) {
   switch (entry.screen) {
     case ScreenId::CarProfile:
       cursorOf(entry.screen) = c.activeProfile;
+      break;
+    case ScreenId::ChooseTrack:
+      cursorOf(entry.screen) = c.trackResolved;
       break;
     case ScreenId::Brightness:
       cursorOf(entry.screen) = c.brightness;

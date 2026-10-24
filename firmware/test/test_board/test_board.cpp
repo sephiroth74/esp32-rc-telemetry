@@ -34,6 +34,7 @@ using ui::TextSize;
   TEST_ASSERT_EQUAL_INT(static_cast<int>(DialogKind::expected), static_cast<int>((board).dialog()))
 
 static const char* const kLongNames[] = {"Typhon 6", "Kraton 8", "Outcast8"};
+static const char* const kTrackChoices[] = {"N4512E00934-99", "Pista Ambrosia", "N4512E00935"};
 
 // The longest values each field can take on the device.
 static Facts worstCase() {
@@ -45,6 +46,8 @@ static Facts worstCase() {
   f.menu.profileCount = 3;
   f.menu.activeProfile = 0;
   f.profileNames = kLongNames;
+  f.menu.trackChoices = 3;
+  f.trackChoiceNames = kTrackChoices;
   f.profileCalibrated = true;
   f.gnssLink = true;
   f.gnssBaud = 230400;
@@ -537,7 +540,8 @@ static void every_screen_fits_in_21_columns() {
       {"Session entry", {Event::Open, Event::Open}},
       {"Track", {Event::Open, Event::Down, Event::Open}},
       {"Track, on Back",
-       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down}},
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down,
+        Event::Down}},
       {"Start line", {Event::Open, Event::Down, Event::Open, Event::Open}},
       {"Start line dialog", {Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold}},
       {"Geometry entry", {Event::Open, Event::Down, Event::Open, Event::Down, Event::Open}},
@@ -545,6 +549,12 @@ static void every_screen_fits_in_21_columns() {
        {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Open}},
       {"New track",
        {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Open}},
+      {"Choose track",
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down,
+        Event::Open}},
+      {"Choose track, on Back",
+       {Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down,
+        Event::Open, Event::Down, Event::Down, Event::Down}},
       {"GNSS", {Event::Open, Event::Down, Event::Down, Event::Open}},
       {"Settings", {Event::Open, Event::Down, Event::Down, Event::Down, Event::Down, Event::Open}},
       {"Car profile",
@@ -699,6 +709,23 @@ static void a_screen_without_a_track_says_why() {
   TEST_ASSERT_EQUAL_STRING("Track none, no card", t.lines[3]);
 }
 
+// Track › Choose lists the tracks as the screens name them, the resolved one marked; the choice
+// comes back as a toast.
+static void choose_track_lists_the_tracks_in_reach() {
+  Walk w;
+  w.keys({Event::Open, Event::Down, Event::Open, Event::Down, Event::Down, Event::Down, Event::Down,
+          Event::Open});
+  ASSERT_SCREEN(ChooseTrack, w.board);
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("> N4512E00934-99 *", t.lines[1]);
+  TEST_ASSERT_EQUAL_STRING("  Pista Ambrosia", t.lines[2]);
+  w.key(Event::Down);
+  BoardOutput o = w.key(Event::Open);
+  ASSERT_COMMAND(ChooseTrack, o);
+  TEST_ASSERT_EQUAL_STRING("Track Pista Ambrosia", o.toast);
+}
+
 static void about_lists_the_post_check_by_check() {
   Walk w;
   ui::PostResult post;
@@ -772,6 +799,7 @@ int main(int, char**) {
   RUN_TEST(the_home_screen_reads_as_designed);
   RUN_TEST(the_gnss_screen_reads_as_designed);
   RUN_TEST(a_screen_without_a_track_says_why);
+  RUN_TEST(choose_track_lists_the_tracks_in_reach);
   RUN_TEST(about_lists_the_post_check_by_check);
   RUN_TEST(hints_follow_the_layout);
   RUN_TEST(a_list_keeps_its_cursor_in_view);

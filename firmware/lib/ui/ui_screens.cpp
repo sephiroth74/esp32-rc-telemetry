@@ -118,6 +118,8 @@ const char* screenTitle(ScreenId s) {
       return "Track info";
     case ScreenId::NewTrack:
       return "New track";
+    case ScreenId::ChooseTrack:
+      return "Choose";
     case ScreenId::Gnss:
       return "GNSS";
     case ScreenId::Settings:
@@ -264,6 +266,9 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
     case ScreenId::CarProfile:
       active = f.menu.activeProfile;
       break;
+    case ScreenId::ChooseTrack:
+      active = f.menu.trackResolved;
+      break;
     case ScreenId::Brightness:
       active = f.menu.brightness;
       break;
@@ -276,12 +281,14 @@ void editor(const Board& b, const Facts& f, ScreenId screen, Layout layout, Cont
   }
   uint8_t cursor = b.menu().cursor();
   for (uint8_t i = 0; i < count; ++i) {
-    const char* label = screen == ScreenId::CarProfile   ? profileName(f, i)
-                        : screen == ScreenId::Brightness ? kBrightnessLabels[i]
-                        : screen == ScreenId::DimDelay   ? kDimDelayLabels[i]
-                                                         : kTextSizeLabels[i];
+    const char* label = screen == ScreenId::CarProfile    ? profileName(f, i)
+                        : screen == ScreenId::ChooseTrack ? trackChoiceName(f, i)
+                        : screen == ScreenId::Brightness  ? kBrightnessLabels[i]
+                        : screen == ScreenId::DimDelay    ? kDimDelayLabels[i]
+                                                          : kTextSizeLabels[i];
     c.add("%s %s%s", i == cursor ? ">" : " ", label, i == active ? " *" : "");
   }
+  if (screen == ScreenId::ChooseTrack && count == 0) c.add("  No track in reach");
   if (Menu::hasNewChoice(screen)) c.add("%s New car", cursor == count++ ? ">" : " ");
   c.add("%s Back", cursor == count ? ">" : " ");
   c.cursor = cursor;
@@ -407,6 +414,7 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       list(b, f, screen, layout, c);
       return;
     case ScreenId::CarProfile:
+    case ScreenId::ChooseTrack:
     case ScreenId::Brightness:
     case ScreenId::DimDelay:
     case ScreenId::TextSize:
