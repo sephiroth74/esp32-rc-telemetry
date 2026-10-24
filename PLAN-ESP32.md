@@ -1151,6 +1151,9 @@ session open.
   under macOS is how filesystems get damaged. A host that has ejected the disk (a START STOP UNIT
   with eject) has let go of it: the display then reads `Ejected: OK to exit`, and leaving asks
   nothing. The disk's medium goes with the eject, so the host does not mount it again unasked.
+- Entering, the device leaves the bus for a moment and comes back, so that the host enumerates the
+  disk with its medium: macOS does not always notice a medium that arrives later (bench session 4,
+  `docs/hardware.md`).
 - **Connecting USB during a session does not auto-mount MSC.** Logging continues and the pack simply
   charges. MSC is entered explicitly, never implicitly.
 - With `ARDUINO_USB_MODE=0` the device is a composite CDC + MSC device, so the serial monitor keeps

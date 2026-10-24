@@ -442,7 +442,8 @@ try when one is at hand; their logic is host-tested.
   that ejected the disk is let go without a confirmation (§7.3, refined); a card that does not
   answer ends TRANSFER with a notice (189 host tests). On the bench (2026-10-24, bench session 4 in
   `docs/hardware.md`), against macOS: the disk mounted, read, ejected and left, and the
-  confirmation when leaving without the eject.
+  confirmation when leaving without the eject. A later Transfer left the disk without its medium
+  on the Mac; the device now leaves the bus and comes back on entering, and the disk mounts.
 - [ ] **9.2 BLE GATT**, only in TRANSFER: status, control and download per `docs/protocol.md`
   (§7.4), verified against the phone and desktop apps.
 

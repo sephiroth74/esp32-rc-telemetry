@@ -176,6 +176,13 @@ declines and holding OK accepts. Each time the board mounted the card again and 
 The serial port works throughout, the device being a composite of the two; the port's name changes
 with that, to `/dev/cu.usbmodem…C2`.
 
+**macOS does not always notice the medium arriving.** In a later Transfer, three minutes after
+boot, the disk stayed without a medium: the Mac listed the device's mass-storage interface and its
+logical unit, with no volume, and never asked again. The core's `USBMSC` gives no way to report the
+change, so on entering Transfer the device now leaves the bus for 300 ms and comes back: the Mac
+enumerates it afresh, finds the medium and mounts the disk within seconds. The serial port drops
+for that moment.
+
 ## Bench session 5 — the RC inputs captured (2026-10-24)
 
 ROADMAP.md step 6.2, the bench wired as `hardware/wiring-bench.png`: CH1 and CH2 from Y-cables

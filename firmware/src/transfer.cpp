@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <USB.h>
 #include <USBMSC.h>
+#include <tusb.h>
 
 #include "card.h"
 
@@ -37,6 +38,16 @@ bool onStartStop(uint8_t, bool start, bool loadEject) {
   return true;
 }
 
+// macOS reads a disk's medium when the device enumerates, and does not always notice one that
+// comes later: seen on the bench, the disk mounted in one Transfer and stayed medium-less in the
+// next. So the device leaves the bus and comes back, and the host finds the disk with its medium.
+// The serial port drops for that moment.
+void reattach() {
+  tud_disconnect();
+  delay(300);
+  tud_connect();
+}
+
 }  // namespace
 
 bool transferEnter() {
@@ -56,6 +67,7 @@ bool transferEnter() {
   msc.isWritable(true);
   msc.begin(sectors, kSector);
   msc.mediaPresent(true);
+  reattach();
   Serial.printf("transfer: %lu sectors on USB\n", (unsigned long)sectors);
   return true;
 }
