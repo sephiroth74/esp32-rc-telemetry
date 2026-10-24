@@ -11,6 +11,7 @@
 #include "gnss_task.h"
 #include "keys.h"
 #include "logger.h"
+#include "rc_capture.h"
 #include "session.h"
 #include "settings.h"
 #include "transfer.h"
@@ -31,7 +32,6 @@ const char* profileNamePtrs[CAR_PROFILES_MAX];
 
 ui::Facts sampleFacts() {
   ui::Facts f;
-  f.menu.rcSignal = true;
   f.menu.profileMax = CAR_PROFILES_MAX;
   f.menu.textSize = DISPLAY_TEXT_SIZE_DEFAULT;
   f.profileNames = profileNamePtrs;
@@ -43,8 +43,6 @@ ui::Facts sampleFacts() {
   f.lastLapMs = 62341;
   f.bestLapMs = 58902;
   f.deltaMs = 3439;
-  f.steeringUs = 1500;
-  f.throttleUs = 1500;
   f.geometryM = 412;
   f.geometryPoints = 4120;
   f.firmware = FW_VERSION;
@@ -348,6 +346,32 @@ void uiTask(void*) {
     }
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
+    // The receiver's widths as captured (§4.3): what Calibrate and the session's inputs page show;
+    // the percentages come with a calibration (step 6.3).
+    RcLive rc;
+    rcRead(rc);
+    facts.steeringUs = rc.widthUs[static_cast<uint8_t>(RcInput::Steering)];
+    facts.throttleUs = rc.widthUs[static_cast<uint8_t>(RcInput::Throttle)];
+    facts.menu.rcSignal = facts.steeringUs || facts.throttleUs;
+    // Bench log, as the gnss task's line: every 10 s, each input's range over those 10 s, its valid
+    // pulses and its rejects since boot.
+    static uint32_t rcLoggedMs = 0;
+    static uint16_t rcMin[2] = {UINT16_MAX, UINT16_MAX}, rcMax[2] = {0, 0};
+    for (uint8_t i = 0; i < 2; ++i) {
+      if (rc.widthUs[i] && rc.widthUs[i] < rcMin[i]) rcMin[i] = rc.widthUs[i];
+      if (rc.widthUs[i] > rcMax[i]) rcMax[i] = rc.widthUs[i];
+    }
+    if (now - rcLoggedMs >= 10000) {
+      rcLoggedMs = now;
+      Serial.printf("[%7lu] rc: steer %u-%u us, %lu ok, %lu rej; throttle %u-%u us, %lu ok, %lu rej\n",
+                    (unsigned long)now, rcMax[0] ? rcMin[0] : 0, rcMax[0], (unsigned long)rc.pulses[0],
+                    (unsigned long)rc.rejects[0], rcMax[1] ? rcMin[1] : 0, rcMax[1],
+                    (unsigned long)rc.pulses[1], (unsigned long)rc.rejects[1]);
+      for (uint8_t i = 0; i < 2; ++i) {
+        rcMin[i] = UINT16_MAX;
+        rcMax[i] = 0;
+      }
+    }
     lookUpTrack(board, acq.fix());
     facts.usbHost = transferHostAttached();
     facts.usbEjected = transferEjected();

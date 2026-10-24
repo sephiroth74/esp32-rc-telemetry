@@ -555,8 +555,16 @@ void session(const Board& b, const Facts& f, Content& c) {
   }
   c.add("Speed %u km/h", f.speedKmh);
   c.add("GNSS loss %lu", (unsigned long)f.gnssLoss);
-  c.add("Steering %+4d %%", f.steeringPct);
-  c.add("Throttle %+4d %%", f.throttlePct);
+  if (f.profileCalibrated) {
+    c.add("Steering %+4d %%", f.steeringPct);
+    c.add("Throttle %+4d %%", f.throttlePct);
+  } else {  // the widths, until a calibration makes percentages of them (§3.8); -- for none
+    char a[8];
+    snprintf(a, sizeof a, f.steeringUs ? "%u us" : "--", f.steeringUs);
+    c.add("Steering %s", a);
+    snprintf(a, sizeof a, f.throttleUs ? "%u us" : "--", f.throttleUs);
+    c.add("Throttle %s", a);
+  }
   c.setHint("OK mark  hold: stop");
 }
 
@@ -574,14 +582,22 @@ void calibration(const Board& b, const Facts& f, Layout layout, Content& c) {
     c.setHint("hold OK: save");
     return;
   }
-  c.add("%s", kSteps[step][0]);
-  c.add("%s", kSteps[step][1]);
-  c.add("St %4uus  Th %4uus", f.steeringUs, f.throttleUs);
   bool aux = step == kCalibrationSteps - 1;
-  if (layout == Layout::TwoButtons) {
-    c.setHint(aux ? "OK capture  NAV skip" : "OK capture");
+  c.add("%s", kSteps[step][0]);
+  // With two buttons the hint has no room for both keys: OK's part moves into the step's text, and
+  // the hint says what holding NAV does here — out of Calibrate from the first step, a step back
+  // from the others (§3.8).
+  bool two = layout == Layout::TwoButtons;
+  if (two && !aux) {
+    c.add("%s", step == 0 ? "then OK to capture" : "hold it, then OK");
   } else {
-    c.setHint(aux ? "OK capture  DOWN skip" : "OK capture  < back");
+    c.add("%s", kSteps[step][1]);
+  }
+  c.add("St %4uus  Th %4uus", f.steeringUs, f.throttleUs);
+  if (two) {
+    c.setHint(aux ? "OK capture  NAV skip" : step == 0 ? "hold NAV: exit" : "hold NAV: back");
+  } else {
+    c.setHint(aux ? "OK capture  DOWN skip" : step == 0 ? "OK capture  < exit" : "OK capture  < back");
   }
 }
 

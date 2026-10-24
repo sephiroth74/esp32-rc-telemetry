@@ -176,6 +176,21 @@ declines and holding OK accepts. Each time the board mounted the card again and 
 The serial port works throughout, the device being a composite of the two; the port's name changes
 with that, to `/dev/cu.usbmodem…C2`.
 
+## Bench session 5 — the RC inputs captured (2026-10-24)
+
+ROADMAP.md step 6.2, the bench wired as `hardware/wiring-bench.png`: CH1 and CH2 from Y-cables
+through 10 kΩ to D3 and D2, one receiver − to GND, the receiver on the ESC, the car's wheels free.
+The MCPWM capture times both inputs at once, and the console gives each one's range over 10 s.
+
+| Quantity | Value |
+| --- | --- |
+| POST check 10 | `steer+thr` with the receiver on at boot; `none` with it off |
+| Steering, CH1 | neutral 1,500 µs, full left **1,054 µs**, full right **1,936 µs** |
+| Throttle, CH2 | neutral 1,498 µs, full brake **1,002 µs**, full throttle **1,956 µs** |
+| Rate | 602 valid pulses every 10 s on each input: the KR-331's 60 Hz, none missed |
+| Rejects | 1 an input since boot, the first pulse, which has no frame period yet; none while the sticks moved. Wiring the receiver in with the board on gave some hundreds, as the contacts settled |
+| A session's log | 48 s, read back over USB: 483 RC records, one every 100 ms, five samples each; steering 1,054–1,943 µs and throttle 1,003–1,957 µs, never 0; 0 rejects in the footer, both inputs present in `meta.json` |
+
 ## Still to measure
 
 | Quantity | Why it matters | Value |
@@ -204,7 +219,7 @@ readings are about 50 µs apart, so its widths are good to that, and to a few µ
 
 | Car | Receiver | Channel logic level | BEC voltage | Throttle-wire telemetry | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | **3.3 V** push-pull: high 3.25–3.27 V, low 0.00 V (CH3). Positive pulses, one every **16.6 ms (60 Hz)**, the same on every channel. **Steering (CH1): neutral 1,500 µs, full left 1,050 µs, full right 1,940 µs**, and **throttle (CH2): neutral 1,500 µs, full brake 1,005 µs, full throttle ≈ 1,940 µs** (held under 2 s, so estimated from the peaks), with the KT-331P's trims and end points as they are; CH3 1,000 µs in one position of its switch, the other not yet measured | **5.90 V** (Brainz 8 ESC; multimeter, red to black at the receiver, ESC on) | **None seen**: on CH2, with the ESC armed and driven, the frames stay 16.6 ms apart with no extra edges | Ports, top to bottom: VCC, CH3, CH2, CH1. VCC is the power input, not a channel: its pins carry the rail and no pulses. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. CH3 is the KT-331P's two-position **3ch switch** on the grip (instruction manual p. 10; REV-3C and EPA-3C in its menu), which nothing on this car uses: a candidate for the aux-channel remote trigger (PLAN-ESP32.md §8). The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
+| Kyosho Inferno MP9e Evo V2 (34111, electric 1/8 buggy) | Kyosho Syncro **KR-331**, 3 channels, with the KT-331P transmitter | **3.3 V** push-pull: high 3.25–3.27 V, low 0.00 V (CH3). Positive pulses, one every **16.6 ms (60 Hz)**, the same on every channel. **Steering (CH1): neutral 1,500 µs, full left 1,050 µs, full right 1,940 µs**, and **throttle (CH2): neutral 1,500 µs, full brake 1,005 µs, full throttle ≈ 1,940 µs** (held under 2 s, so estimated from the peaks), with the KT-331P's trims and end points as they are. Timed again by the firmware's MCPWM capture (bench session 5): **steering 1,054–1,936 µs, neutral 1,500; throttle 1,002–1,956 µs, neutral 1,498**; CH3 1,000 µs in one position of its switch, the other not yet measured | **5.90 V** (Brainz 8 ESC; multimeter, red to black at the receiver, ESC on) | **None seen**: on CH2, with the ESC armed and driven, the frames stay 16.6 ms apart with no extra edges | Ports, top to bottom: VCC, CH3, CH2, CH1. VCC is the power input, not a channel: its pins carry the rail and no pulses. CH1 steering servo, CH2 the ESC, which powers the receiver through it; **CH3 and VCC are free**. CH3 is the KT-331P's two-position **3ch switch** on the grip (instruction manual p. 10; REV-3C and EPA-3C in its menu), which nothing on this car uses: a candidate for the aux-channel remote trigger (PLAN-ESP32.md §8). The KR-331 has no telemetry and no data port: each port is signal, + and −, and carries only the PWM of its channel |
 
 ## Wiring
 

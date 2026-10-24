@@ -176,6 +176,23 @@ static void the_session_screen_wraps_its_pages() {
   TEST_ASSERT_EQUAL_UINT8(9, t.scrollFirst);
 }
 
+// Without a calibration the inputs page gives the widths, as captured, and -- for an input with
+// none: a percentage needs the car's endpoints (§3.8).
+static void the_inputs_page_gives_widths_until_calibrated() {
+  Walk w;
+  w.facts.profileCalibrated = false;
+  w.facts.steeringUs = 1500;
+  w.facts.throttleUs = 0;
+  w.key(Event::Hold);
+  w.down(1);  // small text, pages of five: steering ends the second page, throttle opens the third
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Steering 1500 us", t.lines[6]);
+  w.down(1);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Throttle --", t.lines[2]);
+}
+
 // The session's GNSS lines read as the GNSS screen's: satellites used and seen, which move even
 // indoors, and no hAcc without a fix rather than the module's 4295 km of no estimate.
 static void the_session_gnss_page_reads_as_the_gnss_screen() {
@@ -782,6 +799,24 @@ static void hints_follow_the_layout() {
   TEST_ASSERT_EQUAL_STRING("  Track", two.lines[3]);
 }
 
+// Calibrate with two buttons says what holding NAV does at each step: out from the first, a step
+// back from the others; OK's part goes into the step's own text.
+static void calibration_says_how_to_get_out() {
+  Walk w;
+  w.toSettings();
+  w.key(Event::Down);
+  w.key(Event::Open);   // Settings › Calibrate
+  w.key(Event::Hold);   // its first step
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("then OK to capture", t.lines[3]);
+  TEST_ASSERT_EQUAL_STRING("hold NAV: exit", t.lines[7]);
+  w.key(Event::Open);  // captured: the second step
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("hold it, then OK", t.lines[3]);
+  TEST_ASSERT_EQUAL_STRING("hold NAV: back", t.lines[7]);
+}
+
 static void a_list_keeps_its_cursor_in_view() {
   Walk w;
   w.key(Event::Open);
@@ -801,6 +836,7 @@ int main(int, char**) {
   RUN_TEST(a_session_locks_the_menu);
   RUN_TEST(the_session_screen_wraps_its_pages);
   RUN_TEST(the_session_gnss_page_reads_as_the_gnss_screen);
+  RUN_TEST(the_inputs_page_gives_widths_until_calibrated);
   RUN_TEST(down_on_home_scrolls_and_keeps_the_menu_awake);
   RUN_TEST(the_stop_dialog_times_out_into_the_session);
   RUN_TEST(geometry_records_until_held);
@@ -823,6 +859,7 @@ int main(int, char**) {
   RUN_TEST(choose_track_lists_the_tracks_in_reach);
   RUN_TEST(about_lists_the_post_check_by_check);
   RUN_TEST(hints_follow_the_layout);
+  RUN_TEST(calibration_says_how_to_get_out);
   RUN_TEST(a_list_keeps_its_cursor_in_view);
   return UNITY_END();
 }

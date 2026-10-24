@@ -372,10 +372,20 @@ try when one is at hand; their logic is host-tested.
 - [ ] **6.1 RC front end.** Per input, 10 kΩ in series, a BAT43 clamp to 3V3 and a 100 kΩ pull-down
   (§2.5; the 74LVC2G17 first planned gave way to through-hole parts). For each car, the logic
   level and the BEC voltage go into `docs/hardware.md`.
-- [ ] **6.2 RC capture.** MCPWM capture with pulse validation and reject counters; RC samples in the
+- [x] **6.2 RC capture.** MCPWM capture with pulse validation and reject counters; RC samples in the
   log; POST check 10 (§4.3).
   `tools/rc-live` already times one channel this way on the bench, with the `RC_*` windows, and
   shows it on the OLED as a bar from the centre.
+  *So far:* `src/rc_capture.cpp`: both inputs on one capture timer, each pulse checked against
+  its width and frame windows, rejects counted per input, an input present once a pulse passes.
+  A 50 Hz sampler logs RC records, five to an epoch, while a session is open; the footer takes the
+  session's rejects and `meta.json` the inputs present. POST check 10 names them. The screens show
+  the live widths, the session's inputs page in µs until a calibration (191 host tests). On the
+  bench (bench session 5): steering 1,054–1,936 µs, throttle 1,002–1,956 µs, 60 Hz with none
+  missed, `steer+thr` at boot.
+  *Result:* a 48 s bench session read back over USB: 483 RC records, one every 100 ms, five
+  samples each; steering 1,054–1,943 µs and throttle 1,003–1,957 µs, never 0; 0 rejects in the
+  footer, both inputs present in `meta.json`.
 - [ ] **6.3 Car profiles and calibration** (§3.8, §4.3).
   - Profiles read from `config.json` and chosen in Settings › Car profile.
   - New car: a `Car N` profile appended to both copies of `config.json`, the NVS calibration at its

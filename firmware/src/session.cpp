@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "logger.h"
+#include "rc_capture.h"
 #include "settings.h"
 
 namespace {
@@ -261,8 +262,10 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
     doc["start"]["utc"] = nullptr;
   }
   doc["start"]["fix"] = started.haveFix;
-  doc["inputs"]["steering"] = false;  // phase 6
-  doc["inputs"]["throttle"] = false;
+  RcLive rc;  // §4.3: an input is present once it has delivered valid pulses
+  rcRead(rc);
+  doc["inputs"]["steering"] = rc.present[static_cast<uint8_t>(RcInput::Steering)];
+  doc["inputs"]["throttle"] = rc.present[static_cast<uint8_t>(RcInput::Throttle)];
   if (footer) {
     doc["close"] = closeName(reason);
     JsonObject f = doc["footer"].to<JsonObject>();
@@ -272,6 +275,8 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
     f["uart_errors"] = footer->uartErrors;
     f["ubx_bad_checksums"] = footer->ubxBadChecksums;
     f["ring_overflow"] = footer->ringOverflow;
+    f["rc_rejects_steering"] = footer->rcRejects[0];
+    f["rc_rejects_throttle"] = footer->rcRejects[1];
     f["writes"] = footer->writes;
     f["slow_writes"] = footer->slowWrites;
     f["write_max_ms"] = footer->writeMaxMs;

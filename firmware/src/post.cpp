@@ -10,6 +10,7 @@
 #include "gnss_config.h"
 #include "gnss_link.h"
 #include "i2c_bus.h"
+#include "rc_capture.h"
 #include "keys.h"
 #include "log_ring.h"
 #include "settings.h"
@@ -127,6 +128,23 @@ ui::CheckReport checkGnssLink() {
 // in the background.
 ui::CheckReport checkGnssConfig() { return gnssConfigure(); }
 
+// 10: edges on the steering and the throttle input within POST_RC_EDGE_WINDOW_MS, each on its own;
+// the result names those present. None is no failure: an input may be unwired, or the receiver off
+// on the bench (§4.3), and power-loss detection then waits for one (§4.5).
+ui::CheckReport checkRc() {
+  if (!rcBegin()) return ui::CheckReport::fail("no capture");
+  RcLive rc;
+  uint32_t t0 = millis();
+  do {
+    delay(10);
+    rcRead(rc);
+  } while (!(rc.present[0] && rc.present[1]) && millis() - t0 < POST_RC_EDGE_WINDOW_MS);
+  if (rc.present[0] && rc.present[1]) return ui::CheckReport::pass("steer+thr");
+  if (rc.present[0]) return ui::CheckReport::pass("steer");
+  if (rc.present[1]) return ui::CheckReport::pass("throttle");
+  return ui::CheckReport::skipped("none");
+}
+
 ui::CheckReport runCheck(uint8_t id) {
   switch (id) {
     case 0:
@@ -147,6 +165,8 @@ ui::CheckReport runCheck(uint8_t id) {
       return checkGnssLink();
     case 9:
       return checkGnssConfig();
+    case 10:
+      return checkRc();
     default:
       return ui::CheckReport::skipped();
   }

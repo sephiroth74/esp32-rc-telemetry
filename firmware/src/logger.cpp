@@ -12,6 +12,7 @@
 #include "gnss_task.h"
 #include "log_ring.h"
 #include "logbuf.h"
+#include "rc_capture.h"
 
 namespace {
 
@@ -32,6 +33,7 @@ rcl::Writer writer(0);
 uint32_t startMs = 0;
 uint32_t records = 0, ubxFrames = 0;
 uint32_t droppedAtOpen = 0;
+uint32_t rcRejectsAtOpen[3] = {};
 uint8_t scratch[kScratch];
 
 // The logger task's own.
@@ -130,6 +132,9 @@ void finish() {
   f.uartErrors = gnss.loss.uartErrors - lossAtOpen.uartErrors;
   f.ubxBadChecksums = gnss.loss.badChecksum - lossAtOpen.badChecksum;
   f.ubxOversize = gnss.loss.oversize - lossAtOpen.oversize;
+  RcLive rc;
+  rcRead(rc);
+  for (uint8_t i = 0; i < 3; ++i) f.rcRejects[i] = rc.rejects[i] - rcRejectsAtOpen[i];
   f.writes = latency.count();
   f.slowWrites = latency.slow();
   f.writeMaxMs = latency.maxMs();
@@ -201,6 +206,9 @@ bool logOpen(const char* filePath, const rcl::SessionHeader& header) {
   GnssLive gnss;
   gnssLiveRead(gnss);
   lossAtOpen = gnss.loss;
+  RcLive rc;
+  rcRead(rc);
+  for (uint8_t i = 0; i < 3; ++i) rcRejectsAtOpen[i] = rc.rejects[i];
   snprintf(path, sizeof path, "%s", filePath);
   uint64_t nonce = uint64_t(esp_random()) << 32 | esp_random();
   uint8_t head[rcl::kFileHeaderBytes];
