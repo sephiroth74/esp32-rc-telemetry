@@ -132,11 +132,14 @@ p       = (|d| × 100 + ⌊full / 2⌋) ÷ full     (integer division: rounded t
 percent = min(p, 100), negative on the negative side; 0 when d is 0
 ```
 
-**A capture is a calibration** when every width is non-zero, each end lies at least 50 µs from
-neutral, and the two ends lie on opposite sides of it. Otherwise the summary of Settings ›
-Calibrate does not save it: a step was skipped, a stick stayed put, or an end was captured the
-wrong way.
+**A capture is a calibration** when each input captured — one with no pulse is left out, as a car
+with only the throttle tapped (§4.3) — has every width non-zero, each end at least 50 µs from
+neutral, and its two ends on opposite sides of it; and at least one input was captured. Otherwise
+the summary of Settings › Calibrate does not save it, and says why, the first input first: a step
+was missed (`Steering step missed`), a stick stayed put (`not moved`), an end was captured the
+wrong way (`wrong way`), or nothing was captured at all.
 
 **The accepted window** of a calibrated input (§4.3) runs from the smaller end to the larger one,
-widened by a margin each way.
+widened by 100 µs each way (`RC_WINDOW_MARGIN_US`). An input left out of the calibration keeps the
+800–2200 µs of an uncalibrated one.
 

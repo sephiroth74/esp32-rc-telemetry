@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#include "calibration.h"
 #include "config.h"
 #include "logger.h"
 #include "rc_capture.h"
@@ -247,7 +248,26 @@ bool writeMeta(const rcl::Footer* footer, rcl::Close reason) {
   doc["post"]["summary"] = started.postSummary;
   doc["car_profile"]["index"] = started.profile;
   doc["car_profile"]["name"] = started.profileName;
-  doc["car_profile"]["calibration"] = nullptr;  // phase 6
+  // The calibration in use (§3.8): each axis's ends and neutral in µs, null for an input left out
+  // of it; null altogether for a profile never calibrated.
+  const rc::Calibration* cal = calibrationActive();
+  if (cal) {
+    JsonObject c = doc["car_profile"]["calibration"].to<JsonObject>();
+    const rc::Axis* axes[2] = {&cal->steering, &cal->throttle};
+    const char* names[2] = {"steering", "throttle"};
+    for (uint8_t i = 0; i < 2; ++i) {
+      if (rc::absent(*axes[i])) {
+        c[names[i]] = nullptr;
+        continue;
+      }
+      c[names[i]]["negative_us"] = axes[i]->negativeUs;
+      c[names[i]]["neutral_us"] = axes[i]->neutralUs;
+      c[names[i]]["positive_us"] = axes[i]->positiveUs;
+    }
+    c["aux_us"] = cal->auxUs;
+  } else {
+    doc["car_profile"]["calibration"] = nullptr;
+  }
   doc["start"]["automatic"] = started.automatic;
   time_t now = time(nullptr);
   if (now > 1700000000 && !startUtc[0]) {  // set from the GNSS (gnss_task.cpp), not the 1970 of a boot

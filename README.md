@@ -29,6 +29,7 @@ make build     # compile
 make upload    # flash over USB-C
 make monitor   # serial console
 make test      # host unit tests for firmware/lib/
+make sim       # flash the bench simulation: receiver and keys from the console (bench_sim.h)
 make help      # everything else
 ```
 

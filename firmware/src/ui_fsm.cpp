@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "bench_sim.h"
+#include "calibration.h"
 #include "card.h"
 #include "config.h"
 #include "display.h"
@@ -159,6 +161,50 @@ void lookUpTrack(const ui::Board& board, bool fix) {
   }
 }
 
+// Settings › Calibrate and the profiles' calibrations (§3.8, step 6.3). The steps capture the live
+// widths into `working`, whose summary the screens show; a save puts it in the active profile's
+// NVS slot. A profile chosen or added brings its own, or none.
+rc::Calibration working;
+
+void showWorking() {
+  const rc::Axis& s = working.steering;
+  const rc::Axis& t = working.throttle;
+  const uint16_t st[3] = {s.negativeUs, s.neutralUs, s.positiveUs};
+  const uint16_t th[3] = {t.negativeUs, t.neutralUs, t.positiveUs};
+  for (uint8_t i = 0; i < 3; ++i) {
+    facts.capturedSteering[i] = st[i];
+    facts.capturedThrottle[i] = th[i];
+  }
+  facts.calibrationProblem = rc::problem(working);
+}
+
+void runCalibration(const ui::BoardOutput& o) {
+  switch (o.command) {
+    case ui::Command::EnterCalibration:
+      working = rc::Calibration();
+      showWorking();
+      break;
+    case ui::Command::CalibrationCapture:  // the steps of lib/ui and lib/rc go in the same order
+      rc::capture(working, static_cast<rc::Step>(o.arg), facts.steeringUs, facts.throttleUs, 0);
+      showWorking();
+      break;
+    case ui::Command::SaveCalibration:
+      if (calibrationSave(facts.menu.activeProfile, working)) facts.profileCalibrated = true;
+      break;
+    case ui::Command::SelectProfile:
+      calibrationUse(o.arg);
+      facts.profileCalibrated = calibrationActive();
+      break;
+    case ui::Command::NewProfile:
+      calibrationClear(o.arg);
+      calibrationUse(o.arg);
+      facts.profileCalibrated = calibrationActive();
+      break;
+    default:
+      break;
+  }
+}
+
 // Stand-ins for the modules that will carry the commands out. Each only updates the sample facts,
 // so the screens react as they will once the real thing is behind them. A start line and a
 // geometry are the card's own (lookUpTrack), until phase 8 records them.
@@ -167,17 +213,12 @@ void runPlaceholder(const ui::BoardOutput& o) {
     case ui::Command::StopSession:  // the track's own numbers come from the card (lookUpTrack)
       ++facts.cardSessions;
       break;
-    case ui::Command::SaveCalibration:
-      facts.profileCalibrated = true;
-      break;
-    case ui::Command::SelectProfile:
+    case ui::Command::SelectProfile:  // its calibration: runCalibration
       facts.menu.activeProfile = o.arg;
-      facts.profileCalibrated = false;
       break;
     case ui::Command::NewProfile:
       facts.menu.profileCount = o.arg + 1;
       facts.menu.activeProfile = o.arg;
-      facts.profileCalibrated = false;
       break;
     case ui::Command::SetBrightness:  // the ui task applies it to the panel on the next tick
       facts.menu.brightness = o.arg;
@@ -211,6 +252,8 @@ void uiTask(void*) {
   ui::ScreenText text;
   char shownState[ui::kScreenCols + 1] = "";
   settingsFill(facts.menu);
+  calibrationUse(facts.menu.activeProfile);  // and the inputs' windows with it (§4.3)
+  facts.profileCalibrated = calibrationActive();
   uint32_t lastKeyMs = millis();
   ui::Acquisition acq(acquisitionTiming());
   uint32_t seenEpochs = 0;
@@ -267,6 +310,7 @@ void uiTask(void*) {
       Serial.printf("[%7lu] command %s (%u)\n", (unsigned long)now, ui::commandName(out.command),
                     out.arg);
       runSession(out, now, automatic);
+      runCalibration(out);
       if (out.command == ui::Command::RestartGnss) acq.restart(now);  // the clock, §3.4
       // TRANSFER (§7.3): the card to the USB host and back; one that will not go, a notice.
       if (out.command == ui::Command::EnterTransfer && !transferEnter()) {
@@ -320,14 +364,14 @@ void uiTask(void*) {
     bool dimmed = dimAfter && now - lastKeyMs >= dimAfter;
 
     ui::Event event;
-    while (keysNext(event)) {
+    auto onKey = [&](ui::Event event) {
       lastKeyMs = now;
       if (event == ui::Event::Press && dimmed) {
         keysSwallow();
         dimmed = false;
         board.wake(now);  // a timer restart only: a notice on screen stays to be read
         Serial.printf("[%7lu] woken\n", (unsigned long)now);
-        continue;
+        return;
       }
       if (event == ui::Event::Hold) displayAcknowledge(now);
       ui::BoardOutput out = board.handle(event, facts, now);
@@ -335,7 +379,12 @@ void uiTask(void*) {
         Serial.printf("[%7lu] event %s\n", (unsigned long)now, ui::eventName(event));
       }
       act(out, now, /*automatic=*/false);
-    }
+    };
+    while (keysNext(event)) onKey(event);
+#ifdef BENCH_SIM
+    benchSimPoll();  // the console's keys, as if pressed (bench_sim.h)
+    while (benchSimNextEvent(event)) onKey(event);
+#endif
     board.tick(now);
     // A card that failed in the middle of a session: closed, and said so (§3.5).
     if (board.mode() == ui::Mode::Session && logFailed()) {
@@ -346,13 +395,21 @@ void uiTask(void*) {
     }
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
-    // The receiver's widths as captured (§4.3): what Calibrate and the session's inputs page show;
-    // the percentages come with a calibration (step 6.3).
+    // The receiver's widths as captured (§4.3), and what the active calibration makes of them: the
+    // percentages on the screens, and the throttle the automatic start counts (§3.6), known only
+    // with a calibrated throttle and a live input.
     RcLive rc;
     rcRead(rc);
     facts.steeringUs = rc.widthUs[static_cast<uint8_t>(RcInput::Steering)];
     facts.throttleUs = rc.widthUs[static_cast<uint8_t>(RcInput::Throttle)];
     facts.menu.rcSignal = facts.steeringUs || facts.throttleUs;
+    const rc::Calibration* cal = calibrationActive();
+    facts.steeringPctKnown = cal && rc::calibrated(cal->steering) && facts.steeringUs;
+    facts.throttlePctKnown = cal && rc::calibrated(cal->throttle) && facts.throttleUs;
+    facts.steeringPct = facts.steeringPctKnown ? rc::percent(cal->steering, facts.steeringUs) : 0;
+    facts.throttlePct = facts.throttlePctKnown ? rc::percent(cal->throttle, facts.throttleUs) : 0;
+    motion.throttleKnown = facts.throttlePctKnown;
+    motion.throttlePct = facts.throttlePct;
     // Bench log, as the gnss task's line: every 10 s, each input's range over those 10 s, its valid
     // pulses and its rejects since boot.
     static uint32_t rcLoggedMs = 0;
@@ -409,6 +466,11 @@ void uiTask(void*) {
       snprintf(shownState, sizeof shownState, "%s", shape);
       Serial.printf("[%7lu] screen %.11s\n", (unsigned long)now, state);
     }
+#ifdef BENCH_SIM
+    if (benchSimTakeScreenRequest()) {
+      for (const auto& l : text.lines) Serial.printf("screen| %s\n", l);
+    }
+#endif
     displayShow(text);
     displayHoldBar(keysHoldPercent(now));
     displayRefresh(now);

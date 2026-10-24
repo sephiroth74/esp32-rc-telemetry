@@ -113,6 +113,7 @@ constexpr uint16_t RC_FRAME_MIN_US = 3000;   // fast digital modes, ~333 Hz
 constexpr uint16_t RC_FRAME_MAX_US = 22000;  // analog-servo modes, ~45 Hz
 constexpr uint16_t RC_SIGNAL_LOST_MS = 200;  // no edges for this long → the car was switched off
 constexpr uint32_t RC_SAMPLE_PERIOD_US = 20000;  // 50 Hz, the session header's RC period (protocol)
+constexpr uint16_t RC_WINDOW_MARGIN_US = 100;  // a calibrated input takes its ends widened by this
 constexpr uint16_t RC_STALE_MS = 100;  // no valid pulse for this long: the input logs 0, not its last
 
 // --- IMU (§2.6) -------------------------------------------------------------

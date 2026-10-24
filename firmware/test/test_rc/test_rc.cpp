@@ -98,6 +98,44 @@ static void the_six_steps_fill_the_calibration() {
   ASSERT_CHECK(Ok, cal.throttle);
 }
 
+// The bench's own widths, timed by the MCPWM capture (docs/hardware.md, bench session 5), taken
+// through the six steps: a calibration, and its percentages and accepted window.
+static void the_bench_cars_capture_is_a_calibration() {
+  rc::Calibration cal;
+  rc::capture(cal, rc::Step::Neutral, 1500, 1498, 0);
+  rc::capture(cal, rc::Step::SteerLeft, 1054, 1498, 0);
+  rc::capture(cal, rc::Step::SteerRight, 1936, 1498, 0);
+  rc::capture(cal, rc::Step::FullThrottle, 1500, 1956, 0);
+  rc::capture(cal, rc::Step::FullBrake, 1500, 1002, 0);
+  TEST_ASSERT_NULL(rc::problem(cal));
+  TEST_ASSERT_EQUAL_INT8(-100, rc::percent(cal.steering, 1054));
+  TEST_ASSERT_EQUAL_INT8(100, rc::percent(cal.throttle, 1956));
+  TEST_ASSERT_EQUAL_INT8(50, rc::percent(cal.throttle, 1727));  // 229 of 458
+  TEST_ASSERT_EQUAL_INT8(-50, rc::percent(cal.throttle, 1250));  // 248 of 496
+  uint16_t lo, hi;
+  rc::window(cal.throttle, 100, lo, hi);
+  TEST_ASSERT_EQUAL_UINT16(902, lo);
+  TEST_ASSERT_EQUAL_UINT16(2056, hi);
+}
+
+// What the summary says of a capture it will not save; an unwired input is no problem, as long as
+// the other one is calibrated.
+static void the_summary_says_why_it_will_not_save() {
+  rc::Calibration cal;
+  TEST_ASSERT_EQUAL_STRING("Nothing captured", rc::problem(cal));
+  cal.throttle = Axis{1002, 1498, 1956};  // throttle only: the steering is unwired
+  TEST_ASSERT_NULL(rc::problem(cal));
+  cal.steering = Axis{1054, 1500, 1520};  // right not turned
+  TEST_ASSERT_EQUAL_STRING("Steering not moved", rc::problem(cal));
+  cal.steering = Axis{1054, 1500, 1200};  // right captured while turned left
+  TEST_ASSERT_EQUAL_STRING("Steering wrong way", rc::problem(cal));
+  cal.steering = Axis{1054, 1500, 0};  // right skipped
+  TEST_ASSERT_EQUAL_STRING("Steering step missed", rc::problem(cal));
+  cal.steering = Axis{1054, 1500, 1936};
+  cal.throttle = Axis{1002, 1498, 1498};
+  TEST_ASSERT_EQUAL_STRING("Throttle not moved", rc::problem(cal));
+}
+
 static void an_absent_input_leaves_its_axis_uncaptured() {
   // Only the throttle wired (§4.3): the steering steps capture nothing, the aux step is skipped.
   rc::Calibration cal;
@@ -121,5 +159,7 @@ int main(int, char**) {
   RUN_TEST(the_accepted_window_follows_the_car);
   RUN_TEST(the_six_steps_fill_the_calibration);
   RUN_TEST(an_absent_input_leaves_its_axis_uncaptured);
+  RUN_TEST(the_bench_cars_capture_is_a_calibration);
+  RUN_TEST(the_summary_says_why_it_will_not_save);
   return UNITY_END();
 }

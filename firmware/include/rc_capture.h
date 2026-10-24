@@ -28,3 +28,9 @@ bool rcBegin();
 void rcRead(RcLive& out);
 // An input's accepted widths: config.h's until a calibration gives its own (§4.3, step 6.3).
 void rcSetWindow(RcInput input, uint16_t minUs, uint16_t maxUs);
+
+#ifdef BENCH_SIM
+// The bench simulation (bench_sim.h): a receiver sending these widths at 60 Hz, as pulses through
+// the inputs' windows; 0 for an input off.
+void rcSimulate(uint16_t steeringUs, uint16_t throttleUs);
+#endif

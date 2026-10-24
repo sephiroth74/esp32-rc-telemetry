@@ -641,7 +641,9 @@ Rules across the states:
 - **Car profiles**: up to eight, `profiles[0..7]` in `config.json`, each with a name — shown in the
   status bar, up to 8 characters — and its aux-channel band mapping (§8). Each profile's RC
   calibration lives in NVS, keyed by profile index, so it survives a card swap; the active index is
-  in NVS too. The profile's name and calibration are copied into every session's `meta.json`.
+  in NVS too. The profile's name and calibration are copied into every session's `meta.json`:
+  `car_profile.calibration` gives each input's `negative_us`, `neutral_us` and `positive_us`, null
+  for an input the calibration left out, and `aux_us`; it is null for a profile never calibrated.
 - **New car**, the choice after the profiles in Settings › Car profile, is for the car nobody added
   from a computer. It appends a profile named `Car N` (N = its index + 1) to both copies of
   `config.json`, clears whatever calibration NVS still holds at that index (a profile deleted in an
@@ -652,8 +654,10 @@ Rules across the states:
   left → full right → full throttle → full brake → the aux channel through its positions (DOWN
   skips it). Each step shows the live widths and is captured with OK; LEFT goes back a step, and at
   the first step cancels. A summary of the endpoints follows, and holding OK saves them — confirming
-  first if the profile was already calibrated. Calibrate is refused with `No RC signal` when there
-  are no edges on the RC inputs (§4.3).
+  first if the profile was already calibrated. A capture that is no calibration (docs/algorithms.md)
+  is not offered for saving: the summary names the input and why, such as `Steering not moved`, and
+  LEFT steps back to take it again. Calibrate is refused with `No RC signal` when there are no
+  edges on the RC inputs (§4.3).
 
 ---
 
@@ -719,7 +723,8 @@ plausible frame period — anything from about 3 ms to 22 ms, since the receiver
 advance — and count the rejects. This is not defensive boilerplate: some ESCs send telemetry back over
 the throttle wire (§2.8). We never decode it, and it must not end up in the throttle trace as spurious
 pulses. Some radios' high-response modes may also shift the pulse-width range, so once a car is
-calibrated, the accepted window comes from its calibration rather than from these constants.
+calibrated, the accepted window comes from its calibration rather than from these constants: its
+ends, widened by 100 µs each way.
 
 **Each input is optional.** Steering and throttle are wired independently, and either may be missing:
 a car with only the throttle tapped, or a device logging GNSS alone. An input counts as **present**

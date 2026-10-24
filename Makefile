@@ -5,7 +5,7 @@
 PIO ?= $(HOME)/.platformio/penv/bin/pio
 FW := firmware
 
-.PHONY: help build upload monitor test check fmt clean
+.PHONY: help build upload sim monitor test check fmt clean
 
 help: ## Show this help
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##/\t/' | expand -t 12
@@ -15,6 +15,9 @@ build: ## Compile the firmware
 
 upload: ## Flash the firmware over USB
 	$(PIO) run -d $(FW) -t upload
+
+sim: ## Flash the bench simulation, driven from the console (include/bench_sim.h)
+	$(PIO) run -d $(FW) -e sim -t upload
 
 monitor: ## Open the serial monitor
 	$(PIO) device monitor -d $(FW)

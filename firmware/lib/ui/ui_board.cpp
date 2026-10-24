@@ -270,6 +270,7 @@ BoardOutput Board::inCalibration(Event event, const Facts& f, uint32_t nowMs) {
   }
   switch (event) {
     case Event::Hold: {
+      if (f.calibrationProblem) return {};  // the summary says why; back to redo a step
       if (f.profileCalibrated) {
         confirm_.open(DialogKind::OverwriteCalibration, nowMs);
         return {};

@@ -26,6 +26,11 @@ struct Facts {
   MenuContext menu;
   const char* const* profileNames = nullptr;  // menu.profileCount of them, up to 8 characters each
   bool profileCalibrated = false;             // the active profile
+  // Settings › Calibrate's summary (§3.8): the widths captured, each as negative end, neutral and
+  // positive end, 0 for none; and why they cannot be saved, nullptr when they can (lib/rc).
+  uint16_t capturedSteering[3] = {};
+  uint16_t capturedThrottle[3] = {};
+  const char* calibrationProblem = nullptr;
 
   bool gnssLink = false;  // the module answered POST check 8, and its messages keep coming
   uint32_t gnssBaud = 0;
@@ -59,8 +64,10 @@ struct Facts {
   uint32_t bestLapMs = 0;
   int32_t deltaMs = 0;  // last lap against the best
 
-  int8_t steeringPct = 0;
+  int8_t steeringPct = 0;  // known with the input calibrated and a pulse to make it of
   int8_t throttlePct = 0;
+  bool steeringPctKnown = false;
+  bool throttlePctKnown = false;
   uint16_t steeringUs = 0;
   uint16_t throttleUs = 0;
 

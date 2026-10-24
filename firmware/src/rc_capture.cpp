@@ -88,6 +88,29 @@ void sample(void*) {
   if (n) logAppend(rcl::Type::RcSamples, batchStartMs, payload, n);
 }
 
+#ifdef BENCH_SIM
+uint16_t simWidth[2] = {};
+esp_timer_handle_t simTimer = nullptr;
+
+// A simulated frame: each input that is on takes a pulse, as the interrupt would, window and all.
+void simFrame(void*) {
+  int64_t now = esp_timer_get_time();
+  portENTER_CRITICAL(&lock);
+  for (uint8_t i = 0; i < 2; ++i) {
+    Channel& c = channels[i];
+    if (!simWidth[i]) continue;
+    if (simWidth[i] >= c.minUs && simWidth[i] <= c.maxUs) {
+      c.widthUs = simWidth[i];
+      c.lastValidUs = now;
+      ++c.pulses;
+    } else {
+      ++c.rejects;
+    }
+  }
+  portEXIT_CRITICAL(&lock);
+}
+#endif
+
 bool channelBegin(Channel& c) {
   mcpwm_capture_channel_config_t config = {};
   config.gpio_num = c.gpio;
@@ -148,6 +171,19 @@ void rcRead(RcLive& out) {
   portEXIT_CRITICAL(&lock);
   out.lastPulseMs = uint32_t(newest / 1000);  // millis() runs on the same clock
 }
+
+#ifdef BENCH_SIM
+void rcSimulate(uint16_t steeringUs, uint16_t throttleUs) {
+  simWidth[0] = steeringUs;
+  simWidth[1] = throttleUs;
+  if (simTimer) return;
+  esp_timer_create_args_t args = {};
+  args.callback = simFrame;
+  args.dispatch_method = ESP_TIMER_TASK;
+  args.name = "rc-sim";
+  if (esp_timer_create(&args, &simTimer) == ESP_OK) esp_timer_start_periodic(simTimer, 16667);
+}
+#endif
 
 void rcSetWindow(RcInput input, uint16_t minUs, uint16_t maxUs) {
   if (input == RcInput::Aux) return;

@@ -55,4 +55,13 @@ struct Calibration {
 // each other step sets the end it is about, from the input it is about.
 void capture(Calibration& cal, Step step, uint16_t steeringUs, uint16_t throttleUs, uint16_t auxUs);
 
+// An axis no step captured anything for: its input is unwired, which §4.3 allows.
+bool absent(const Axis& axis);
+bool calibrated(const Axis& axis);  // checks Ok
+
+// Why a capture cannot be saved, as Calibrate's summary says it, up to 21 columns; nullptr when it
+// can: each input calibrated or absent from every step, and at least one calibrated
+// (docs/algorithms.md).
+const char* problem(const Calibration& cal);
+
 }  // namespace rc

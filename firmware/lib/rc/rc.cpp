@@ -62,4 +62,23 @@ void capture(Calibration& cal, Step step, uint16_t steeringUs, uint16_t throttle
   }
 }
 
+bool absent(const Axis& a) { return !a.negativeUs && !a.neutralUs && !a.positiveUs; }
+
+bool calibrated(const Axis& a) { return check(a) == AxisCheck::Ok; }
+
+const char* problem(const Calibration& cal) {
+  static const char* const kWhy[2][4] = {
+      {nullptr, "Steering step missed", "Steering not moved", "Steering wrong way"},
+      {nullptr, "Throttle step missed", "Throttle not moved", "Throttle wrong way"},
+  };
+  const Axis* axes[2] = {&cal.steering, &cal.throttle};
+  for (uint8_t i = 0; i < 2; ++i) {
+    if (absent(*axes[i])) continue;
+    AxisCheck c = check(*axes[i]);
+    if (c != AxisCheck::Ok) return kWhy[i][static_cast<uint8_t>(c)];
+  }
+  if (absent(cal.steering) && absent(cal.throttle)) return "Nothing captured";
+  return nullptr;
+}
+
 }  // namespace rc

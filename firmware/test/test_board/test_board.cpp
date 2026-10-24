@@ -75,6 +75,8 @@ static Facts worstCase() {
   f.deltaMs = -9999;
   f.steeringPct = -100;
   f.throttlePct = 100;
+  f.steeringPctKnown = true;
+  f.throttlePctKnown = true;
   f.steeringUs = 2200;
   f.throttleUs = 2200;
   f.geometryM = 99999;
@@ -181,6 +183,7 @@ static void the_session_screen_wraps_its_pages() {
 static void the_inputs_page_gives_widths_until_calibrated() {
   Walk w;
   w.facts.profileCalibrated = false;
+  w.facts.steeringPctKnown = w.facts.throttlePctKnown = false;
   w.facts.steeringUs = 1500;
   w.facts.throttleUs = 0;
   w.key(Event::Hold);
@@ -191,6 +194,30 @@ static void the_inputs_page_gives_widths_until_calibrated() {
   w.down(1);
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Throttle --", t.lines[2]);
+}
+
+// A calibrated input with no pulse is --, never a neutral +0 %; one the calibration left out (the
+// car has none) gives its width, if it has one.
+static void the_inputs_page_shows_no_pulse_as_none_when_calibrated() {
+  Walk w;
+  w.facts.steeringPctKnown = false;
+  w.facts.steeringPct = 0;
+  w.facts.steeringUs = 0;
+  w.facts.throttlePctKnown = false;
+  w.facts.throttlePct = 0;
+  w.facts.throttleUs = 1498;
+  w.key(Event::Hold);
+  w.down(1);
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Steering --", t.lines[6]);
+  w.down(1);
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Throttle 1498 us", t.lines[2]);
+  w.facts.throttlePctKnown = true;
+  w.facts.throttlePct = 50;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("Throttle  +50 %", t.lines[2]);
 }
 
 // The session's GNSS lines read as the GNSS screen's: satellites used and seen, which move even
@@ -279,6 +306,33 @@ static void calibration_walks_its_steps() {
   TEST_ASSERT_EQUAL_STRING("Calibration saved", o.toast);
   ASSERT_MODE(Idle, w.board);
   ASSERT_SCREEN(Calibrate, w.board);
+}
+
+// The summary shows what was captured; one that cannot be a calibration says why, and holding OK
+// saves nothing (docs/algorithms.md).
+static void the_calibration_summary_will_not_save_a_bad_capture() {
+  Walk w;
+  w.facts.capturedSteering[0] = 1054;
+  w.facts.capturedSteering[1] = 1500;
+  w.facts.capturedSteering[2] = 1520;
+  w.facts.capturedThrottle[0] = 1002;
+  w.facts.capturedThrottle[1] = 1498;
+  w.facts.capturedThrottle[2] = 1956;
+  w.facts.calibrationProblem = "Steering not moved";
+  w.toSettings();
+  w.down(1);
+  w.key(Event::Open);
+  w.key(Event::Hold);
+  for (uint8_t step = 0; step < ui::kCalibrationSteps - 1; ++step) w.key(Event::Open);
+  w.key(Event::Down);  // past the aux step: the summary
+  ScreenText t;
+  ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
+  TEST_ASSERT_EQUAL_STRING("St 1054 1500 1520", t.lines[2]);
+  TEST_ASSERT_EQUAL_STRING("Th 1002 1498 1956", t.lines[3]);
+  TEST_ASSERT_EQUAL_STRING("Steering not moved", t.lines[4]);
+  TEST_ASSERT_EQUAL_STRING("hold NAV: back", t.lines[7]);
+  ASSERT_COMMAND(None, w.key(Event::Hold));
+  ASSERT_MODE(Calibration, w.board);
 }
 
 static void calibration_cancels_at_its_first_step() {
@@ -837,11 +891,13 @@ int main(int, char**) {
   RUN_TEST(the_session_screen_wraps_its_pages);
   RUN_TEST(the_session_gnss_page_reads_as_the_gnss_screen);
   RUN_TEST(the_inputs_page_gives_widths_until_calibrated);
+  RUN_TEST(the_inputs_page_shows_no_pulse_as_none_when_calibrated);
   RUN_TEST(down_on_home_scrolls_and_keeps_the_menu_awake);
   RUN_TEST(the_stop_dialog_times_out_into_the_session);
   RUN_TEST(geometry_records_until_held);
   RUN_TEST(calibration_walks_its_steps);
   RUN_TEST(calibration_cancels_at_its_first_step);
+  RUN_TEST(the_calibration_summary_will_not_save_a_bad_capture);
   RUN_TEST(an_uncalibrated_profile_saves_without_asking);
   RUN_TEST(transfer_asks_before_leaving_a_host);
   RUN_TEST(ok_leaves_transfer_as_well);

@@ -386,23 +386,37 @@ try when one is at hand; their logic is host-tested.
   *Result:* a 48 s bench session read back over USB: 483 RC records, one every 100 ms, five
   samples each; steering 1,054–1,943 µs and throttle 1,003–1,957 µs, never 0; 0 rejects in the
   footer, both inputs present in `meta.json`.
-- [ ] **6.3 Car profiles and calibration** (§3.8, §4.3).
+- [x] **6.3 Car profiles and calibration** (§3.8, §4.3).
   - Profiles read from `config.json` and chosen in Settings › Car profile.
   - New car: a `Car N` profile appended to both copies of `config.json`, the NVS calibration at its
     index cleared, the profile made active.
   - The Calibrate procedure, with its overwrite confirmation.
   - One calibration per profile in NVS, copied into each session's `meta.json`.
 
-  *So far:* `lib/rc`, host-tested (8 tests) on the bench car's widths: endpoints by meaning, the
+  *So far:* `lib/rc`, host-tested (10 tests) on the bench car's widths: endpoints by meaning, the
   percentage on each side's own scale, rounded and held at ±100, the check of a capture before it is
-  saved, the accepted window, and the six steps filling a calibration, an absent input's axis left
-  uncaptured. Still to do, on the device: the capture screens on live widths, NVS, `meta.json`.
+  saved and the reason the summary gives for refusing one, the accepted window, and the six steps
+  filling a calibration, an absent input's axis left uncaptured. `src/calibration.cpp` keeps one
+  calibration a profile in NVS, loads the active profile's at boot and on a change of profile,
+  clears it for New car, and gives each calibrated input its own accepted window; `meta.json` takes
+  the endpoints. The session's inputs page turns to percentages, `--` with no pulse (195 host
+  tests).
+  *Result*, with the car away, on the `sim` build (`firmware/include/bench_sim.h`): bench session
+  5's widths sent through the inputs' windows from the console, and the keys pressed from it. The
+  six steps gave `St 1054 1500 1936`, `Th 1002 1498 1956`; held OK saved them for Car 4, and
+  Calibrate read `Calibrated: yes`, after a restart too. On the inputs page: full lock and full
+  throttle ±100 %, 1,727 µs on the steering +52 % and 1,250 µs on the throttle −50 %, `--` with the
+  receiver off. Steering at 2,100 µs, outside its window of 954–2,036 µs, was all rejects, from
+  boot. A session's `meta.json` carried the endpoints. The next time the car is on the bench, its
+  own calibration replaces the simulated one.
 - [ ] **6.4 Automatic start and stop** (§3.6). The rules are host-tested in `lib/ui`.
   *So far:* `lib/ui/ui_auto` decides from speed and throttle, each counted only when known, and the
   board acts on it: from IDLE only and with `session.auto_start` on, through Home with any dialog
   closed, a refusal shown once, the stop after `session.auto_stop_min` still with a stop dialog
   closed, and no new run after a stop by hand until the car has stood still for 5 s (12 host tests,
-  §3.6 refined). The ui task feeds it the GNSS speed; the throttle joins with step 6.2.
+  §3.6 refined). The ui task feeds it the GNSS speed, and the throttle as a percentage once the
+  profile's throttle is calibrated (step 6.3): on the `sim` build, the throttle held at full brake
+  started a session 1 s after the calibration was saved.
   *Test:* on the bench with the throttle, then on track with speed. Record the thresholds against §9
   question 17.
 - [ ] **6.5 Power loss and sleep** (§4.5).

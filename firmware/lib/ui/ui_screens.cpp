@@ -86,6 +86,18 @@ void deltaText(int32_t ms, char (&out)[16]) {
            (unsigned long)(magnitude % 1000));
 }
 
+// An input as a percentage once its calibration makes one of its width (§3.8), the width until
+// then, and -- with no pulse.
+void inputText(bool pctKnown, int8_t pct, uint16_t us, char (&out)[16]) {
+  if (pctKnown) {
+    snprintf(out, sizeof out, "%+4d %%", pct);
+  } else if (us) {
+    snprintf(out, sizeof out, "%u us", us);
+  } else {
+    snprintf(out, sizeof out, "--");
+  }
+}
+
 // Free space in at most five columns: MB below a GB, one decimal below 10 GB, whole GB above.
 void freeText(const Facts& f, char (&out)[16]) {
   if (!f.menu.cardOk) {
@@ -555,16 +567,10 @@ void session(const Board& b, const Facts& f, Content& c) {
   }
   c.add("Speed %u km/h", f.speedKmh);
   c.add("GNSS loss %lu", (unsigned long)f.gnssLoss);
-  if (f.profileCalibrated) {
-    c.add("Steering %+4d %%", f.steeringPct);
-    c.add("Throttle %+4d %%", f.throttlePct);
-  } else {  // the widths, until a calibration makes percentages of them (§3.8); -- for none
-    char a[8];
-    snprintf(a, sizeof a, f.steeringUs ? "%u us" : "--", f.steeringUs);
-    c.add("Steering %s", a);
-    snprintf(a, sizeof a, f.throttleUs ? "%u us" : "--", f.throttleUs);
-    c.add("Throttle %s", a);
-  }
+  inputText(f.steeringPctKnown, f.steeringPct, f.steeringUs, a);
+  c.add("Steering %s", a);
+  inputText(f.throttlePctKnown, f.throttlePct, f.throttleUs, a);
+  c.add("Throttle %s", a);
   c.setHint("OK mark  hold: stop");
 }
 
@@ -576,10 +582,16 @@ void calibration(const Board& b, const Facts& f, Layout layout, Content& c) {
       {"Full brake", "and hold it"},       {"Aux: move through", "every position"},
   };
   uint8_t step = b.calibrationStep();
-  if (step >= kCalibrationSteps) {
-    c.add("Endpoints captured");
-    c.add("for %s", profileName(f, f.menu.activeProfile));
-    c.setHint("hold OK: save");
+  if (step >= kCalibrationSteps) {  // the ends and neutral, as captured, and whether they will do
+    c.add("St %4u %4u %4u", f.capturedSteering[0], f.capturedSteering[1], f.capturedSteering[2]);
+    c.add("Th %4u %4u %4u", f.capturedThrottle[0], f.capturedThrottle[1], f.capturedThrottle[2]);
+    if (f.calibrationProblem) {
+      c.add("%s", f.calibrationProblem);
+      c.setHint(layout == Layout::TwoButtons ? "hold NAV: back" : "< back");
+    } else {
+      c.add("for %s", profileName(f, f.menu.activeProfile));
+      c.setHint("hold OK: save");
+    }
     return;
   }
   bool aux = step == kCalibrationSteps - 1;
