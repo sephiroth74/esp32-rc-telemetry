@@ -1,10 +1,9 @@
 // Track and lap geometry — PLAN-ESP32.md §7.1, docs/algorithms.md.
 //
-// So far the tracks and sessions on the card (ROADMAP.md step 5.4): the ~1 km cell id that names a
-// track's folder, the distance and the geo-fence test that recognise a track from a fix, the choice
-// among several, the name of a new one, and the session numbers within it. The rules, to the
-// detail, are docs/algorithms.md's. Phase 8 adds interpolated gate crossing, s/d projection, sector
-// splits and lap detection.
+// The tracks and sessions on the card (ROADMAP.md step 5.4): the ~1 km cell id that names a track's
+// folder, the distance and the geo-fence test that recognise a track from a fix, the choice among
+// several, the name of a new one, and the session numbers within it. The rules, to the detail, are
+// docs/algorithms.md's. The laps are laps.h's; the s/d projection and sectors are still to come.
 //
 // Shaped around u-blox's native integer degrees × 1e-7, so no floating point enters the path between
 // a fix and a folder name; only the distance, a comparison against a radius, uses it.

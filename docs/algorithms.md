@@ -5,8 +5,9 @@ and `packages/rct_core/` in Dart. Both must agree to the last decimal, because t
 time the desktop app then has to reproduce.
 
 **Status:** the track rules — cell names, recognition, session numbers — are written below and
-implemented in `firmware/lib/geo/` (ROADMAP.md step 5.4). The lap algorithms are still to define;
-they block on-device lap detection (PLAN-ESP32.md phase 8).
+implemented in `firmware/lib/geo/` (ROADMAP.md step 5.4). So are the laps, with a start line and
+without one: the crossing, the lap's distance, its flags, and the automatic line (steps 8.1–8.3).
+Still to define: the s/d projection, sectors and the geometry.
 
 ## Fixed already
 
@@ -23,15 +24,11 @@ PLAN-ESP32.md §7.5 settles what these algorithms must do, before how:
 
 ## To define
 
-- **Gate crossing, interpolated.** At 10 Hz the car travels 1.1–1.7 m between fixes, so a lap timed
-  by "the fix nearest the line" is worth ±0.15 s at best. The crossing instant is interpolated
-  between the two fixes that straddle the gate; §5.5 sets the honest accuracy expectation.
 - **s/d projection** onto a recorded centreline, so two laps can be compared at the same distance
   along the track rather than at the same time.
 - **Sector splits** derived from the geometry rather than hand-placed.
-- **Cut detection**: against the median lap distance first (§7.5), and against `geometry.rcg`
-  where there is one.
-- **Loop closure and the fastest point**, for the automatic start line.
+- **Cut detection against `geometry.rcg`**, where there is one; against the median lap distance it
+  is below.
 - **The median path**, building `geometry.rcg` from the unflagged laps of every session.
 
 ## Tracks and sessions on the card
@@ -112,6 +109,114 @@ track** names its folder the same way, skipping steps 1–3.
 `session_NNN`, numbered per track from the highest existing number plus one, starting at 1. A name
 counts only if it is `session_` followed by digits and nothing else. Three digits with leading
 zeros, as many as the number needs from 1000 on: `session_999`, then `session_1000`.
+
+## Laps
+
+PLAN-ESP32.md §7.5, to the detail two implementations need to agree on. Implemented in
+`firmware/lib/geo/laps.h`, checked against `fixtures/laps-v1.json`.
+
+### The epochs that count
+
+The session's NAV-PVT epochs, in order. One **takes part** when it has `gnssFixOK` and a 3D fix
+(`fixType` 3); every other is passed over, as if it had not come. From each: `iTOW` (ms), latitude
+and longitude (degrees × 10⁷), `gSpeed` (mm/s), `headMot` (degrees × 10⁵, clockwise from north),
+and the session time `t` (ms) of its record.
+
+Times of week wrap at 604 800 000 ms. Every difference of two `iTOW`s below is taken modulo that,
+into [0, 604 800 000).
+
+### The local plane
+
+Distances and directions are worked out on a plane around a reference point `O`, in metres:
+
+```text
+φ0     the latitude of O in radians: value × 10⁻⁷ × π / 180; λ0 its longitude, the same
+Δλ     λ − λ0, brought into [−π, π]
+x      6 371 008.8 × Δλ × cos φ0          east
+y      6 371 008.8 × (φ − φ0)             north
+```
+
+`O` is the gate's centre for the laps, and the first epoch of the trace for the automatic line.
+The length of a step from one point to the next is `√(Δx² + Δy²)`.
+
+### The gate
+
+A start line is a gate: a **centre**, a **heading** `h` — the direction of travel across it, as
+`headMot` gives it — and a **width** `w`, 15 m unless `start_line.json` says otherwise. On the plane
+around its centre, a point `(x, y)` is
+
+```text
+u = x sin h + y cos h        ahead of the line, positive in the direction of travel
+v = x cos h − y sin h        along it, from its centre, positive to the right
+```
+
+### A crossing
+
+Between two consecutive epochs that take part, `A` then `B`:
+
+1. **No more than 1000 ms apart.** Over a longer gap — fixes lost — nothing is crossed: the lap runs
+   on to the next crossing, and comes out long.
+2. **Forwards:** `u_A < 0 ≤ u_B`. A car going back over the line crosses nothing.
+3. **The fraction** of the step at the line: `f = u_A / (u_A − u_B)`, in (0, 1].
+4. **Within the gate:** `|v_A + f × (v_B − v_A)| ≤ w / 2`. A crossing outside it does not count: a
+   car that misses the start straight completes no lap, and the next lap comes out long.
+5. **The moment**, interpolated: `τ = iTOW_A + f × (iTOW_B − iTOW_A)`, in double precision, then
+   `⌊τ + 0.5⌋` modulo the week. Its session time is `t_A` plus that moment less `iTOW_A`.
+6. **Not within 5000 ms of the last crossing counted**, which is ignored: GNSS noise across the
+   line, or a car wobbling over it.
+
+The first crossing counted ends no lap, and is lap `0` in its Lap record. Each later one ends the
+next lap, whose time is the difference of the two moments.
+
+### A lap's distance
+
+The length of the path between its two crossings, on the plane around the gate: the sum of the
+steps between consecutive epochs that take part, gaps included. The step a crossing falls in is
+split at `f`: `f` of its length goes to the lap that ends there, the rest to the next.
+
+### Flags
+
+Against the **median** of the session's lap distances, its laps so far, the lap itself included —
+of an even count, the mean of the two in the middle. Under 85 % of it the car skipped part of the
+track, and the lap is `cut`; over 130 % it went off, or missed the line, and the lap is `off`. A
+flagged lap never becomes the best lap. The median moves as laps come, and so can the flags of
+earlier laps: a Lap record keeps the flags known when it was written; the screens and the apps work
+them out again.
+
+### Without a start line
+
+The line goes where the car is fastest, once the track is known: **two consecutive laps that
+agree** (decided 2026-10-25). A first lap out of the pits, a run off the track or a cut does not
+agree with the next, and the line waits for two that do — as many laps as that takes.
+
+The **trace** is every epoch that takes part from the session's start, on the plane around the
+first of them. Only those **moving**, with `gSpeed` ≥ 1000 mm/s, enter the loop's search, as
+`headMot` means nothing at a standstill.
+
+1. **The first loop.** For each new moving epoch `J`, the candidates are the earlier moving epochs
+   `I` with `iTOW_J − iTOW_I` ≥ 20 000 ms, within 10 m of `J`, and a heading within 45° of `J`'s
+   (the difference of the two `headMot` brought into [0°, 180°]). The first `J` with a candidate
+   closes the loop.
+2. **A provisional gate** goes at `J`: its position, its `headMot`, 15 m wide. It only cuts the
+   trace into laps: those laps are found as with any line, from the start of the trace, and from
+   then on as the epochs come. A lap's **epochs** run from the one that completed the crossing
+   starting it to the one before the epoch that completed the crossing ending it.
+3. **Two laps agree** when the shorter is at least 90 % of the longer, and at least 95 % of the
+   epochs of each lie within 10 m of the other's path — the segments between its consecutive
+   epochs, the distance from a point to a segment being to the segment's nearest point. Each time
+   a provisional lap ends, it and the one before are compared; the first two that agree decide.
+4. **The fastest point** of those two laps: each of their epochs `K` has a smoothed speed, the mean
+   `gSpeed` of the trace's epochs whose `iTOW` lies within 500 ms of `K`'s, `K` included, up to the
+   epoch that completed the second lap's crossing, the sum taken in whole mm/s before the one
+   division. The largest wins, the earliest of equals.
+5. **The gate** goes there: `K`'s position as its centre, `K`'s `headMot` as its heading, 15 m wide,
+   source `auto`. It is found at the epoch that completed the second lap, or at the loop's closure
+   when the two laps were already in the trace then.
+6. **The laps are found again** from the start of the trace with it, and from then on as the
+   epochs come.
+
+The device keeps the trace of the last 10 minutes: two laps that agree have to come within them,
+and the laps found again start at most that far back.
 
 ## Steering and throttle in percent
 

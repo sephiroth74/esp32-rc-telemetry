@@ -1211,14 +1211,17 @@ The desktop app writes back through USB MSC (§7.3), or the phone app through BL
 the device resolves tracks by position (§7.1), the next session there finds the line already in
 place.
 
-**The automatic start line is the fastest point of a lap**, normally the main straight. On a track
-without one, the device:
+**The automatic start line is where the car is fastest**, normally the main straight, once the track
+is known from two laps that agree (decided 2026-10-25). On a track without one, the device:
 
-1. **Finds a first lap without a line:** the trace comes back within 10 m of an earlier point, heading
-   within 45° of it, at least 20 s later.
-2. **Takes the fastest point of that loop**, on the speed smoothed over 1 s so that a landing's
+1. **Finds a first loop:** the trace comes back within 10 m of an earlier point, heading within 45°
+   of it, at least 20 s later. A provisional gate there cuts the trace into laps.
+2. **Waits for two consecutive laps that agree**, in length and in path. The lap out of the pits, a
+   run off the track or a cut disagrees with the next one, and the device waits for more laps, as
+   many as it takes.
+3. **Takes the fastest point of those two laps**, on the speed smoothed over 1 s so that a landing's
    spike does not win.
-3. **Places the gate there,** across the direction of travel and 15 m wide; saves it with source
+4. **Places the gate there,** across the direction of travel and 15 m wide; saves it with source
    `auto`; and works out again the lap times of the session so far from it.
 
 Later sessions use that line as it is; the desktop app is where it is moved to the real line.

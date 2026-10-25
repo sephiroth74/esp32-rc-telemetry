@@ -2,8 +2,7 @@
 //
 // The tracks and sessions on the card, by the rules of docs/algorithms.md (PLAN-ESP32.md §7.1):
 // cell ids, distances, the geo-fence test, which track a fix belongs to, a new track's name and the
-// session numbers. Gate crossing and lap detection follow in phase 8, against a recorded lap with
-// known crossing times in docs/fixtures/.
+// session numbers. The laps are test_laps's.
 #include <stdio.h>
 #include <string.h>
 #include <unity.h>

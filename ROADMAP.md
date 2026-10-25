@@ -457,10 +457,31 @@ try when one is at hand; their logic is host-tested.
 
 - [ ] **8.1 Gate crossing.** `docs/algorithms.md` written first; then `lib/geo` gate crossing, with
   host tests on a recorded lap — including a recorded off and a recorded cut (§7.5).
+  *So far:* "Laps" in `docs/algorithms.md`: the epochs that count, the local plane, the gate, the
+  crossing — forwards, within 1000 ms, within the width, interpolated to the ms, 5 s apart — and a
+  lap's distance. `lib/geo/laps.h` implements it, `test_laps` holds it to
+  `docs/fixtures/laps-v1.json`, a simulated session whose laps `make_laps.py` works out a third
+  time from the document, and to each rule on its own. Still to do: a
+  recorded session in place of the simulated one, and the device's side (8.4, 8.5).
 - [ ] **8.2 The automatic start line.** The first lap found without a line, the gate at its fastest
   point, saved with source `auto`, and the session's laps worked out again from it (§7.5).
+  Decided on the way (2026-10-25): **not on the first lap, but on two consecutive laps that agree**,
+  as many laps as it takes when the first ones do not — the lap out of the pits, a run off the
+  track, a cut — and at the car's fastest point in those two.
+  *So far:* the rules in `docs/algorithms.md` — the first loop's closure among the moving epochs, a
+  provisional gate there that cuts the trace into laps, two laps that agree (the shorter at least
+  90 % of the longer, 95 % of each within 10 m of the other's path), the fastest point on the
+  speed averaged over ±500 ms, the gate 15 m wide — and `geo::LineFinder`, which keeps the trace
+  in a buffer of the caller's for the laps to be found again. On the fixture the first laps
+  disagree, off then cut, and the gate comes with provisional laps 3 and 4, 2 min in; each rule
+  has a test that fails without it (15 tests in `test_laps`, 225 in all). Still to do, on the
+  device: the 10-minute trace in PSRAM, `start_line.json` with source `auto`, and the laps found
+  again.
 - [ ] **8.3 Lap flags.** `cut` and `off` against the median lap distance; flagged laps never become
   the best lap.
+  *So far:* `geo::medianM()` and `geo::flagOf()`, on the fixture's laps: a run off the track and two
+  laps doubled by a missed line come out `off`, a cut `cut`. Still to do: the best lap that skips
+  them, on the device.
 - [ ] **8.4 Track entries.** Track › Start line, with its overwrite confirmation; Track › Geometry;
   both showing their source, and the source rules of §7.5 when files arrive from the desktop app.
 - [ ] **8.5 Live laps and sectors.** The session's laps page, and the last and best laps on Home.
