@@ -13,6 +13,7 @@
 #include "gnss_task.h"
 #include "keys.h"
 #include "logger.h"
+#include "power.h"
 #include "rc_capture.h"
 #include "session.h"
 #include "settings.h"
@@ -252,6 +253,7 @@ void uiTask(void*) {
   const ui::Layout layout = keysLayout();
   ui::Board board(menuTiming());
   board.setAutoTiming(autoSessionTiming(settings().autoStopMin));
+  board.setPowerTiming(powerTiming());
   ui::ScreenText text;
   char shownState[ui::kScreenCols + 1] = "";
   settingsFill(facts.menu);
@@ -354,6 +356,7 @@ void uiTask(void*) {
       vTaskDelay(pdMS_TO_TICKS(800));
       ESP.restart();
     }
+    if (out.command == ui::Command::Sleep) powerSleep();  // from IDLE: no session is open
   };
 
   for (;;) {
@@ -443,6 +446,18 @@ void uiTask(void*) {
                     (unsigned long)motion.speedMmS);
       act(automatic, now, /*automatic=*/true);
     }
+    // Sleep from IDLE (§4.5): the pulses stopping, or nothing for a while. The notice wakes a
+    // dimmed display, so that it is seen.
+    ui::Power power;
+    power.rcLive = rc.lastPulseMs && static_cast<int32_t>(now - rc.lastPulseMs) < RC_SIGNAL_LOST_MS;
+    power.usbHost = facts.usbHost;
+#ifdef BENCH_SIM
+    if (benchSimHostHidden()) power.usbHost = false;  // to see the bench sleep (bench_sim.h)
+#endif
+    ui::SleepWhy noticeBefore = board.sleepNotice();
+    ui::BoardOutput slept = board.onPower(power, facts, now);
+    if (board.sleepNotice() != noticeBefore) lastKeyMs = now;
+    if (slept.command != ui::Command::None) act(slept, now, /*automatic=*/true);
 
     PostUpdate update;
     while (xQueueReceive(postUpdates, &update, 0) == pdTRUE) {

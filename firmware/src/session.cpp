@@ -4,15 +4,20 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <dirent.h>
+#include <esp_heap_caps.h>
 #include <esp_mac.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "calibration.h"
+#include "card.h"
 #include "config.h"
 #include "logger.h"
+#include "post.h"
 #include "rc_capture.h"
 #include "settings.h"
 
@@ -210,6 +215,27 @@ uint32_t nextSessionId() {
   return id;
 }
 
+// The session open now, in NVS: what the next boot closes if the car's switch comes first.
+void markOpen(bool open) {
+  Preferences nvs;
+  nvs.begin("log", /*readOnly=*/false);
+  if (open) {
+    nvs.putString("open", dir);
+    nvs.putUInt("open_id", current.id);
+  } else {
+    nvs.remove("open");
+    nvs.remove("open_id");
+  }
+  nvs.end();
+}
+
+size_t readAt(void* context, size_t offset, uint8_t* buf, size_t capacity) {
+  int fd = *static_cast<int*>(context);
+  if (lseek(fd, offset, SEEK_SET) < 0) return 0;
+  ssize_t n = read(fd, buf, capacity);
+  return n > 0 ? size_t(n) : 0;
+}
+
 const char* closeName(rcl::Close c) {
   switch (c) {
     case rcl::Close::ByHand:
@@ -390,6 +416,7 @@ bool sessionBegin(const SessionStart& start, SessionInfo& out) {
   snprintf(path, sizeof path, "%s/session.rcl", dir);
   if (!logOpen(path, h)) return false;
   open_ = true;
+  markOpen(true);
   out = current;
   Serial.printf("session %lu: %s/%s, track %s%s\n", (unsigned long)current.id, current.track,
                 strrchr(dir, '/') + 1, current.track, current.newTrack ? " (new)" : "");
@@ -399,6 +426,7 @@ bool sessionBegin(const SessionStart& start, SessionInfo& out) {
 void sessionEnd(rcl::Close reason, bool haveFix, geo::Point fix) {
   if (!open_) return;
   open_ = false;
+  markOpen(false);
   if (!logClose(reason, LOG_CLOSE_WAIT_MS)) Serial.println("session: the close is still running");
   rcl::Footer footer;
   bool haveFooter = logLastFooter(footer);
@@ -425,3 +453,48 @@ void sessionEnd(rcl::Close reason, bool haveFix, geo::Point fix) {
 bool sessionOpen() { return open_; }
 
 const SessionInfo& sessionCurrent() { return current; }
+
+void sessionRecover() {
+  Preferences nvs;
+  nvs.begin("log", /*readOnly=*/true);
+  String left = nvs.getString("open", "");
+  uint32_t id = nvs.getUInt("open_id", 0);
+  nvs.end();
+  if (left.isEmpty() || !cardMounted()) return;  // without the card, the next boot tries again
+  snprintf(dir, sizeof dir, "%s", left.c_str());
+  markOpen(false);  // once, whatever comes of it
+
+  uint32_t t0 = millis();
+  char path[112];
+  snprintf(path, sizeof path, "%s/session.rcl", dir);
+  int fd = open(path, O_RDWR);
+  if (fd < 0) {
+    postLogLine("session %lu: left open, but %s is gone", (unsigned long)id, path);
+    return;
+  }
+  rcl::Tail tail;
+  auto* buf = static_cast<uint8_t*>(heap_caps_malloc(LOG_RECOVER_PIECE_BYTES, MALLOC_CAP_SPIRAM));
+  bool found = buf && rcl::findTail(readAt, &fd, buf, LOG_RECOVER_PIECE_BYTES,
+                                    LOG_RECOVER_GAP_BYTES, tail);
+  heap_caps_free(buf);
+  if (!found || tail.sessionId != id) {  // another card in the slot, say
+    close(fd);
+    postLogLine("session %lu: left open, but %s is not it; left alone", (unsigned long)id, path);
+    return;
+  }
+  off_t size = lseek(fd, 0, SEEK_END);
+  bool cut = ftruncate(fd, tail.end) == 0;
+  close(fd);
+  snprintf(path, sizeof path, "%s/meta.json", dir);
+  JsonDocument doc;
+  bool closed = readJson(path, doc);
+  if (closed) {
+    doc["close"] = "unclosed";
+    closed = writeJson(path, doc);
+  }
+  postLogLine("session %lu: left open, closed at boot: %lu records, %lu of %lu bytes kept%s%s, "
+              "%lu ms",
+              (unsigned long)id, (unsigned long)tail.records, (unsigned long)tail.end,
+              (unsigned long)size, cut ? "" : ", not cut", closed ? "" : ", no meta.json",
+              (unsigned long)(millis() - t0));
+}

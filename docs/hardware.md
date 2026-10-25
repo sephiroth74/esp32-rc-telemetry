@@ -148,7 +148,7 @@ back on a Mac by a reader written from `docs/protocol.md`.
   an epoch. Every other step is 100 ms, with no error counted on our side.
 - **Two earlier sessions cut by unplugging the battery mid-run** (ids 2 and 3, no fix) read to their
   last record. Their 4 MB extent is not cut to length and `meta.json` has no footer, as expected
-  without SAVING (§4.5).
+  when a session is not closed (§4.5).
 - **Every time on the card is UTC** (§7.1), so the Finder shows the files' dates two hours early
   here in summer.
 
@@ -203,10 +203,9 @@ The MCPWM capture times both inputs at once, and the console gives each one's ra
 | Quantity | Why it matters | Value |
 | --- | --- | --- |
 | Whether this GM10 V3.1 carries a magnetometer | §9 question 4; its other half, config flash, is answered above | — |
-| How long the module's own backup keeps its BBR, and the time to first fix with the backup LiPo fitted | Hot in 5 s after 16 s off, cold after two days (above): where in between does it go cold? (§2.7) | — |
-| Whether the GM10 runs from 3V3 | On battery the 5V pad is dead, so a GM10 on 5 V loses its BBR in SLEEP and every run starts cold (§2.7, §9 question 16) | — |
+| How long the module's own backup keeps its BBR | Hot in 5 s after 16 s off, cold after two days (above): where in between does it go cold? It is the only backup the GM10 has (§2.7) | — |
 | JS5208 ladder: the ADC reading of each key, once the switch is fitted | UP, DOWN and RIGHT are still nominal in `KEY_MV_BOUNDS` (§3.1; ROADMAP.md, "Switching to the JS5208") | — |
-| Whether OK on the ladder wakes the chip from deep sleep, and whether the RC inputs do (with the §2.5 pull-downs) without spurious wakes | The two wake sources of §4.5 | — |
+| Whether OK on the ladder wakes the chip from deep sleep | The one wake source of §4.5 | — |
 | `DYNMODEL` 4 vs 8 on track | Whether the automotive filter lags the hardest-accelerating cars (§5.2) | — |
 | Whether the LM2940CT-5.0 holds 5.0 V on the MP9e's 5.90 V BEC | 5.9 V is under the 6.25 V from which TI guarantees it; its dropout, 0.2 V at most at 100 mA, should leave room (§2.7) | — |
 | Whether a BAT43 clamp keeps a 5 V receiver's pulse under 3.6 V on the pin | The RC inputs' protection of §2.5, worked out at about 3.5 V; to measure with a 5 V source through the 10 kΩ | — |
@@ -236,8 +235,8 @@ The KiCad schematics in [`hardware/`](../hardware/README.md):
   display on I²C, the two-button ladder on D0, the GM10 on UART1, and the receiver's CH1 and CH2
   through 10 kΩ to D3 and D2, ground common, the receiver's + rail off the XIAO.
 - [`car.kicad_sch`](../hardware/car.pdf) — **in the car, planned**: the BEC → bulk capacitors →
-  LM2940CT-5.0 with its 100 µF low-ESR electrolytic → 5V pad path, no diodes, the 1S backup LiPo on
-  the BAT pads (§2.7), each RC input through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ to ground
+  LM2940CT-5.0 with its 100 µF low-ESR electrolytic → 5V pad path, no diodes and no backup battery
+  (§2.7), each RC input through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ to ground
   (§2.5), the bench's two keys (§3.1), and the optional IMU sharing the I²C bus with the display
   (§2.4, §2.6), drawn but not fitted.
 

@@ -422,13 +422,29 @@ try when one is at hand; their logic is host-tested.
   started a session 1 s after the calibration was saved.
   *Test:* on the bench with the throttle, then on track with speed. Record the thresholds against §9
   question 17.
-- [ ] **6.5 Power loss and sleep** (§4.5).
-  - SAVING when the RC edges stop, then deep sleep.
-  - Wake on OK and on the RC signal.
-  - Sleep when idle; a USB host keeps the device awake.
+- [ ] **6.5 Power off and sleep** (§4.5). There is no backup battery (§2.7, decided 2026-10-25):
+  the car switched off is the device switched off, and a session is ended by hand first.
+  - A session the switch cut, closed at the next boot.
+  - Sleep from IDLE, for a device powered otherwise than by the car; a USB host keeps it awake.
+  - Wake on OK.
 
-  *Test:* switch the car off mid-session → the file is closed and parseable. Switch it back on →
-  the POST runs and the session starts automatically.
+  *Test:* switch the car off mid-session → at the next boot the file is cut after its last record,
+  parseable, and `meta.json` reads `close: unclosed`.
+
+  *So far:* `sessionBegin()` names the open session in NVS and `sessionEnd()` clears it; at boot
+  `sessionRecover()` cuts the `.rcl` after its last whole record, found by `rcl::findTail()` in
+  128 KB pieces (4 host tests), and gives `meta.json` `close: unclosed`, a line in `/post.log`. The
+  board sleeps from IDLE only (`lib/ui/ui_power.h`, 9 host tests, 210 in all): the RC signal
+  stopping, or 5 min with no RC signal, no host and no key, give a 10 s notice that any key, the
+  pulses or a host cancel; a session is never ended by the pulses. `src/power.cpp` switches the
+  display off, unmounts the card and sleeps until OK. The status bar's LiPo mark is gone.
+  On the bench, on the `sim` build (`reset` restarts at once, `usb off` hides the host, a 20 s
+  timer stands in for OK): a session reset 8.5 s in was closed at the next boot in 170 ms, 106
+  records and 8,052 of 4,194,304 bytes kept, 0 bytes skipped on reading, its first 5.0 s;
+  `meta.json` read `close: unclosed`. In IDLE the notice counted down from 10 s, OK cancelled it and
+  opened nothing, and left alone it slept; 5 min after the last activity it came by itself; each
+  sleep woke into the POST, `woken by timer`.
+  Still to do: the wake on OK, with a finger on the button; and the switch-off in the car.
 - [ ] **6.6 Aux channel trigger** on D1, if §2.2 left it free (§8, deferred).
 
 ## Phase 7 — IMU
@@ -466,8 +482,8 @@ try when one is at hand; their logic is host-tested.
 
 ## Phase 10 — Field hardening
 
-- [ ] **10.1 Soak test across a race day.** Review write latency and losses, the backup LiPo's
-  behaviour, and the JS5208's durability (§9 question 18).
+- [ ] **10.1 Soak test across a race day.** Review write latency and losses, and the JS5208's
+  durability (§9 question 18).
 
 ## Phase 11 — Camera (optional)
 

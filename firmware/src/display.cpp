@@ -135,6 +135,12 @@ bool displayBegin() {
   return true;
 }
 
+void displayOff() {
+  if (!present) return;
+  I2cLock lock;
+  u8g2.setPowerSave(1);
+}
+
 void displaySetTextSize(ui::TextSize size) {
   if (size == textSize) return;
   textSize = size;

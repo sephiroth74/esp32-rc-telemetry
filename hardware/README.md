@@ -5,7 +5,7 @@ KiCad schematics of the device, one sheet each:
 | Sheet | What | Status |
 | --- | --- | --- |
 | [`bench.kicad_sch`](bench.kicad_sch) ([PDF](bench.pdf)) | The bench build: the XIAO, the display, the two keys, the GM10, and the taps on the receiver's channels | **As wired** on 2026-10-19 |
-| [`car.kicad_sch`](car.kicad_sch) ([PDF](car.pdf)) | In the car: the power path from the receiver rail through an LM2940CT-5.0, no diodes, the backup LiPo, the RC inputs through 10 k with a BAT43 clamp and 100 k down, the two keys, the optional IMU (not fitted, DNP) | **Planned**, from PLAN-ESP32.md §2.5, §2.7 and §3.1. Rev 2, 2026-10-24: the LM2940 in place of the buck, the clamps in place of the 74LVC2G17, the bench's two keys in place of the JS5208 |
+| [`car.kicad_sch`](car.kicad_sch) ([PDF](car.pdf)) | In the car: the power path from the receiver rail through an LM2940CT-5.0, no diodes and no backup battery, the RC inputs through 10 k with a BAT43 clamp and 100 k down, the two keys, the optional IMU (not fitted, DNP) | **Planned**, from PLAN-ESP32.md §2.5, §2.7 and §3.1. Rev 2, 2026-10-24: the LM2940 in place of the buck, the clamps in place of the 74LVC2G17, the bench's two keys in place of the JS5208. Rev 3, 2026-10-25: the backup LiPo on BAT+/BAT− taken out |
 
 ![Bench build](bench.png)
 
@@ -69,6 +69,6 @@ netlist after any change of layout, and check that every power net holds only th
 
 `gen_schematics.py` wrote the first version of both sheets from KiCad's libraries. Running it again
 overwrites the sheets, edits made in KiCad included, so edit in KiCad from now on. The car sheet's
-rev 2 is the exception: that sheet had never been edited in KiCad, so it was generated again, with
-the UUIDs of what did not change kept. To do the same, run the script into a scratch directory and
-copy only the sheet you mean, or it overwrites the other one too.
+revs 2 and 3 are the exception: that sheet had never been edited in KiCad, so it was generated
+again, with the UUIDs of what did not change kept. To do the same, run the script into a scratch
+directory and copy only the sheet you mean, or it overwrites the other one too.

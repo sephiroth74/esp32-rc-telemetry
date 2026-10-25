@@ -79,6 +79,16 @@ void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
 }
 
 BoardOutput Board::handle(Event event, const Facts& facts, uint32_t nowMs) {
+  activeMs_ = nowMs;  // a key keeps the device awake (§4.5)
+  if (sleep_ != SleepWhy::None) {
+    if (event != Event::Press) return {};
+    sleep_ = SleepWhy::None;
+    menu_.restartTimer(nowMs);
+    BoardOutput o;
+    o.swallow = true;
+    toast(o, "Sleep cancelled");
+    return o;
+  }
   if (notice_ != Refusal::None) {
     if (event != Event::Press) return {};  // the rest of the gesture that opened it
     notice_ = Refusal::None;
@@ -363,6 +373,38 @@ BoardOutput Board::onMotion(const Motion& motion, const Facts& f, uint32_t nowMs
   o.command = Command::StartSession;
   toast(o, "Session %u", f.nextSession);
   return o;
+}
+
+BoardOutput Board::onPower(const Power& p, const Facts&, uint32_t nowMs) {
+  BoardOutput o;
+  bool stopped = rcLive_ && !p.rcLive;  // the pulses stopped this tick
+  rcLive_ = p.rcLive;
+  if (p.rcLive || p.usbHost || mode_ != Mode::Idle) activeMs_ = nowMs;
+  if (mode_ != Mode::Idle) return o;  // a session ends by hand or standing still, never here
+  if (sleep_ != SleepWhy::None) {
+    if (p.rcLive || p.usbHost) {  // the car is back on, or a host came
+      sleep_ = SleepWhy::None;
+      return o;
+    }
+    if (static_cast<int32_t>(nowMs - sleepAtMs_) < 0) return o;
+    sleep_ = SleepWhy::None;
+    return command(Command::Sleep);
+  }
+  if (p.usbHost) return o;
+  if (stopped) {
+    sleep_ = SleepWhy::CarOff;
+  } else if (!p.rcLive && nowMs - activeMs_ >= powerTiming_.idleMs) {
+    sleep_ = SleepWhy::Idle;
+  } else {
+    return o;
+  }
+  sleepAtMs_ = nowMs + powerTiming_.noticeMs;
+  return o;
+}
+
+uint32_t Board::sleepInS(uint32_t nowMs) const {
+  int32_t left = static_cast<int32_t>(sleepAtMs_ - nowMs);
+  return left > 0 ? (static_cast<uint32_t>(left) + 999) / 1000 : 0;
 }
 
 void Board::backToIdle(uint32_t nowMs) {

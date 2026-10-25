@@ -396,8 +396,9 @@ def car():
     display(s)
     imu(s)
     gm10(s)
-    s.text(1000, 830, "Sul retro: BAT+ / BAT− → LiPo 1S 150–300 mAh", 12, bold=True)
-    s.text(1000, 846, "backup, opzionale: chiude bene il file quando spegni la macchina", 11, color="#555")
+    s.text(1000, 830, "Sul retro: BAT+ / BAT− liberi, niente batteria tampone", 12, bold=True)
+    s.text(1000, 846, "la board si spegne con la macchina: prima chiudi la sessione (tieni OK)", 11,
+           color="#555")
     legend(s, ["✗  Mai la USB mentre la macchina o una LiPo alimentano la board",
                "✗  Mai il + della ricevente dritto sul pad 5V: passa dall'LM2940",
                "✗  Mai il 3V3 della XIAO verso il + della ricevente",

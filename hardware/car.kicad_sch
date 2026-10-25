@@ -1,4 +1,4 @@
-(kicad_sch (version 20250114) (generator "eeschema") (generator_version "9.0") (uuid "ffdedf3a-67e8-4282-b496-2684f4fc429c") (paper "A3") (title_block (title "In the car: power, backup LiPo, protected RC inputs, two keys, IMU") (date "2026-10-24") (rev "2") (company "esp32-rc-telemetry") (comment 1 "Signals and keys as on bench.kicad_sch; the power and the RC inputs' protection change.") (comment 2 "To confirm on the bench: the LM2940 on a 5.9 V BEC, the RC inputs' clamps, the IMU.") (comment 3 "The design of PLAN-ESP32.md 2.5, 2.7 and 3.1: not built yet."))
+(kicad_sch (version 20250114) (generator "eeschema") (generator_version "9.0") (uuid "ffdedf3a-67e8-4282-b496-2684f4fc429c") (paper "A3") (title_block (title "In the car: power, protected RC inputs, two keys, IMU") (date "2026-10-25") (rev "3") (company "esp32-rc-telemetry") (comment 1 "Signals and keys as on bench.kicad_sch; the power and the RC inputs' protection change.") (comment 2 "To confirm on the bench: the LM2940 on a 5.9 V BEC, the RC inputs' clamps, the IMU.") (comment 3 "The design of PLAN-ESP32.md 2.5, 2.7 and 3.1: not built yet."))
 	(lib_symbols (symbol "rct:XIAO_ESP32S3_Sense" (pin_names (offset 1.016)) (exclude_from_sim no) (in_bom yes) (on_board yes) (property "Reference" "U" (at 0 16.51 0) (effects (font (size 1.27 1.27)))) (property "Value" "Seeed XIAO ESP32-S3 Sense" (at 0 -16.51 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.27 1.27)) (hide yes))) (symbol "XIAO_ESP32S3_Sense_0_1" (rectangle (start -20.32 15.24) (end 20.32 -15.24) (stroke (width 0.254) (type default)) (fill (type background)))) (symbol "XIAO_ESP32S3_Sense_1_1" (pin passive line (at -22.86 7.62 0) (length 2.54) (name "D0/GPIO1" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 5.08 0) (length 2.54) (name "D1/GPIO2" (effects (font (size 1.27 1.27)))) (number "2" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 2.54 0) (length 2.54) (name "D2/GPIO3" (effects (font (size 1.27 1.27)))) (number "3" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 0 0) (length 2.54) (name "D3/GPIO4" (effects (font (size 1.27 1.27)))) (number "4" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 -2.54 0) (length 2.54) (name "D4/GPIO5/SDA" (effects (font (size 1.27 1.27)))) (number "5" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 -5.08 0) (length 2.54) (name "D5/GPIO6/SCL" (effects (font (size 1.27 1.27)))) (number "6" (effects (font (size 1.27 1.27))))) (pin passive line (at -22.86 -7.62 0) (length 2.54) (name "D6/GPIO43/TX" (effects (font (size 1.27 1.27)))) (number "7" (effects (font (size 1.27 1.27))))) (pin passive line (at 22.86 7.62 180) (length 2.54) (name "D7/GPIO44/RX" (effects (font (size 1.27 1.27)))) (number "8" (effects (font (size 1.27 1.27))))) (pin passive line (at 22.86 5.08 180) (length 2.54) (name "D8/GPIO7/SCK" (effects (font (size 1.27 1.27)))) (number "9" (effects (font (size 1.27 1.27))))) (pin passive line (at 22.86 2.54 180) (length 2.54) (name "D9/GPIO8/MISO" (effects (font (size 1.27 1.27)))) (number "10" (effects (font (size 1.27 1.27))))) (pin passive line (at 22.86 0 180) (length 2.54) (name "D10/GPIO9/MOSI" (effects (font (size 1.27 1.27)))) (number "11" (effects (font (size 1.27 1.27))))) (pin power_in line (at -5.08 17.78 270) (length 2.54) (name "5V" (effects (font (size 1.27 1.27)))) (number "14" (effects (font (size 1.27 1.27))))) (pin power_out line (at 5.08 17.78 270) (length 2.54) (name "3V3" (effects (font (size 1.27 1.27)))) (number "12" (effects (font (size 1.27 1.27))))) (pin power_in line (at -10.16 -17.78 90) (length 2.54) (name "GND" (effects (font (size 1.27 1.27)))) (number "13" (effects (font (size 1.27 1.27))))) (pin passive line (at 0 -17.78 90) (length 2.54) (name "BAT-" (effects (font (size 1.27 1.27)))) (number "16" (effects (font (size 1.27 1.27))))) (pin passive line (at 10.16 -17.78 90) (length 2.54) (name "BAT+" (effects (font (size 1.27 1.27)))) (number "15" (effects (font (size 1.27 1.27))))))) 	(symbol "power:+5V"
 		(power global)
 		(pin_numbers
@@ -380,229 +380,6 @@
 					)
 				)
 				(number "1"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-		)
-		(embedded_fonts no)
-	) 	(symbol "Device:Battery_Cell"
-		(pin_numbers
-			(hide yes)
-		)
-		(pin_names
-			(offset 0)
-			(hide yes)
-		)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(duplicate_pin_numbers_are_jumpers no)
-		(property "Reference" "BT"
-			(at 2.54 2.54 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "Battery_Cell"
-			(at 2.54 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 0 1.524 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 0 1.524 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Single-cell battery"
-			(at 0 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Device" "V"
-			(at 0 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Type" "DC"
-			(at 0 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Sim.Pins" "1=+ 2=-"
-			(at 0 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "ki_keywords" "battery cell"
-			(at 0 0 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(symbol "Battery_Cell_0_1"
-			(rectangle
-				(start -2.286 1.778)
-				(end 2.286 1.524)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type outline)
-				)
-			)
-			(rectangle
-				(start -1.524 1.016)
-				(end 1.524 0.508)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type outline)
-				)
-			)
-			(polyline
-				(pts
-					(xy 0 1.778) (xy 0 2.54)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy 0 0.762) (xy 0 0)
-				)
-				(stroke
-					(width 0)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy 0.762 3.048) (xy 1.778 3.048)
-				)
-				(stroke
-					(width 0.254)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-			(polyline
-				(pts
-					(xy 1.27 3.556) (xy 1.27 2.54)
-				)
-				(stroke
-					(width 0.254)
-					(type default)
-				)
-				(fill
-					(type none)
-				)
-			)
-		)
-		(symbol "Battery_Cell_1_1"
-			(pin passive line
-				(at 0 5.08 270)
-				(length 2.54)
-				(name "+"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number "1"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-			(pin passive line
-				(at 0 -2.54 90)
-				(length 2.54)
-				(name "-"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number "2"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -1705,12 +1482,8 @@
 	(symbol (lib_id "power:+3V3") (at 205.74 81.28 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "0441ee67-7ef9-4b14-ad0b-9804662a0336") (property "Reference" "#PWR002" (at 205.74 76.28 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Value" "+3V3" (at 205.74 77.47 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 205.74 81.28 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 205.74 81.28 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "783d756d-49a5-413c-9897-a1487cf85d53")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "#PWR002") (unit 1)))))
 	(wire (pts (xy 190.5 119.38) (xy 190.5 121.92)) (stroke (width 0) (type default)) (uuid "1f1292e7-203d-4c25-9184-a06a1da11ac1"))
 	(symbol (lib_id "power:GND") (at 190.5 121.92 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "3e917e60-8392-4d3f-9d97-6cb140169943") (property "Reference" "#PWR003" (at 190.5 116.92 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Value" "GND" (at 190.5 125.73 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 190.5 121.92 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 190.5 121.92 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "a25b1ec9-7bf0-41b8-bb88-eedd3394f188")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "#PWR003") (unit 1)))))
-	(symbol (lib_id "Device:Battery_Cell") (at 223.52 129.54 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "cdb03219-c541-4728-b261-ff5df61fa5d2") (property "Reference" "BT1" (at 227.33 128.27 0) (effects (font (size 1.27 1.27)))) (property "Value" "1S LiPo 150-300 mAh" (at 227.33 130.81 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 223.52 129.54 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 223.52 129.54 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "fd6061de-3699-4424-9409-b668b10e5380")) (pin "2" (uuid "52a7b3ea-7af9-4c70-be42-15b919daca80")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "BT1") (unit 1)))))
-	(wire (pts (xy 210.82 119.38) (xy 210.82 124.46)) (stroke (width 0) (type default)) (uuid "3ba4b365-81c5-46f7-8c54-52ac2a63bbf5"))
-	(wire (pts (xy 210.82 124.46) (xy 223.52 124.46)) (stroke (width 0) (type default)) (uuid "9774943b-d202-4f3f-b120-691cbce2bc33"))
-	(wire (pts (xy 200.66 119.38) (xy 200.66 134.62)) (stroke (width 0) (type default)) (uuid "94eb6166-b7e2-4bd6-860e-4b9fcc84153f"))
-	(wire (pts (xy 200.66 134.62) (xy 223.52 134.62)) (stroke (width 0) (type default)) (uuid "ac0f86df-c627-4bee-a812-7c990e00841e"))
-	(wire (pts (xy 223.52 134.62) (xy 223.52 132.08)) (stroke (width 0) (type default)) (uuid "c1b4b298-c4f9-4e5b-9227-6ccfeca69ee4"))
+	(no_connect (at 210.82 119.38) (uuid "46a893a3-d222-42fe-b69c-83457da8f70b"))
+	(no_connect (at 200.66 119.38) (uuid "b94246cd-a7af-45e6-aabf-34195537e313"))
 	(symbol (lib_id "rct:SSD1306_OLED") (at 63.5 50.8 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "cf77383a-f1c4-41ca-ba82-71e8c8c525bb") (property "Reference" "DS1" (at 55.88 40.64 0) (effects (font (size 1.27 1.27)))) (property "Value" "OLED 0.96in SSD1306 0x3C" (at 63.5 69.85 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 63.5 50.8 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 63.5 50.8 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "255f532c-56e9-4308-855b-8e965a94321e")) (pin "2" (uuid "76c77010-ddbc-48f5-a358-9290007fa0fa")) (pin "3" (uuid "0d4be99d-ba03-4302-8b93-2f92b14330a8")) (pin "4" (uuid "f8a4543d-a0d3-4d08-b549-12dfa349ea70")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "DS1") (unit 1)))))
 	(wire (pts (xy 63.5 39.37) (xy 63.5 36.83)) (stroke (width 0) (type default)) (uuid "3c7a4e08-c139-4be9-bc07-c950fbc2d50b"))
 	(symbol (lib_id "power:+3V3") (at 63.5 36.83 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "6a25b5e9-b43c-4122-88bd-833edb8cdd8f") (property "Reference" "#PWR004" (at 63.5 31.83 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Value" "+3V3" (at 63.5 33.02 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 63.5 36.83 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 63.5 36.83 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "1714187f-d616-45f7-9d19-d06f7c1f8a98")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "#PWR004") (unit 1)))))
@@ -1841,6 +1614,6 @@
 	(symbol (lib_id "power:GND") (at 25.4 27.94 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "8c958a14-ae25-4929-ab63-ded5a90788a0") (property "Reference" "#PWR027" (at 25.4 22.94 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Value" "GND" (at 25.4 31.75 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 25.4 27.94 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "~" (at 25.4 27.94 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "0f0dde02-c719-4a4d-9a36-08f29019c828")) (instances (project "car" (path "/ffdedf3a-67e8-4282-b496-2684f4fc429c" (reference "#PWR027") (unit 1)))))
 	(text "XIAO pads, USB-C up, from the top: left D0 D1 D2 D3 D4 D5 D6, right 5V GND 3V3 D10 D9 D8 D7;\nBAT+ and BAT- on the back. The microSD of the Sense board takes D8 CLK, D9 DAT0, D10 CMD and\nGPIO21 for DAT3, inside: leave D8-D10 free. D1 is spare, for the optional aux channel." (exclude_from_sim no) (at 20.32 193.04 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "965f0e24-4564-455e-bf85-08c6317fd1d2"))
 	(text "Keys: the bench's two buttons (PLAN-ESP32.md 3.1): a 10 k pull-up on D0, OK straight to\nground, NAV through 10 k; 0 V, 1.62 V, and 3.12 V at rest.\nThe IMU is optional (DNP): on the I2C bus with the display, at 0x6A, it needs no GPIO.\nThe GM10 runs from the LM2940's 5 V." (exclude_from_sim no) (at 20.32 208.28 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "f831e033-7292-422f-a15d-a28f9a9e83fc"))
-	(text "RC inputs, per channel: 10 k in series; a BAT43 to 3V3 that holds a 5 V receiver's pulse\nunder the pin's 3.6 V; 100 k to ground that holds the pin low with the receiver off, as the\nRC inputs wake the chip. A 3.3 V receiver's high reads about 3.0 V, over the 2.48 V needed." (exclude_from_sim no) (at 236.22 190.5 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "629de0a7-3e18-42ff-bbf9-aba4d2bd7e16"))
-	(text "Power: never the receiver rail straight into the 5V pad. C1, low ESR, and C2 soak up the\nservo's spikes, and the LM2940 holds 5 V for the 5V pad and the GM10. It is guaranteed from\n6.25 V in; on a 5.9 V BEC its dropout, 0.2 V at most at 100 mA, leaves room, to confirm on\nthe bench. C3 keeps it stable: 22 u or more, ESR 0.1 to 1 ohm: a low-ESR electrolytic, the\nEEU-FR1C101, as small tantalums run over 1 ohm. No diodes (decided 2026-10-24), so the\nUSB is never plugged in while the car or a LiPo powers the board: the two 5 V would meet\non the 5V pad.\nThe LiPo on the BAT pads carries the shutdown when the car is switched off." (exclude_from_sim no) (at 20.32 226.06 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "34b517d8-e0c4-4d48-863f-011b80794c71"))
+	(text "RC inputs, per channel: 10 k in series; a BAT43 to 3V3 that holds a 5 V receiver's pulse\nunder the pin's 3.6 V; 100 k to ground that holds the pin low with its lead unplugged, so\nthat noise is not taken for pulses. A 3.3 V receiver's high reads about 3.0 V, over 2.48 V." (exclude_from_sim no) (at 236.22 190.5 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "95b3bfd8-e15c-4e5f-81a2-7421d5546d56"))
+	(text "Power: never the receiver rail straight into the 5V pad. C1, low ESR, and C2 soak up the\nservo's spikes, and the LM2940 holds 5 V for the 5V pad and the GM10. It is guaranteed from\n6.25 V in; on a 5.9 V BEC its dropout, 0.2 V at most at 100 mA, leaves room, to confirm on\nthe bench. C3 keeps it stable: 22 u or more, ESR 0.1 to 1 ohm: a low-ESR electrolytic, the\nEEU-FR1C101, as small tantalums run over 1 ohm. No diodes (decided 2026-10-24), so the\nUSB is never plugged in while the car or a LiPo powers the board: the two 5 V would meet\non the 5V pad.\nNo backup battery on BAT+/BAT- (decided 2026-10-25): the device goes off with the car, so\na session is ended by hand first; one the switch cuts is closed at the next boot." (exclude_from_sim no) (at 20.32 226.06 0) (effects (font (size 1.27 1.27)) (justify left top)) (uuid "2eaa8cf2-9b08-478f-b6e4-43f14a9e2234"))
 	(sheet_instances (path "/" (page "1"))) (embedded_fonts no))

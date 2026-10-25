@@ -255,7 +255,6 @@ R = library("Device", "R")
 C = library("Device", "C")
 CP = library("Device", "C_Polarized")
 DS = library("Device", "D_Schottky")
-BAT = library("Device", "Battery_Cell")
 SW = library("Switch", "SW_Push")
 GND = library("power", "GND")
 V3 = library("power", "+3V3")
@@ -432,21 +431,14 @@ def bench():
 # --- Car --------------------------------------------------------------------------------------------
 
 def car():
-    s = Sheet("car", "In the car: power, backup LiPo, protected RC inputs, two keys, IMU",
+    s = Sheet("car", "In the car: power, protected RC inputs, two keys, IMU",
               ["The design of PLAN-ESP32.md 2.5, 2.7 and 3.1: not built yet.",
                "To confirm on the bench: the LM2940 on a 5.9 V BEC, the RC inputs' clamps, the IMU.",
                "Signals and keys as on bench.kicad_sch; the power and the RC inputs' protection change."],
-              paper="A3", date="2026-10-24", rev="2")
+              paper="A3", date="2026-10-25", rev="3")
     p = xiao(s, 200.66, 101.6, lambda pin: s.to_power(pin, V5))
-    # The backup LiPo across the BAT pads (§2.7).
-    # BAT+ is the right-most bottom pad, so its wire and BAT-'s never cross nor touch the ground.
-    (bx, by), _ = p["15"]
-    (nx, ny), _ = p["16"]
-    tx = bx + 12.7
-    bt = s.place(BAT, tx, by + 10.16, "1S LiPo 150-300 mAh", ref="BT1", refpos=(tx + 3.81, by + 8.89),
-                 valpos=(tx + 3.81, by + 11.43))
-    s.wire((bx, by), (bx, bt["1"][0][1]), bt["1"][0])
-    s.wire((nx, ny), (nx, bt["2"][0][1] + 2.54), (tx, bt["2"][0][1] + 2.54), bt["2"][0])
+    s.nc(p["15"])  # no backup battery (§2.7, 2026-10-25): the device goes off with the car
+    s.nc(p["16"])
 
     oled(s, 63.5, 50.8)
     # Optional (§2.6): not fitted until it is bought, so drawn crossed out. It needs no GPIO.
@@ -526,8 +518,8 @@ def car():
                           "The IMU is optional (DNP): on the I2C bus with the display, at 0x6A, it needs no GPIO.\n"
                           "The GM10 runs from the LM2940's 5 V.")
     s.text(236.22, 190.5, "RC inputs, per channel: 10 k in series; a BAT43 to 3V3 that holds a 5 V receiver's pulse\n"
-                           "under the pin's 3.6 V; 100 k to ground that holds the pin low with the receiver off, as the\n"
-                           "RC inputs wake the chip. A 3.3 V receiver's high reads about 3.0 V, over the 2.48 V needed.")
+                           "under the pin's 3.6 V; 100 k to ground that holds the pin low with its lead unplugged, so\n"
+                           "that noise is not taken for pulses. A 3.3 V receiver's high reads about 3.0 V, over 2.48 V.")
     s.text(20.32, 226.06, "Power: never the receiver rail straight into the 5V pad. C1, low ESR, and C2 soak up the\n"
                          "servo's spikes, and the LM2940 holds 5 V for the 5V pad and the GM10. It is guaranteed from\n"
                          "6.25 V in; on a 5.9 V BEC its dropout, 0.2 V at most at 100 mA, leaves room, to confirm on\n"
@@ -535,7 +527,8 @@ def car():
                          "EEU-FR1C101, as small tantalums run over 1 ohm. No diodes (decided 2026-10-24), so the\n"
                          "USB is never plugged in while the car or a LiPo powers the board: the two 5 V would meet\n"
                          "on the 5V pad.\n"
-                         "The LiPo on the BAT pads carries the shutdown when the car is switched off.")
+                         "No backup battery on BAT+/BAT- (decided 2026-10-25): the device goes off with the car, so\n"
+                         "a session is ended by hand first; one the switch cuts is closed at the next boot.")
     s.write(f"{OUT}/car.kicad_sch")
 
 

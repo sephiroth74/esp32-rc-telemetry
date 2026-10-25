@@ -9,7 +9,10 @@
 //                                     its Press first, so one that closes a notice or wakes the
 //                                     display does only that, as on the keys
 //   screen                            the screen's lines as last drawn
-// The simulated pulses go through the inputs' accepted windows like real ones. Never in the car.
+//   usb off|on                        sleep as if no USB host were attached, or not (§4.5)
+//   reset                             restarts at once, closing nothing: the car switched off
+// The simulated pulses go through the inputs' accepted windows like real ones. A sleep wakes on OK
+// or after SLEEP_SIM_WAKE_S, standing in for a press (power.h). Never in the car.
 #pragma once
 
 #ifdef BENCH_SIM
@@ -20,5 +23,6 @@ void benchSimPoll();                       // reads what the console sent; every
 bool benchSimNextEvent(ui::Event& event);  // a key waiting, if any
 void benchSimSwallow();                    // keysSwallow(): the rest of the current gesture goes
 bool benchSimTakeScreenRequest();          // `screen` was asked for since the last call
+bool benchSimHostHidden();                 // `usb off`: the board sleeps with a host attached
 
 #endif

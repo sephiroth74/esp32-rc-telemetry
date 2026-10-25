@@ -15,3 +15,5 @@ ui::PostResult postRun();  // after i2cBusBegin() and keysBegin()
 // /post.log back on the serial console: the POST's own lines can come before a USB host has opened
 // the port, the file is there after. loop() calls it each time a host opens the port.
 void postEchoLog();
+// A line more in /post.log, for what the boot does after the POST: printed now as well.
+void postLogLine(const char* fmt, ...) __attribute__((format(printf, 1, 2)));

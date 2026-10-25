@@ -9,6 +9,7 @@
 #include "ui_gnss.h"
 #include "ui_keys.h"
 #include "ui_menu.h"
+#include "ui_power.h"
 
 inline ui::KeyConfig keyConfig(KeyLayout layout = KEY_LAYOUT_DEFAULT) {
   ui::KeyConfig c{};
@@ -52,5 +53,13 @@ inline ui::MenuTiming menuTiming() {
   ui::MenuTiming t{};
   t.menuTimeoutMs = UI_MENU_TIMEOUT_MS;
   t.dialogTimeoutMs = UI_DIALOG_TIMEOUT_MS;
+  return t;
+}
+
+// Sleep (§4.5).
+inline ui::PowerTiming powerTiming() {
+  ui::PowerTiming t{};
+  t.noticeMs = SLEEP_NOTICE_MS;
+  t.idleMs = SLEEP_IDLE_MS;
   return t;
 }

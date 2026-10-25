@@ -19,6 +19,7 @@ constexpr uint8_t kQueue = 16;
 ui::Event events[kQueue];
 uint8_t head = 0, count = 0;
 bool screenWanted = false;
+bool hostHidden = false;
 
 // A key as the keys give it: a Press, then the gesture's own event.
 void queue(ui::Event e) {
@@ -70,6 +71,14 @@ void run(const char* cmd) {
   } else if (strcmp(cmd, "screen") == 0) {
     screenWanted = true;
     return;
+  } else if (strcmp(cmd, "reset") == 0) {
+    Serial.println("sim: reset, as the car switched off");
+    Serial.flush();
+    esp_restart();
+  } else if (sscanf(cmd, "usb %15s", word) == 1 && (!strcmp(word, "on") || !strcmp(word, "off"))) {
+    hostHidden = strcmp(word, "off") == 0;
+    Serial.printf("sim: USB host %s for sleep\n", hostHidden ? "hidden" : "seen");
+    return;
   } else {
     Serial.printf("sim: what is \"%s\"?\n", cmd);
     return;
@@ -107,6 +116,8 @@ void benchSimSwallow() {
     --count;
   }
 }
+
+bool benchSimHostHidden() { return hostHidden; }
 
 bool benchSimTakeScreenRequest() {
   bool wanted = screenWanted;

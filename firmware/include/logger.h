@@ -36,7 +36,7 @@ bool loggerBegin();
 // ring at once, and the logger task creates the file. False while a session is open or closing.
 bool logOpen(const char* path, const rcl::SessionHeader& header);
 // The footer, everything waiting, the file cut to its length and closed. Waits up to `waitMs` for
-// the card, which SAVING needs (§4.5); false when it took longer, and the close goes on.
+// the card; false when it took longer, and the close goes on.
 bool logClose(rcl::Close reason, uint32_t waitMs);
 // Open, or opening: records are taken.
 bool logActive();

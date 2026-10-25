@@ -16,6 +16,7 @@
 enum class CardMount : uint8_t { Ok, NoCard, Exfat, Gpt, NoFat32 };
 
 CardMount cardMount();  // POST check 3; unmounts first if it was mounted
+void cardUnmount();     // before deep sleep
 bool cardMounted();
 uint32_t cardTotalMb();
 uint32_t cardFreeMb();

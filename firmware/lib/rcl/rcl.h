@@ -71,6 +71,10 @@ class Reader {
   bool begin(const uint8_t* data, size_t size);
   // The next whole record with a matching CRC; false at the end of the data.
   bool next(Record& out);
+  // A file read in pieces: `data` now holds it from byte `base` on, its header read by begin() on
+  // the first piece. The records' offsets stay the file's.
+  void resume(const uint8_t* data, size_t size, size_t base);
+  size_t position() const { return base_ + pos_; }  // where the next record is looked for
 
   uint16_t version() const { return version_; }
   uint64_t nonce() const { return nonce_; }
@@ -78,11 +82,25 @@ class Reader {
 
  private:
   const uint8_t* data_ = nullptr;
-  size_t size_ = 0, pos_ = 0, skipped_ = 0;
+  size_t size_ = 0, pos_ = 0, skipped_ = 0, base_ = 0;
   uint16_t version_ = 0;
   uint64_t nonce_ = 0;
   uint32_t seed_ = 0;
 };
+
+// Where a file that was never closed ends — the car switched off with its session open (§4.5) —
+// so that it can be cut there and read as a closed one does, bar the footer.
+struct Tail {
+  size_t end = 0;          // just past the last whole record; the file header's end with none
+  uint32_t records = 0;    // whole records, the session header's included
+  uint32_t sessionId = 0;  // the session header's; 0 without one
+};
+// Fills `buf` with up to `capacity` bytes of the file from `offset`; how many it read.
+using ReadAt = size_t (*)(void* context, size_t offset, uint8_t* buf, size_t capacity);
+// Reads the file in pieces of `capacity`, which must hold the largest record there can be,
+// kRecordOverhead + kMaxPayload, and gives up `gap` bytes past the last record found: what follows
+// in a pre-allocated extent is whatever the card held. False for anything but an .rcl.
+bool findTail(ReadAt read, void* context, uint8_t* buf, size_t capacity, size_t gap, Tail& out);
 
 // --- Payloads ----------------------------------------------------------------------
 // encode(): the payload's size, or 0 when it does not fit. decode(): false for a payload too short

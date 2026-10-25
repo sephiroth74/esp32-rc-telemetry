@@ -167,6 +167,10 @@ const char* screenTitle(ScreenId s) {
 
 // The state word: 11 columns at most, which both grids leave for it.
 void stateText(const Board& b, const Facts& f, uint32_t nowMs, char (&out)[24]) {
+  if (b.sleepNotice() != SleepWhy::None) {
+    snprintf(out, sizeof out, "Sleep");
+    return;
+  }
   if (b.notice() != Refusal::None) {
     snprintf(out, sizeof out, "Refused");
     return;
@@ -229,7 +233,6 @@ void statusBar(const Board& b, const Facts& f, TextSize size, uint32_t nowMs, Sc
     if (f.warning) strcat(marks, " !");
     if (f.usbHost) strcat(marks, " U");
     if (ble) strcat(marks, " B");
-    if (f.lipoLow) strcat(marks, " Li");
     put(out, 1, "%-12s%9s", state, marks);
     return;
   }
@@ -238,7 +241,6 @@ void statusBar(const Board& b, const Facts& f, TextSize size, uint32_t nowMs, Sc
   if (f.warning) strcat(marks, "!");
   if (f.usbHost) strcat(marks, "U");
   if (ble) strcat(marks, "B");
-  if (f.lipoLow) strcat(marks, "L");
   put(out, 0, "%-11s %4s %4s", state, fix, marks);
 }
 
@@ -622,7 +624,18 @@ void calibration(const Board& b, const Facts& f, Layout layout, Content& c) {
   }
 }
 
-void content(const Board& b, const Facts& f, Layout layout, TextSize size, Content& c) {
+void content(const Board& b, const Facts& f, Layout layout, TextSize size, uint32_t nowMs,
+             Content& c) {
+  if (b.sleepNotice() != SleepWhy::None) {  // §4.5: the car switched off, or nothing for a while
+    if (b.sleepNotice() == SleepWhy::CarOff) {
+      c.add("Car switched off");
+    } else {
+      c.add("Nothing for %lu min", (unsigned long)b.idleSleepMin());
+    }
+    c.add("Sleep in %lu s", (unsigned long)b.sleepInS(nowMs));
+    c.setHint("any key: cancel");
+    return;
+  }
   if (b.notice() != Refusal::None) {
     notice(b, c);
     return;
@@ -778,7 +791,7 @@ void render(const Board& board, const Facts& facts, Layout layout, TextSize size
   statusBar(board, facts, size, nowMs, out);
 
   Content c;
-  content(board, facts, layout, size, c);
+  content(board, facts, layout, size, nowMs, c);
   layOut(c, size, board.scroll(), out);
 }
 

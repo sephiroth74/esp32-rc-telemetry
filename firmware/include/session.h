@@ -74,3 +74,7 @@ bool sessionBegin(const SessionStart& start, SessionInfo& out);
 void sessionEnd(rcl::Close reason, bool haveFix, geo::Point fix);
 bool sessionOpen();
 const SessionInfo& sessionCurrent();
+// At boot, with the card mounted and before any session: one that the car switched off left open
+// (§4.5), named in NVS by sessionBegin() until sessionEnd(), is cut after its last whole record,
+// its meta.json given `close: unclosed`. A file that is not that session's is left alone.
+void sessionRecover();

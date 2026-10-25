@@ -280,8 +280,8 @@
   <path d="M1014,710 H990 V780 H1320 V500 H1350" fill="none" stroke="#00897b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="1284" y="600" font-size="11" fill="#00897b" text-anchor="end" font-weight="bold">TX → D7</text>
   <text x="1326" y="650" font-size="11" fill="#00897b" text-anchor="start" font-weight="bold">RX ← D6</text>
-  <text x="1000" y="830" font-size="12" fill="#222" text-anchor="start" font-weight="bold">Sul retro: BAT+ / BAT− → LiPo 1S 150–300 mAh</text>
-  <text x="1000" y="846" font-size="11" fill="#555" text-anchor="start">backup, opzionale: chiude bene il file quando spegni la macchina</text>
+  <text x="1000" y="830" font-size="12" fill="#222" text-anchor="start" font-weight="bold">Sul retro: BAT+ / BAT− liberi, niente batteria tampone</text>
+  <text x="1000" y="846" font-size="11" fill="#555" text-anchor="start">la board si spegne con la macchina: prima chiudi la sessione (tieni OK)</text>
   <path d="M40,986 H80" fill="none" stroke="#d62828" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="92" y="990" font-size="12" fill="#222" text-anchor="start">+ positivo (BEC o 5 V)</text>
   <path d="M40,1007 H80" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>

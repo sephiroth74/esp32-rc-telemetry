@@ -17,9 +17,9 @@ car profile and its calibration, the track, the UTC start, the POST in words —
 ### What the format has to survive
 
 - **A power cut at any moment.** The file is written in 32 KB chunks with a flush every 5 s, into
-  extents pre-allocated 4 MB at a time (§4.4). A session that ends without SAVING leaves a file
-  whose last records are cut short, followed by whatever the card held in the pre-allocated space:
-  zeros, or the bytes of an older session. **Records are self-delimiting and checked**, so a reader
+  extents pre-allocated 4 MB at a time (§4.4). A session the car's switch ends — there is no
+  backup battery (§2.7) — leaves a file whose last records are cut short, followed by whatever the
+  card held in the pre-allocated space: zeros, or the bytes of an older session. **Records are self-delimiting and checked**, so a reader
   takes every whole record and stops at the end of them (§4.5).
 - **Nothing thrown away** (§5.3). UBX frames are stored **whole and verbatim**, sync to checksum, for
   every message the module sends, so a field nobody reads today is still there tomorrow, and a
@@ -86,7 +86,9 @@ taken for one of this session's.
    bytes skipped. One rule covers every case — the cut-short last record, the zero-filled or stale
    tail, the one corrupted record a card might produce mid-file — and gives up none of the records
    after it. A length mangled mid-file does not end the reading either.
-4. A file with no session footer ended without SAVING.
+4. A file with no session footer was not closed: the car was switched off with its session open.
+   The device's next boot cuts it after its last whole record (§4.5); a file read before that, or
+   off another card, still has its tail.
 
 `t_ms` never decreases from one record of a type to the next. Across types it can step back a
 little: the records come from different tasks through queues of their own, and the logger writes
@@ -201,12 +203,12 @@ the laps again from the UBX records, better; these are what the device knew on t
 
 #### `0x08` Session footer
 
-Written at a graceful close: stopped by hand, by the automatic stop, or on SAVING after the car was
-switched off (§3.6, §4.5). Every count covers the whole session.
+Written at a graceful close: stopped by hand, or by the automatic stop (§3.6). Every count covers
+the whole session.
 
 | Offset | Type | Field | |
 | --- | --- | --- | --- |
-| 0 | `u8` | close | `0` by hand, `1` the automatic stop, `2` power off (SAVING), `3` a card error |
+| 0 | `u8` | close | `0` by hand, `1` the automatic stop, `3` a card error; `2`, power off, is never written since there is no backup battery to close on (§2.7) |
 | 1 | `u8[3]` | — | `0` |
 | 4 | `u32` | UBX frames | Written |
 | 8 | `u32` | records | Written, this one excluded |
@@ -225,7 +227,9 @@ switched off (§3.6, §4.5). Every count covers the whole session.
 | 60 | `u32` | write p99 | 99th percentile, ms |
 | 64 | `u32` | ring high water | Most bytes ever waiting in the ring |
 
-68 bytes. The same numbers go into `meta.json`, for the apps to show without reading the log.
+68 bytes. The same numbers go into `meta.json`, for the apps to show without reading the log, and
+its `close` names the reason: `by_hand`, `auto_stop` or `card_error`. A session the device closed
+at the next boot, after the car's switch, has `close: unclosed` and no footer (§4.5).
 
 ### Budget
 

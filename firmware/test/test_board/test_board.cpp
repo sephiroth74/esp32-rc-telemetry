@@ -83,7 +83,6 @@ static Facts worstCase() {
   f.geometryPoints = 65535;
   f.usbHost = true;
   f.bleConnected = true;
-  f.lipoLow = true;
   f.warning = true;
   f.firmware = "0.1.0-dev";
   f.postSummary = "all checks ok";
@@ -763,14 +762,14 @@ static void the_home_screen_reads_as_designed() {
   ScreenText t;
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Small, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Typhon 6 3D 32  58GB", t.lines[0]);
-  TEST_ASSERT_EQUAL_STRING("Ready          ! U Li", t.lines[1]);  // marks right-aligned
+  TEST_ASSERT_EQUAL_STRING("Ready             ! U", t.lines[1]);  // marks right-aligned
   TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[2]);
   TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[4]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[7]);
   TEST_ASSERT_EQUAL_UINT8(0, t.scrollTotal);  // five lines in five rows: nothing to scroll
 
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
-  TEST_ASSERT_EQUAL_STRING("Ready       3D32  !UL", t.lines[0]);
+  TEST_ASSERT_EQUAL_STRING("Ready       3D32   !U", t.lines[0]);
   TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[1]);
   TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[3]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[4]);

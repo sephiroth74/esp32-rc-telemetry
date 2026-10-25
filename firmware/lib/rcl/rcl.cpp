@@ -141,7 +141,15 @@ bool Reader::begin(const uint8_t* data, size_t size) {
   if (headerSize < kFileHeaderBytes || headerSize > size) return false;
   seed_ = seedOf(nonce_);
   pos_ = headerSize;
+  base_ = 0;
   return true;
+}
+
+void Reader::resume(const uint8_t* data, size_t size, size_t base) {
+  data_ = data;
+  size_ = size;
+  pos_ = 0;
+  base_ = base;
 }
 
 bool Reader::next(Record& out) {
@@ -160,7 +168,7 @@ bool Reader::next(Record& out) {
           out.tMs = tMs;
           out.payload = p + kRecordHead;
           out.length = length;
-          out.offset = pos_;
+          out.offset = base_ + pos_;
           pos_ += kRecordOverhead + length;
           return true;
         }
@@ -170,6 +178,37 @@ bool Reader::next(Record& out) {
     ++skipped_;
   }
   return false;
+}
+
+bool findTail(ReadAt read, void* context, uint8_t* buf, size_t capacity, size_t gap, Tail& out) {
+  constexpr size_t kMaxRecord = kRecordOverhead + kMaxPayload;
+  out = Tail();
+  if (capacity <= kMaxRecord) return false;
+  size_t base = 0, n = read(context, 0, buf, capacity);
+  Reader r;
+  if (!r.begin(buf, n)) return false;
+  out.end = r.position();
+  for (;;) {
+    Record rec;
+    while (r.next(rec)) {
+      SessionHeader h;
+      if (out.records == 0 && rec.type == static_cast<uint8_t>(Type::SessionHeader) &&
+          decode(rec.payload, rec.length, h)) {
+        out.sessionId = h.sessionId;
+      }
+      ++out.records;
+      out.end = rec.offset + kRecordOverhead + rec.length;
+    }
+    if (n < capacity) return true;  // the end of the file
+    // Everything up to the piece's last kMaxRecord bytes was searched: a record that starts there
+    // and did not fit is found again in the next piece, which begins no later.
+    size_t searched = base + n - kMaxRecord;
+    if (searched > out.end + gap) return true;
+    base = searched > out.end ? searched : out.end;
+    n = read(context, base, buf, capacity);
+    if (n == 0) return true;
+    r.resume(buf, n, base);
+  }
 }
 
 // --- Payloads ----------------------------------------------------------------------

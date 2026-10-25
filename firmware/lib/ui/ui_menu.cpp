@@ -138,6 +138,7 @@ const char* commandName(Command command) {
       "select profile", "new profile",       "set brightness",
       "set dim delay",  "set text size",     "delete sessions",
       "restart",        "choose track",      "set require fix",
+      "sleep",
   };
   return kNames[static_cast<uint8_t>(command)];
 }

@@ -25,6 +25,7 @@ void displayShow(const ui::ScreenText& text);
 void displayToast(const char* text, uint32_t nowMs);
 void displayHoldBar(uint8_t percent);     // the bottom pixel row, 0 = hidden
 void displayAcknowledge(uint32_t nowMs);  // inverts the panel DISPLAY_ACK_INVERT_MS
+void displayOff();                        // the panel dark, before deep sleep; begin() lights it
 
 void displayRefresh(uint32_t nowMs);  // call every tick; sends at most every DISPLAY_REFRESH_MS
 // Sends what changed at once, whatever the rate: for the POST, before a check that blocks, and

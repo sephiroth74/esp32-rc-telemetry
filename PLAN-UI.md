@@ -14,11 +14,11 @@ disagree, §3 wins and this file is corrected. The steps that build it are Phase
 | Settings | Only the **car profile** and the **display** (brightness, dim delay, text size) are edited on the device, and a **New car** profile can be added there; everything else lives in `/config.json` on the card, mirrored to LittleFS | §3.8 |
 | Tracks | Found by position, never registered beforehand; **New track** starts a fresh one at a known venue, for a new layout | §7.1 |
 | Text | Two sizes, both 21 columns: **small** (5x8) and **large** (6x13B, the default, picked on the bench). Content longer than the body scrolls | §3.2 |
-| Sessions | **Automatic** start (moving, or throttle off neutral) and stop (car off, or 5 min standing still), plus **manual** start and stop | §3.6 |
+| Sessions | **Automatic** start (moving, or throttle off neutral) and stop (5 min standing still), plus **manual** start and stop. Switching the car off switches the device off: end the session first; the next boot closes one left open | §3.6, §4.5 |
 | Confirmations | Stopping a session by hand, overwriting a start line, overwriting a calibration, deleting sessions | §3.1 |
 | Errors | Stay on screen **until a key is pressed**; the warning mark stays while the condition lasts | §3.2 |
 | Calibration | A procedure under Settings, per **car profile** (up to 8); no boot gesture | §3.8 |
-| Wake | From deep sleep on **OK** or on the **RC signal**, so switching the car on wakes the device | §4.5 |
+| Sleep | Only off the car's power, from IDLE: the RC signal stopping, or 5 min with nothing, then 10 s of notice; **OK** wakes | §4.5 |
 | BLE | **Only in Transfer mode**: no live stream, no radio near the receiver while driving | §7.4 |
 
 ## Keys
@@ -42,12 +42,11 @@ nothing else.
 | **POST** | Power-on, or a wake from deep sleep | → IDLE; → FATAL when PSRAM or the card fails | Dead |
 | **FATAL** | Check 1 or 3 failed | Hold OK → POST | Hold OK only |
 | **IDLE** | End of the POST; a session closed; a mode left | → SESSION, GEOMETRY, CALIBRATION, TRANSFER, SLEEP | Navigation |
-| **SESSION** | Hold OK on Home or Session; the automatic start | Stop confirmed, 5 min still, card error → IDLE; car off → SAVING | OK = marker, hold OK = stop, UP/DOWN = page |
+| **SESSION** | Hold OK on Home or Session; the automatic start | Stop confirmed, 5 min still, card error → IDLE | OK = marker, hold OK = stop, UP/DOWN = page |
 | **GEOMETRY** | Hold OK on Track › Geometry | Hold OK = stop and save | Hold OK |
 | **CALIBRATION** | Hold OK on Settings › Calibrate, with an RC signal | Saved, or cancelled at the first step | OK = capture, LEFT = back, DOWN = skip aux |
 | **TRANSFER** | OK on Menu › Transfer | OK or LEFT, confirmed while a USB host is attached | OK, LEFT |
-| **SAVING** | The car was switched off during a session | File closed → SLEEP | Dead |
-| **SLEEP** | After SAVING; car off while idle (10 s notice); 5 min idle with no RC, no USB, no key | OK or an RC signal → POST | OK wakes |
+| **SLEEP** | From IDLE: the RC signal stopping, or 5 min with no RC, no USB, no key — both after a 10 s notice any key cancels | OK → POST | OK wakes |
 
 The automatic start acts from IDLE only, never in GEOMETRY, CALIBRATION or TRANSFER. A USB host keeps
 the device out of SLEEP. BLE exists only inside TRANSFER.
@@ -60,22 +59,20 @@ stateDiagram-v2
   POST --> IDLE
   IDLE --> SESSION: hold OK / automatic start
   SESSION --> IDLE: stop confirmed / 5 min still / card error
-  SESSION --> SAVING: car switched off
   IDLE --> GEOMETRY: Track › Geometry
   GEOMETRY --> IDLE: hold OK, saved
   IDLE --> CALIBRATION: Settings › Calibrate
   CALIBRATION --> IDLE: saved / cancelled
   IDLE --> TRANSFER: Menu › Transfer
   TRANSFER --> IDLE: exit
-  SAVING --> SLEEP
-  IDLE --> SLEEP: car off 10 s / 5 min inactive
-  SLEEP --> POST: OK / RC signal
+  IDLE --> SLEEP: RC signal stopped / 5 min inactive, then 10 s
+  SLEEP --> POST: OK
 ```
 
 ## Screens
 
 With **large** text, the default, every screen after the POST has a one-line **status bar** in the
-yellow band — the state, the fix, and the warning, USB, BLE and LiPo marks — then **three body rows**
+yellow band — the state, the fix, and the warning, USB and BLE marks — then **three body rows**
 in the large font and the **key hint** in the small one. Toasts — confirmations only, never a refusal,
 which takes the body until a key — take the last body row for 1.5 s, and
 a thin scroll bar on the right edge shows when there is more: NAV turns the page. **Small** text
@@ -101,7 +98,7 @@ OK menu  hold: start     < back   OK open         OK mark  hold: stop
 | **Transfer** | USB host and BLE state, `Eject on host first` |
 | **Dialog** | The question, `hold OK: yes`, `other key: no (10s)` |
 | **Error** | `Card lost`, `Write error` or `Card full`, with `any key: close` |
-| **Saving** | `Power lost`, `Saving session N`, `Saved`, then the display goes off |
+| **Sleep notice** | `Car switched off` or `Nothing for 5 min`, `Sleep in N s`; any key cancels |
 
 The full catalogue — every menu entry with what it shows and does, and the rest of the mockups — is
 §3.4 of PLAN-ESP32.md.

@@ -4,12 +4,14 @@
 // held to as well: the JSON's values must encode to the .hex's bytes, written by a Python script
 // from the document rather than from this code, and the bytes must decode to the values. Then what
 // a power cut and a card can make of a file (§4.5): a cut at every byte, a tail of zeros or of an
-// older session's records, one corrupted record, a length mangled mid-file.
+// older session's records, one corrupted record, a length mangled mid-file. And where a file left
+// open ends, read in pieces as the device reads a long one.
 #include <ArduinoJson.h>
 #include <stdio.h>
 #include <string.h>
 #include <unity.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -422,6 +424,96 @@ static void a_corrupted_record_costs_only_itself() {
   }
 }
 
+// --- A file left open --------------------------------------------------------------
+
+static size_t readFrom(void* context, size_t offset, uint8_t* buf, size_t capacity) {
+  const Bytes& file = *static_cast<const Bytes*>(context);
+  if (offset >= file.size()) return 0;
+  size_t n = std::min(capacity, file.size() - offset);
+  memcpy(buf, file.data() + offset, n);
+  return n;
+}
+
+// Pieces just over the largest record, so that a long file takes many.
+constexpr size_t kPiece = rcl::kRecordOverhead + rcl::kMaxPayload + 4096;
+constexpr size_t kGap = 65536;
+
+static rcl::Tail tailOf(const Bytes& file) {
+  Bytes buf(kPiece);
+  rcl::Tail t;
+  TEST_ASSERT_TRUE(rcl::findTail(readFrom, const_cast<Bytes*>(&file), buf.data(), buf.size(),
+                                 kGap, t));
+  return t;
+}
+
+// `count` records of `bytes` payload each, of the golden session, a pattern in each payload.
+static Bytes bigRecords(size_t count, size_t bytes) {
+  rcl::Writer w(goldenNonce());
+  Bytes out, payload(bytes), rec(rcl::kRecordOverhead + bytes);
+  for (size_t i = 0; i < count; ++i) {
+    for (size_t j = 0; j < bytes; ++j) payload[j] = static_cast<uint8_t>(i * 7 + j);
+    TEST_ASSERT_EQUAL_UINT(rec.size(), w.record(rcl::Type::Ubx, 1000 + i, payload.data(), bytes,
+                                                rec.data(), rec.size()));
+    out.insert(out.end(), rec.begin(), rec.end());
+  }
+  return out;
+}
+
+// The rest of a 4 MB extent, zeros and an older session's records: the file ends at its own last
+// record, and the session is the header's.
+static void a_file_left_open_ends_at_its_last_record() {
+  Bytes file = golden();
+  file.insert(file.end(), 200000, 0x00);
+  Bytes stale = encodeGolden(goldenNonce() ^ 1, /*withHeader=*/false);
+  file.insert(file.end(), stale.begin(), stale.end());
+  rcl::Tail t = tailOf(file);
+  TEST_ASSERT_EQUAL_UINT(golden().size(), t.end);
+  TEST_ASSERT_EQUAL_UINT(goldenCount(), t.records);
+  TEST_ASSERT_EQUAL_UINT32(expected()["records"][0]["session_id"].as<uint32_t>(), t.sessionId);
+}
+
+// Many pieces, records of up to 60 KB across their edges, the last one cut by the power: every
+// whole record is found, as reading the file at once finds them, and the cut one is not.
+static void a_long_file_read_in_pieces_finds_every_record() {
+  Bytes file = golden();
+  for (size_t bytes : {60000u, 100u, 40000u, 65535u, 7u}) {
+    Bytes recs = bigRecords(3, bytes);
+    file.insert(file.end(), recs.begin(), recs.end());
+  }
+  Bytes cut = bigRecords(1, 30000);
+  file.insert(file.end(), cut.begin(), cut.begin() + 20000);
+  size_t end = file.size() - 20000;
+  file.insert(file.end(), 100000, 0x00);
+  rcl::Reader reader;
+  std::vector<rcl::Record> whole = readAll(file, reader);
+  rcl::Tail t = tailOf(file);
+  TEST_ASSERT_EQUAL_UINT(whole.size(), t.records);
+  TEST_ASSERT_EQUAL_UINT(goldenCount() + 15, t.records);
+  TEST_ASSERT_EQUAL_UINT(end, t.end);
+  // Nothing after the last record, as in a file already cut: the same.
+  Bytes exact(file.begin(), file.begin() + end);
+  rcl::Tail e = tailOf(exact);
+  TEST_ASSERT_EQUAL_UINT(end, e.end);
+  TEST_ASSERT_EQUAL_UINT(t.records, e.records);
+}
+
+// Past `gap` bytes with no record the search stops: what the card held there is not this session's.
+static void the_search_gives_up_after_the_gap() {
+  Bytes file = golden();
+  file.insert(file.end(), kGap + rcl::kRecordOverhead + rcl::kMaxPayload + kPiece, 0x00);
+  Bytes more = bigRecords(2, 100);
+  file.insert(file.end(), more.begin(), more.end());
+  TEST_ASSERT_EQUAL_UINT(golden().size(), tailOf(file).end);
+}
+
+static void only_an_rcl_has_a_tail() {
+  Bytes zeros(1000, 0x00), buf(kPiece);
+  rcl::Tail t;
+  TEST_ASSERT_FALSE(rcl::findTail(readFrom, &zeros, buf.data(), buf.size(), kGap, t));
+  Bytes file = golden();  // and a piece too small for the largest record
+  TEST_ASSERT_FALSE(rcl::findTail(readFrom, &file, buf.data(), rcl::kMaxPayload, kGap, t));
+}
+
 static void a_header_that_is_not_ours_is_refused() {
   rcl::Reader reader;
   Bytes file = golden();
@@ -497,6 +589,10 @@ int main(int, char**) {
   RUN_TEST(the_golden_bytes_decode_to_the_golden_values);
   RUN_TEST(a_file_cut_anywhere_keeps_every_whole_record);
   RUN_TEST(a_tail_of_zeros_or_of_an_older_session_is_skipped);
+  RUN_TEST(a_file_left_open_ends_at_its_last_record);
+  RUN_TEST(a_long_file_read_in_pieces_finds_every_record);
+  RUN_TEST(the_search_gives_up_after_the_gap);
+  RUN_TEST(only_an_rcl_has_a_tail);
   RUN_TEST(a_corrupted_record_costs_only_itself);
   RUN_TEST(a_header_that_is_not_ours_is_refused);
   RUN_TEST(a_type_the_reader_does_not_know_is_still_a_record);

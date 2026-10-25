@@ -70,6 +70,7 @@ enum class Command : uint8_t {
   Restart,
   ChooseTrack,    // arg: which of the tracks within reach (§7.1)
   SetRequireFix,  // arg: 1 for a session to need the fix, 0 for the bench (§3.6)
+  Sleep,          // the display off and the chip into deep sleep, until OK (§4.5)
 };
 
 const char* commandName(Command command);  // for logs

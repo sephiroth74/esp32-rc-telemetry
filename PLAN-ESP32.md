@@ -183,10 +183,11 @@ must accept both without any adjustment.
 3. A fixed resistor divider is **not** acceptable: sized for 5 V it produces ~2.0 V from a 3.3 V
    source, below the ESP32's ~2.48 V V_IH.
 4. Share ground with the receiver. Do **not** connect the XIAO's 3V3 to the receiver's +V rail.
-5. Fit a **~100 kΩ pull-down from each pin to ground**. With the car switched off the receiver is
-   unpowered and its outputs float, and the RC inputs double as deep-sleep wake sources (§4.5): a
-   floating input would wake the chip on noise. With the 10 kΩ in series it makes a divider, which
-   leaves a 3.3 V receiver's high at about 3.0 V, still over the 2.48 V V_IH.
+5. Fit a **~100 kΩ pull-down from each pin to ground**. An input left unwired, or a channel whose
+   lead is unplugged, floats and picks up noise: on the bench an open D2 counted hundreds of
+   rejected pulses a minute, and noise taken for pulses would keep the device from sleeping (§4.5).
+   With the 10 kΩ in series it makes a divider, which leaves a 3.3 V receiver's high at about 3.0 V,
+   still over the 2.48 V V_IH.
 
 ### 2.6 IMU
 
@@ -233,18 +234,16 @@ input limit and wastes it as heat.
   LiPo powers the board.** The two 5 V would meet on the 5V pad, and with the car off the USB would
   reach the receiver backwards through the LM2940, whose datasheet does not say what it does then.
   Unplug the board from the car to flash it or to read the card over USB.
-- **Fit a small 1S LiPo (150–300 mAh) on the BAT pads.** This is the single highest-value reliability
-  addition: it turns power-off into a graceful shutdown instead of a truncated, possibly corrupted SD
-  file, and it keeps the GNSS BBR alive between runs — seconds to a hot fix instead of a 1–2 minute
-  cold start. That last part holds **only if the GM10 is powered from a rail the LiPo keeps up**: on
-  battery the 5V pad is dead, so a GM10 on 5 V loses its BBR in SLEEP (§9, question 16). Verify that
-  the onboard charger works when powered from the 5V pad rather than USB.
-- **Free power-loss detection:** the receiver dies at the same instant as the 5 V rail, so the
-  **disappearance of RC PWM edges means the car was switched off** (§4.5). No pin required.
+- **No backup battery** (decided 2026-10-25). An earlier draft put a 1S LiPo on the BAT pads, to
+  carry a graceful shutdown when the car is switched off; it is not fitted, so **the device goes
+  off with the car**, within a millisecond or so: the LM2940's 100 µF output capacitor holds the
+  5V pad up that long at 200 mA, and the 470 µF at its input is shared with the receiver and the
+  servo. A session is ended by holding OK, or by the automatic stop, before the car is switched
+  off (§3.6). One the switch cuts loses at most its last 5 s, and the next boot closes it (§4.5).
+  The GM10's BBR lives on the module's own backup only (§9, question 16).
 - There is no way to monitor the 5 V rail directly: the XIAO ESP32-S3 does not route battery or input
-  voltage to an ADC internally, and no pad is left for an external divider. The PWM-edge watchdog is
-  the only power-loss signal, which is why on the bench — receiver off — sessions end by the standstill
-  timeout or by hand (§3.6).
+  voltage to an ADC internally, and no pad is left for an external divider. Nothing could be done
+  with the warning anyway, with no energy left to do it.
 - Enable the brownout detector, but understand what it is and is not for: see §4.5.
 
 ### 2.8 Power telemetry — ESC data is not portable
@@ -364,7 +363,7 @@ comes in two sizes, a display setting (§3.8), both 21 columns wide:
 | **Toast**, for 1.5 s | Over the hint | Over the last body row, so it reads in the large font |
 
 The state is one of `Ready`, `Menu`, `REC 12:34`, `Calib 2/6`, `Transfer`…; the marks stand for a
-warning, a USB host, BLE and a low backup LiPo. On both grids the **hold bar** fills the bottom pixel
+warning, a USB host and BLE. On both grids the **hold bar** fills the bottom pixel
 row while OK is held, from 300 ms to 1.5 s (§3.1), and a **scroll bar** two pixels wide runs down the
 right edge of the body whenever the content is longer than the body.
 
@@ -408,7 +407,7 @@ that a card with no room reports "full" rather than "not writable".
 | 7 | I²C and IMU | Bus scan, then the LSM6DSO32 `WHO_AM_I` | Degraded, continue without IMU |
 | 8 | GNSS link | The auto-baud scan of §5.2 — this **is** that scan, not a second one | Degraded, **logging refused**; Transfer mode still available |
 | 9 | GNSS config | VALSET applied and ACK received | Degraded, retried in the background |
-| 10 | RC input | Edges on the steering and on the throttle input within 500 ms, each on its own: the result names the inputs present | Degraded, continue — an input may be unwired, or the receiver off on the bench (§4.3). With neither present, power-loss detection waits for one (§4.5) |
+| 10 | RC input | Edges on the steering and on the throttle input within 500 ms, each on its own: the result names the inputs present | Degraded, continue — an input may be unwired, or the receiver off on the bench (§4.3) |
 
 Everything except check 8 targets **under 1 s** in total; check 8 is bounded by the baud scan, up to
 about 6 s in the worst case.
@@ -521,7 +520,7 @@ The screens outside the menu:
 | **Transfer** | USB host and BLE state; `Eject on host first` |
 | **Dialog** | The question in two lines; `hold OK: yes`, `other key: no (10s)` |
 | **Error** | Title (`Card lost`, `Write error`, `Card full`), detail, `any key: close` |
-| **Saving** | `Power lost`, `Saving session N`, then `Saved`; then the display goes off |
+| **Sleep notice** | `Car switched off` or `Nothing for 5 min`, then `Sleep in N s` counting down; `any key: cancel` |
 
 ### 3.5 Error and warning states
 
@@ -536,13 +535,14 @@ matters. Errors take the body until a key is pressed; warnings stay in the statu
 | Fix lost during a session | Status bar shows `no fix`; the session screen carries on | Logging **continues** — invalid epochs are still recorded (§5.3). The laps it touches are left out or flagged: to decide with phase 8 |
 | GNSS data loss counted | Warning mark, and the loss count on the session's GNSS page | A UART overrun, queue overflow or checksum failure occurred; counters go to the session footer |
 | Acquisition timeout | `Timeout` on the GNSS screen | Holding OK there retries |
-| Backup LiPo low | LiPo mark in the status bar | Advisory only |
-| Power loss detected (§4.5) | The SAVING screen | Then the display goes off and the chip into deep sleep |
+| The car switched off with a session open | Nothing: the device goes off with it (§2.7) | The file keeps all but its last 5 s at most; the next boot closes it, `close: unclosed` (§4.5) |
 
 ### 3.6 Sessions, automatic and manual
 
-A session is one run. It starts when the car moves and ends when the car stops or is switched off,
-without a key press; the keys remain for doing either by hand.
+A session is one run. It starts when the car moves and ends when the car has stood still for a
+while, without a key press; the keys remain for doing either by hand. Switching the car off does
+not end it gracefully: the device goes off with the car (§2.7), so a session is ended by hand, or
+has stopped on its own, before the switch.
 
 - **A session needs the fix**, by hand or automatically (decided 2026-10-24): the GNSS screen's
   `Fix`, a 3D fix with hAcc ≤ 5 m held 3 s (§3.4), not the status bar's bare `3D`. A run with no
@@ -557,7 +557,7 @@ without a key press; the keys remain for doing either by hand.
 
   A dialog that is open is cancelled. If the POST refused logging, or there is no fix yet, the
   trigger shows the reason once, as the notice of §3.4, and starts when it can.
-- **Automatic stop**: the car is switched off (§4.5, through SAVING), or it has stood still — below
+- **Automatic stop**: the car has stood still — below
   2 km/h with the throttle within ±5 % of neutral — for 5 minutes (`session.auto_stop_min`). The
   device returns to Home with `Session N saved`, and the next run starts a new session.
 - **Manual start**: hold OK on Home or on the Session entry; without the fix, the notice
@@ -569,7 +569,7 @@ without a key press; the keys remain for doing either by hand.
 - **Refined in step 6.4**, where `lib/ui` makes these rules testable:
   - What is not known does not count either way: the speed counts with a fresh 3D fix only, the
     throttle with a calibrated profile and a live input only. With neither known the car is never
-    taken for still, and only switching it off ends the run.
+    taken for still, and only a stop by hand ends the run.
   - The standstill counts from the start of the session at the earliest, so a run started by hand
     on a car parked for an hour is not stopped at once.
   - After a **stop by hand** the automatic start waits until the car has stood still for 5 s:
@@ -589,12 +589,11 @@ driving.
 | **POST** | The POST list (§3.3) | Power-on, or a wake from deep sleep | → IDLE; → FATAL when check 1 or 3 fails | Dead |
 | **FATAL** | The fatal message | Check 1 or 3 failed | Hold OK → POST | Hold OK only |
 | **IDLE** | Home, the menu and its entries, editors, dialogs | End of the POST; a session closed; a mode left | → SESSION, GEOMETRY, CALIBRATION, TRANSFER or SLEEP | Navigation (§3.1) |
-| **SESSION** | Three session pages, the stop dialog | Hold OK on Home or on Session; the automatic start (§3.6) | Stop confirmed, 5 min standing still, or a card error → IDLE; car switched off → SAVING | OK = marker, hold OK = stop dialog, UP/DOWN = page |
+| **SESSION** | Three session pages, the stop dialog | Hold OK on Home or on Session; the automatic start (§3.6) | Stop confirmed, 5 min standing still, or a card error → IDLE | OK = marker, hold OK = stop dialog, UP/DOWN = page |
 | **GEOMETRY** | The geometry screen | Hold OK on Track › Geometry | Hold OK = stop and save → IDLE | Hold OK only |
 | **CALIBRATION** | Six steps, the summary, the overwrite dialog | Hold OK on Settings › Calibrate, with an RC signal present | Saved, or LEFT at the first step → IDLE | OK = capture, LEFT = step back, DOWN = skip the aux step |
 | **TRANSFER** | The transfer screen | OK on Menu › Transfer | OK or LEFT → IDLE, confirmed with hold OK while a USB host is attached (§7.3) | OK, LEFT |
-| **SAVING** | `Power lost`, `Saving session N`, `Saved` | The car was switched off during a session (§4.5) | File closed → SLEEP | Dead |
-| **SLEEP** | Display off | After SAVING; from IDLE when the car is switched off (10 s notice, any key cancels); after 5 min with no RC signal, no USB host and no key | OK, or an RC signal → POST | OK wakes |
+| **SLEEP** | Display off | From IDLE when the RC signal stops, or after 5 min with no RC signal, no USB host and no key — both after a 10 s notice that any key cancels | OK → POST | OK wakes |
 
 ```mermaid
 stateDiagram-v2
@@ -604,16 +603,14 @@ stateDiagram-v2
   POST --> IDLE
   IDLE --> SESSION: hold OK / automatic start
   SESSION --> IDLE: stop confirmed / 5 min still / card error
-  SESSION --> SAVING: car switched off
   IDLE --> GEOMETRY: Track › Geometry
   GEOMETRY --> IDLE: hold OK, saved
   IDLE --> CALIBRATION: Settings › Calibrate
   CALIBRATION --> IDLE: saved / cancelled
   IDLE --> TRANSFER: Menu › Transfer
   TRANSFER --> IDLE: exit
-  SAVING --> SLEEP
-  IDLE --> SLEEP: car off 10 s / 5 min inactive
-  SLEEP --> POST: OK / RC signal
+  IDLE --> SLEEP: RC signal stopped / 5 min inactive, then 10 s
+  SLEEP --> POST: OK
 ```
 
 Rules across the states:
@@ -733,9 +730,8 @@ ends, widened by 100 µs each way.
 a car with only the throttle tapped, or a device logging GNSS alone. An input counts as **present**
 once it has delivered valid pulses, whenever that happens. The RC sample records carry the present
 inputs alongside the GNSS data, with 0 µs for an absent one, never a stale value, and `meta.json`
-lists which inputs were present. Nothing needs both: power-loss detection watches whichever is
-present (§4.5), only the throttle half of the automatic start needs the throttle (§3.6), and
-calibration skips the steps of an absent input.
+lists which inputs were present. Nothing needs both: only the throttle half of the automatic start
+needs the throttle (§3.6), and calibration skips the steps of an absent input.
 
 **Calibration** (Settings › Calibrate, §3.8) walks the user through neutral, full-lock left, full-lock
 right, full throttle, full brake and the aux channel, then persists the endpoints to NVS for the
@@ -770,28 +766,37 @@ about 12 MB per hour. Comfortable, but it only stays comfortable if the latency 
   and this is the only way to learn that without guessing.
 - On close: flush, truncate the file to the written length, `SD_MMC.end()` when idling.
 
-### 4.5 Power-loss handling
+### 4.5 Power off and sleep
 
-- **Primary signal: loss of RC PWM edges.** No edge on either channel for 200 ms while a session is
-  open means the car was switched off. Flush and close the file on the SAVING screen (§3.7), then
-  deep-sleep. This works only because of the backup LiPo in §2.7.
-- **Two wake sources.** ext0 on GPIO1 going low — the OK key (§3.1) — and ext1 "any high" on GPIO3
-  and GPIO4, the RC inputs, so **switching the car back on wakes the device** and, with the automatic
-  start (§3.6), the next run records without a key press. Both pins are RTC-capable, and the
-  pull-downs of §2.5 keep a dead receiver from waking the chip on noise. Every wake runs the POST.
-- **Sleeping when idle.** From IDLE, a car switched off means 10 s of notice and then SLEEP — any key
-  cancels it — and 5 minutes with no RC signal, no USB host and no key also means SLEEP. A USB host
-  keeps the device awake (§3.7).
-- **Until an RC input has delivered pulses, this detection is unavailable**: there is no baseline of
-  edges whose disappearance could be noticed. Any present input will do (§4.3). Without one the
-  session relies on the flush cadence below, and the warning mark of §3.5 says so.
+- **The car switched off is the device switched off** (§2.7): there is no backup battery, and no
+  energy left to save anything with. A session is ended before that, by hand or by the automatic
+  stop (§3.6).
+- **Crash safety comes from the 5 s flush cadence and the pre-allocated extents** (§4.4): a session
+  the switch cuts loses at most its last 5 s, and its `.rcl` stays parseable, because records are
+  self-delimiting (`docs/protocol.md`). What it lacks is the footer, and its 4 MB extent is not cut
+  to length.
+- **The next boot closes it** (decided 2026-10-25). `sessionBegin()` names the open session in NVS,
+  and `sessionEnd()` clears it; at boot, with the card mounted, a session still named there has its
+  `.rcl` cut after its last whole record — read in 128 KB pieces, given up 64 KB past the last
+  record, where the extent holds whatever the card had before — and its `meta.json` given
+  `close: unclosed`. A file whose session header is not that session's, a card swapped in the
+  meantime, is left alone. The result goes to `/post.log`. A session begun without a fix stays in
+  `_unassigned`: the fix it may have had later is in the log, for the desktop app (§7.1).
+- **Sleeping when idle**, for a device powered otherwise than by the car, a LiPo through the
+  regulator on the bench, say. From IDLE, the RC signal stopping means 10 s of notice and then
+  SLEEP — any key cancels it, and so do the pulses coming back — and 5 minutes with no RC signal,
+  no USB host and no key also means SLEEP, after the same notice. A USB host keeps the device awake
+  (§3.7). Only IDLE sleeps: a session is never ended by the pulses stopping, and GEOMETRY,
+  CALIBRATION and TRANSFER never sleep; the 5 minutes count from the end of the mode. What is
+  watched is the pulses' stop, the valid pulses of either input gone for `RC_SIGNAL_LOST_MS`, after
+  they had been there.
+- **OK wakes the chip**: ext0 on GPIO1 going low (§3.1). Every wake runs the POST. The display is
+  switched off and the card unmounted before deep sleep, and `/post.log` names what started the
+  boot: `power-on` or `OK key`.
 - **The brownout detector is a corruption guard, not a save path.** Leave it enabled at its default
-  threshold, but do **not** attach the emergency flush to it: by the time it trips the rail has already
-  collapsed and the chip resets immediately, while a single SD write can take over 100 ms. Nothing can
-  be reliably persisted from there. Earlier drafts of this plan claimed otherwise.
-- Crash safety comes instead from the 5 s flush cadence and the pre-allocated extents: a truncated
-  `.rcl` file loses at most the last few seconds and stays parseable, because records are
-  self-delimiting (see `docs/protocol.md`).
+  threshold, but do **not** attach an emergency flush to it: by the time it trips the rail has
+  already collapsed and the chip resets immediately, while a single SD write can take over 100 ms.
+  Nothing can be reliably persisted from there. Earlier drafts of this plan claimed otherwise.
 
 ---
 
@@ -1106,8 +1111,9 @@ moved, that id cannot.
 **A session starts on the fix** (§3.6), so it is filed under its track from the start. Only with
 `session.require_fix` off, on the bench, does one start without a fix: it goes to
 `/tracks/_unassigned/session_NNN/`, and if a fix arrives before it closes, the device relocates the
-folder into the resolved track at close time — on FAT a rename, not a copy. If no fix ever arrives
-it stays there, and the desktop app can re-file it or leave it alone.
+folder into the resolved track at close time — on FAT a rename, not a copy. If no fix ever arrives,
+or the car's switch ends it and the next boot closes it (§4.5), it stays there, and the desktop app
+can re-file it or leave it alone.
 
 #### Times
 
@@ -1250,11 +1256,11 @@ and GNSS checks of the POST come before everything else. Each ends with somethin
 | **3** | **POST: card and GNSS link** | The POST of §3.3 runs on the device, every card and GNSS failure ends on its screen, `config.json` on the card is mirrored to LittleFS (§3.8) |
 | **4** | **GNSS** | VALSET configuration applied at boot (check 9), 10 Hz NAV-PVT and 1 Hz NAV-SAT decoded by `lib/ubx`, host tests green against captured fixtures, live fix on screen |
 | **5** | **Logging core and manual sessions** | `.rcl` records with raw passthrough, PSRAM ring buffer, pre-allocated extents, flush cadence, loss and latency counters, on-card layout with track-cell resolution (§7.1); a 30-minute session survives with clean numbers |
-| **6** | **RC inputs, car profiles, automatic sessions** | MCPWM capture, car profiles and their calibration (§3.8), automatic start and stop (§3.6), power loss → SAVING → SLEEP and the wake on the RC signal (§4.5) |
+| **6** | **RC inputs, car profiles, automatic sessions** | MCPWM capture, car profiles and their calibration (§3.8), automatic start and stop (§3.6), sleep from IDLE and the wake on OK, a session the switch cut closed at the next boot (§4.5) |
 | **7** | **IMU** | LSM6DSO32 through its FIFO, per-epoch aggregates in the log |
 | **8** | **Track and laps on-device** | Start line, geometry recording, interpolated gate crossing, sectors — shared with `lib/geo` host tests |
 | **9** | **Transfer** | USB MSC and the BLE GATT server per `docs/protocol.md`, download verified against the apps |
-| **10** | **Field hardening** | Soak tests across a full race day, write-latency and loss-counter review, backup LiPo |
+| **10** | **Field hardening** | Soak tests across a full race day, write-latency and loss-counter review |
 | **11** | **Camera — optional** | Photos and short clips from the Sense camera land in the session folder, linked to markers and laps in the log, and the Phase 10 numbers are unchanged with the camera on (see below) |
 
 ### Deferred
@@ -1336,9 +1342,8 @@ Rules that keep it from compromising the logger:
     hold the session about to start. (§3.3, POST check 4)
 15. ~~Should a long press re-run the POST after a **latched** failure?~~ **Resolved:** yes — holding
     OK in FATAL re-runs it, while the keys stay dead throughout the checks themselves. (§3.3, §3.7)
-16. Can the GM10 run from 3V3? If it needs the 5V pad, the backup LiPo does not keep its BBR alive in
-    SLEEP, because the 5V pad is dead on battery, and the hot-fix benefit claimed in §2.7 is lost.
-    Options: a GM10 on 3V3, or a small backup supply for its BBR. Check the module in Phase 1.
+16. ~~Can the GM10 run from 3V3, so that the backup LiPo keeps its BBR?~~ **Moot** since there is no
+    backup LiPo (§2.7, 2026-10-25): the car switched off takes the GM10's supply with it either way.
     The module has a backup of its own, which kept its BBR over 15 s unpowered (step 4.1) and gave a
     hot fix in 5 s after 16 s off, against a cold one in about 4 minutes after two days (step 4.4):
     the question is now how long it lasts. Its configuration is in flash, so only the hot fix is at

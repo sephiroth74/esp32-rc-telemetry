@@ -46,7 +46,6 @@ constexpr uint8_t PIN_I2C_SCL = 6;  // D5
 constexpr uint8_t PIN_KEYS = 1;  // D0
 
 // --- RC inputs, through 10 kΩ with a BAT43 clamp to 3V3 and 100 kΩ down (§2.5) -
-// Both RTC-capable: an RC pulse wakes the chip from deep sleep (ext1, §4.5).
 constexpr uint8_t PIN_RC_THROTTLE = 3;  // D2
 constexpr uint8_t PIN_RC_STEERING = 4;  // D3
 

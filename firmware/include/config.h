@@ -35,13 +35,17 @@ constexpr size_t LOG_EXTENT_BYTES = 4u * 1024 * 1024;         // ~20 min per ext
 constexpr size_t LOG_EXTENT_REFILL_BYTES = 1u * 1024 * 1024;  // extend when this much is left
 constexpr uint32_t LOG_SLOW_WRITE_MS = 250;                   // counted per session and reported
 constexpr uint32_t LOG_CLOSE_WAIT_MS = 3000;  // a stop waits this long for the card to be done
+// A session left open, closed at the next boot (§4.5): read in pieces of this size, in PSRAM, and
+// searched this far past its last record.
+constexpr size_t LOG_RECOVER_PIECE_BYTES = 128 * 1024;
+constexpr size_t LOG_RECOVER_GAP_BYTES = 64 * 1024;
 
 // --- Power-on self-test (§3.3) ----------------------------------------------
 constexpr size_t POST_PROBE_BYTES = 256 * 1024;   // one probe answers "writable?" and "how fast?"
 constexpr uint32_t POST_MIN_FREE_MB = 64;         // sd.min_free_mb — below this, logging refused
 constexpr uint32_t POST_WARN_FREE_MB = 256;       // sd.warn_free_mb — below this, warning only
 constexpr uint32_t POST_SLOW_CARD_KBPS = 200;     // below this the card is called out
-constexpr uint32_t POST_RC_EDGE_WINDOW_MS = 500;  // no edges → no power-loss detection (§4.5)
+constexpr uint32_t POST_RC_EDGE_WINDOW_MS = 500;  // edges within this: the inputs present (§4.3)
 
 // --- Keys: the five-way switch on one ADC pin (§3.1) ------------------------
 // Ladder levels against a 10 kΩ pull-up, as the ADC reads them. Measured on the bench
@@ -98,8 +102,9 @@ constexpr uint8_t SESSION_AUTO_STOP_MIN = 5;       // session.auto_stop_min defa
 constexpr uint32_t SESSION_REARM_MS = 5000;  // after a stop by hand: still this long before a start
 
 // --- Sleep and wake (§4.5) --------------------------------------------------
-constexpr uint32_t SLEEP_CAR_OFF_NOTICE_MS = 10000;  // from IDLE; any key cancels
-constexpr uint32_t SLEEP_IDLE_MS = 5u * 60 * 1000;   // no RC signal, no USB host, no key
+constexpr uint32_t SLEEP_NOTICE_MS = 10000;         // from IDLE, before SLEEP; any key cancels
+constexpr uint32_t SLEEP_IDLE_MS = 5u * 60 * 1000;  // no RC signal, no USB host, no key
+constexpr uint32_t SLEEP_SIM_WAKE_S = 20;  // the bench simulation's wake, for a press of OK
 
 // --- Car profiles (§3.8) ----------------------------------------------------
 constexpr uint8_t CAR_PROFILES_MAX = 8;
@@ -111,7 +116,7 @@ constexpr uint16_t RC_PULSE_MIN_US = 800;    // widths outside this are rejected
 constexpr uint16_t RC_PULSE_MAX_US = 2200;   // some ESCs send telemetry back on the throttle wire
 constexpr uint16_t RC_FRAME_MIN_US = 3000;   // fast digital modes, ~333 Hz
 constexpr uint16_t RC_FRAME_MAX_US = 22000;  // analog-servo modes, ~45 Hz
-constexpr uint16_t RC_SIGNAL_LOST_MS = 200;  // no edges for this long → the car was switched off
+constexpr uint16_t RC_SIGNAL_LOST_MS = 200;  // no valid pulse for this long: the signal stopped
 constexpr uint32_t RC_SAMPLE_PERIOD_US = 20000;  // 50 Hz, the session header's RC period (protocol)
 constexpr uint16_t RC_WINDOW_MARGIN_US = 100;  // a calibrated input takes its ends widened by this
 constexpr uint16_t RC_STALE_MS = 100;  // no valid pulse for this long: the input logs 0, not its last

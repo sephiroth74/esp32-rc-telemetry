@@ -5,8 +5,8 @@
 // it was. Like the menu, Board decides nothing about the device — every action comes out as a
 // Command with a toast for the screen — and reads what it shows from Facts.
 //
-// Not here yet: POST and FATAL (ROADMAP.md phase 3), SAVING, SLEEP and the automatic start and stop
-// (phase 6). Framework-free (§6.1).
+// SLEEP comes from the receiver's pulses and the keys (ui_power.h). POST and FATAL are the POST's
+// own (ui_post.h). Framework-free (§6.1).
 #pragma once
 
 #include <stdint.h>
@@ -16,6 +16,7 @@
 #include "ui_keys.h"
 #include "ui_menu.h"
 #include "ui_post.h"
+#include "ui_power.h"
 
 namespace ui {
 
@@ -77,7 +78,6 @@ struct Facts {
   bool usbHost = false;
   bool usbEjected = false;  // TRANSFER: the host ejected the disk, so leaving is safe (§7.3)
   bool bleConnected = false;
-  bool lipoLow = false;
   bool warning = false;  // a capability withdrawn, or a loss counted (§3.2)
 
   const char* firmware = "";
@@ -108,6 +108,12 @@ class Board {
   // POST refuses shows its notice once, and Home says why from then on.
   BoardOutput onMotion(const Motion& motion, const Facts& facts, uint32_t nowMs);
   void setAutoTiming(const AutoSessionTiming& timing) { auto_ = AutoSession(timing); }
+  // Every tick, with the receiver's pulses and the USB host (§4.5). In IDLE, the pulses stopping —
+  // the car switched off, on a device powered otherwise — or a long time with neither them, a
+  // host nor a key opens the sleep notice, and Sleep follows unless a key cancels it. Nothing
+  // sleeps outside IDLE, and a USB host keeps the device awake.
+  BoardOutput onPower(const Power& power, const Facts& facts, uint32_t nowMs);
+  void setPowerTiming(const PowerTiming& timing) { powerTiming_ = timing; }
   // A session the card could not take, at its start or in its middle: back to IDLE, and the
   // reason on screen until a key (§3.5).
   void abortSession(Refusal why, uint8_t arg, uint32_t nowMs);
@@ -116,7 +122,10 @@ class Board {
   const AutoSession& autoSession() const { return auto_; }
   // A key that only woke the dimmed display (§3.2): activity for the menu's timeout, nothing more,
   // so that it does not close a notice before it was read.
-  void wake(uint32_t nowMs) { menu_.restartTimer(nowMs); }
+  void wake(uint32_t nowMs) {
+    menu_.restartTimer(nowMs);
+    activeMs_ = nowMs;
+  }
 
   Mode mode() const { return mode_; }
   const Menu& menu() const { return menu_; }
@@ -132,6 +141,10 @@ class Board {
   // why on the whole body, not in a toast that is gone before it is read.
   Refusal notice() const { return notice_; }
   uint8_t noticeArg() const { return noticeArg_; }
+  // The sleep notice of IDLE, over whatever is open, and the seconds it has left.
+  SleepWhy sleepNotice() const { return sleep_; }
+  uint32_t sleepInS(uint32_t nowMs) const;
+  uint32_t idleSleepMin() const { return powerTiming_.idleMs / 60000; }
 
  private:
   BoardOutput fromMenu(const MenuResult& result, const Facts& facts, uint32_t nowMs);
@@ -155,6 +168,12 @@ class Board {
   uint8_t noticeArg_ = 0;
   AutoSession auto_{AutoSessionTiming{}};
   bool autoRefused_ = false;  // its notice shown: once a boot
+
+  PowerTiming powerTiming_;
+  bool rcLive_ = false;    // last tick's, to see the pulses stop
+  uint32_t activeMs_ = 0;  // a key, the RC signal, a USB host, or a mode: SLEEP counts from here
+  SleepWhy sleep_ = SleepWhy::None;
+  uint32_t sleepAtMs_ = 0;
 };
 
 // A refusal of §3.4 in one line of 21 columns, for the serial log.

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <LittleFS.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "card.h"
@@ -13,6 +14,7 @@
 #include "rc_capture.h"
 #include "keys.h"
 #include "log_ring.h"
+#include "power.h"
 #include "settings.h"
 #include "ui_screens.h"
 
@@ -130,7 +132,7 @@ ui::CheckReport checkGnssConfig() { return gnssConfigure(); }
 
 // 10: edges on the steering and the throttle input within POST_RC_EDGE_WINDOW_MS, each on its own;
 // the result names those present. None is no failure: an input may be unwired, or the receiver off
-// on the bench (§4.3), and power-loss detection then waits for one (§4.5).
+// on the bench (§4.3).
 ui::CheckReport checkRc() {
   if (!rcBegin()) return ui::CheckReport::fail("no capture");
   RcLive rc;
@@ -195,7 +197,8 @@ void writeLog(const ui::PostResult& r) {
   if (!f) return;
   char summary[17];
   ui::postSummary(r, summary);
-  f.printf("POST of firmware %s, %lu ms after boot\n", FW_VERSION, (unsigned long)millis());
+  f.printf("POST of firmware %s, %lu ms after boot, woken by %s\n", FW_VERSION,
+           (unsigned long)millis(), powerWakeName());
   f.printf("result: %s, failed mask 0x%03X\n", summary, r.failedMask());
   for (uint8_t id = 0; id < ui::kPostChecks; ++id) {
     const ui::CheckReport& c = r.checks[id];
@@ -227,6 +230,19 @@ void pollKeys(ui::Post& post, uint32_t nowMs) {
 }
 
 }  // namespace
+
+void postLogLine(const char* fmt, ...) {
+  char line[160];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(line, sizeof line, fmt, ap);
+  va_end(ap);
+  Serial.println(line);
+  File f = LittleFS.open("/post.log", FILE_APPEND);
+  if (!f) return;
+  f.println(line);
+  f.close();
+}
 
 void postEchoLog() {
   File f = LittleFS.open("/post.log", FILE_READ);

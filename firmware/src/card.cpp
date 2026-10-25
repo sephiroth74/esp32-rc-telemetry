@@ -79,6 +79,11 @@ CardMount cardMount() {
   return diagnose();
 }
 
+void cardUnmount() {
+  if (mounted) SD_MMC.end();
+  mounted = false;
+}
+
 bool cardMounted() { return mounted; }
 
 uint32_t cardTotalMb() { return mounted ? SD_MMC.totalBytes() / (1024 * 1024) : 0; }

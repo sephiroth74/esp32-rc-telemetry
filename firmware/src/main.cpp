@@ -17,6 +17,7 @@
 #include "logger.h"
 #include "pins.h"
 #include "post.h"
+#include "session.h"
 #include "settings.h"
 #include "ui_fsm.h"
 
@@ -42,6 +43,7 @@ void setup() {
   ui::PostResult post = postRun();  // check 0 brings the display up; a missing one boots headless
   keysSetLayout(settings().keysLayout == 1 ? KeyLayout::FiveWay : KeyLayout::TwoButtons);
   if (cardMounted() && !loggerBegin()) Serial.println("logger: not started");
+  sessionRecover();  // one the car's switch left open (§4.5)
   gnssTaskStart();  // when check 8 found the module; it retries check 9 if that went unanswered
   uiStart(post);    // after it: acquisition is timed from the gnss task's start
 }
