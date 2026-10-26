@@ -55,16 +55,43 @@ rsvg-convert -w 2400 perfboard-car.svg > perfboard-car.png
 ## Enclosure
 
 [`enclosure-car.solidcraft`](enclosure-car.solidcraft) is the SolidCraft design of the car's
-enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled in place. It is in
-progress. The enclosure has two parts:
+enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled in place. It is
+56.7 × 43.1 × 26.5 mm, 70.7 mm wide across the zip-tie tabs. The enclosure has these parts:
 
 - **Tub:** floor, walls, four zip-tie tabs, and a slot at the back for the receiver's wires.
-- **Lid:** carries the display, the GM10 (Flywoo's own 3D model, embedded in the design), the FPC
-  antenna and the two key caps.
+- **Lid:** a flat top 4.4 mm thick with the display's window and the two keys sunk flush in pockets.
+  Underneath, it carries the display, the GM10 (Flywoo's own 3D model, embedded in the design) in a
+  frame on foam tape with a clamp bar below it, and the FPC antenna on a front flap.
+- **Hatch:** slides in dovetail rails on the left wall and snaps shut over the USB-C port and the
+  microSD card.
 
 Three M2 screws go up through the floor and the board into brass inserts in the lid's posts, and
-hold the three together. `gen_perfboard.py`'s `LID` list repeats the footprints of what the lid
-holds, so that a change of layout is checked against them: keep the two in step.
+hold the three together. A tongue of the lid closes the back slot and clamps the receiver's wires.
+`gen_perfboard.py`'s `LID` list repeats the footprints of what the lid holds, so that a change of
+layout is checked against them: keep the two in step.
+
+[`stl/`](stl) holds the parts to print, exported from the design; export them again after a change.
+All print in PETG with no supports, at 0.2 mm layers and at least 4 perimeters:
+
+| Part | File | Orientation |
+| --- | --- | --- |
+| Tub | `vasca.stl` | Upright, floor on the bed |
+| Lid | `piastra.stl` | Upside down, top on the bed |
+| Hatch | `sportellino.stl` | Outer face on the bed |
+| Key stems | `stelo-nav.stl`, `stelo-ok.stl` | Flange on the bed |
+| Key pads | `tasto-nav.stl`, `tasto-ok.stl` | Upside down, lettering on the bed |
+| GM10 clamp | `fermo-gm10.stl` | Flat |
+
+Screws and heat-set inserts, all M2. The holes are the design's parameters `ins_d`,
+`ins_small_d`, `ins_depth` and `post_foot_d`, so a test print can settle them:
+
+| Where | Screws | Inserts |
+| --- | --- | --- |
+| Tub, board and lid | 3 × M2×8, from below | 3 × 4 mm long, 3.45 mm across, in the lid's posts |
+| Display | 4 × M2×6, from below through its slots | 4 × 4 mm long, 3.2 mm across, from the lid's top |
+| GM10 clamp | 1 × M2×4 | 1 × 4 mm long, 3.2 mm across, in the clamp's post |
+
+The key pads are glued onto their stems after the stems go up through the lid from below.
 
 ## Reading and editing
 

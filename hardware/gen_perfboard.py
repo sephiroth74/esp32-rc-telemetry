@@ -141,12 +141,18 @@ LID = [
     dict(ref="GM10 (patch)", body=("rect", 12.72, -1.7, 24.69, 14.0), z=(19.92 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
     dict(ref="tasto NAV (flangia)", body=("circle", 10.04, -6.35, 2.7), z=(13.0, 20.15 - BOARD_TOP_Z)),
     dict(ref="tasto NAV (guida)", body=("circle", 10.04, -6.35, 3.0), z=(20.3 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto NAV (perno)", body=("circle", 5.04, -6.35, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="tasto NAV (perno)", body=("circle", 5.6, -6.35, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
     dict(ref="tasto OK (flangia)", body=("circle", 17.66, -6.35, 2.7), z=(13.0, 20.15 - BOARD_TOP_Z)),
     dict(ref="tasto OK (guida)", body=("circle", 17.66, -6.35, 3.0), z=(20.3 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto OK (perno)", body=("circle", 22.66, -6.35, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="aletta e antenna FPC", body=("rect", -19.0, -19.05, 19.0, -18.45), z=(7.0 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="antenna FPC (piega)", body=("rect", -18.7, -18.45, 18.7, -16.15), z=(21.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="tasto OK (perno)", body=("circle", 22.66, -8.0, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    # The GM10's clamp: a bar under its shield, resting at the front on a post's foot and screwed at
+    # the back into a post with an insert; it presses the shield up, so it ends where the shield is.
+    dict(ref="fermo GM10 (colonnina davanti)", body=("rect", 23.6, -5.6, 25.6, -3.6), z=(17.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (piedino)", body=("rect", 23.1, -5.6, 25.7, -2.0), z=(16.9 - BOARD_TOP_Z, 17.5 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (colonnina dietro)", body=("circle", 23.3, 16.6, 2.1), z=(17.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (barra)", body=("rect", 23.6, -3.5, 25.2, 14.5), z=(17.5 - BOARD_TOP_Z, 17.96 - BOARD_TOP_Z)),
+    dict(ref="aletta e antenna FPC", body=("rect", -19.0, -19.05, 19.0, -18.25), z=(7.0 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="antenna FPC (piega)", body=("rect", -18.7, -18.25, 18.7, -15.95), z=(21.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
 ] + [dict(ref=f"colonnina {k}", body=("circle", x, y, r), z=z)
      for k, x, y in (("FL", -22.23, -15.875), ("FR", 22.22, -15.875), ("BL", -22.23, 15.875))
      for r, z in ((3.0, (0, 5.1)), (2.0, (5.1, 22.1 - BOARD_TOP_Z)))]
