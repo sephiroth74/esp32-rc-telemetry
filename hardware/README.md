@@ -97,6 +97,32 @@ cannot slip off it, with 0.3 mm free above. Two parameters of the design fit the
 switches: `key_stem_d`, the stem's diameter near its tip (the cap's hole is 0.4 mm wider), and
 `key_play`, to raise if a key stays pressed because its switch is taller than modelled.
 
+## Assembly guide
+
+[`assembly-car.pdf`](assembly-car.pdf) is the step-by-step guide to building the car device, in
+Italian. It covers:
+
+- the inserts;
+- the perfboard, soldered in a buildable order with a drawing per step, and a 5 V test before the
+  XIAO;
+- the lid's parts and the wires between lid and board;
+- closing the box, the receiver's wiring and the first start.
+
+`gen_assembly.py` writes it from `gen_perfboard.py`'s data and the pictures in
+[`assembly/img/`](assembly/img). Edit the script and run it again rather than the HTML; `--pdf`
+prints the PDF through headless Google Chrome:
+
+```sh
+cd hardware && python3 gen_assembly.py --pdf
+```
+
+The pictures are renders of `enclosure-car.solidcraft`. For each picture, the printed parts were
+given opaque colours and the other bodies shown or hidden; the design was then reopened from disk,
+so none of that is saved. Two pictures, `02-piastra-sotto-raw.jpg` and `04-piastra-mappa-raw.jpg`,
+are straight views of the lid from below. The script places their numbered markers from the model's
+coordinates through the camera written in `project()`. After a change to the lid, render both again
+from that camera.
+
 ## Reading and editing
 
 Open a `.kicad_sch` in KiCad's Schematic Editor; the sheets are checked with KiCad 10.0.1. The
