@@ -62,8 +62,9 @@ enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled
 - **Lid:** a flat top 4.4 mm thick with the display's window and the two keys sunk flush in pockets.
   Underneath, it carries the display, the GM10 (Flywoo's own 3D model, embedded in the design) in a
   frame on foam tape with a clamp bar below it, and the FPC antenna on a front flap.
-- **Hatch:** slides in dovetail rails on the left wall and snaps shut over the USB-C port and the
-  microSD card.
+- **Hatch:** slides down from above, beside the lid, into two vertical dovetail guides on the left
+  wall, and snaps shut over the USB-C port and the microSD card. Push it up by its grooves to open
+  it.
 
 Three M2 screws go up through the floor and the board into brass inserts in the lid's posts, and
 hold the three together. A tongue of the lid closes the back slot and clamps the receiver's wires.
