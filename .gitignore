@@ -21,3 +21,4 @@ build/
 .DS_Store
 hardware/.history/
 __pycache__/
+firmware/src/idf_component.yml
