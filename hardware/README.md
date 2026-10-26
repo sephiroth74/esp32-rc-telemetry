@@ -59,7 +59,7 @@ enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled
 56.7 × 43.1 × 26.5 mm, 70.7 mm wide across the zip-tie tabs. The enclosure has these parts:
 
 - **Tub:** floor, walls, four zip-tie tabs, and a slot at the back for the receiver's wires.
-- **Lid:** a flat top 4.4 mm thick with the display's window and the two keys sunk flush in pockets.
+- **Lid:** a flat top 4.4 mm thick with the display's window and the two keys in holes through it.
   Underneath, it carries the display, the GM10 (Flywoo's own 3D model, embedded in the design) in a
   frame on foam tape with a clamp bar below it, and the FPC antenna on a front flap.
 - **Hatch:** slides down from above, beside the lid, into two vertical dovetail guides on the left
@@ -79,8 +79,7 @@ All print in PETG with no supports, at 0.2 mm layers and at least 4 perimeters:
 | Tub | `vasca.stl` | Upright, floor on the bed |
 | Lid | `piastra.stl` | Upside down, top on the bed |
 | Hatch | `sportellino.stl` | Outer face on the bed |
-| Key stems | `stelo-nav.stl`, `stelo-ok.stl` | Flange on the bed |
-| Key pads | `tasto-nav.stl`, `tasto-ok.stl` | Upside down, lettering on the bed |
+| Keys | `tasto-nav.stl`, `tasto-ok.stl` | Upside down, lettering on the bed |
 | GM10 clamp | `fermo-gm10.stl` | Flat |
 
 Screws and heat-set inserts, all M2. The holes are the design's parameters `ins_d`,
@@ -92,7 +91,11 @@ Screws and heat-set inserts, all M2. The holes are the design's parameters `ins_
 | Display | 4 × M2×6, from below through its slots | 4 × 4 mm long, 3.2 mm across, from the lid's top |
 | GM10 clamp | 1 × M2×4 | 1 × 4 mm long, 3.2 mm across, in the clamp's post |
 
-The key pads are glued onto their stems after the stems go up through the lid from below.
+The keys go up through their holes in the lid from below before the board is screwed on, and a
+flange under the lid keeps them in. Each sits on its switch by a cap over the switch's stem, so it
+cannot slip off it, with 0.3 mm free above. Two parameters of the design fit them to the real
+switches: `key_stem_d`, the stem's diameter near its tip (the cap's hole is 0.4 mm wider), and
+`key_play`, to raise if a key stays pressed because its switch is taller than modelled.
 
 ## Reading and editing
 

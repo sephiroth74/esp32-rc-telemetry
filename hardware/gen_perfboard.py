@@ -130,21 +130,22 @@ PARTS = [
 
 # What the lid holds over the board, heights above the board as well: the display over the XIAO,
 # the GM10 over the LM2940 (Flywoo's model: the board and what hangs under it, then the patch and
-# the connector on top), the keys' T caps (a stem on the switch whose flange stops under a guide
-# hanging from the lid, and a wide pad above the lid, shifted outwards and steadied by a second pin
-# in the lid), the FPC antenna on the lid's front flap with its top folded under the lid, and the
+# the connector on top), the keys (one piece each, through a hole in the lid, kept in by a flange
+# under the lid and resting on the switch by a cap over its stem; only the part under the lid is
+# listed), the FPC antenna on the lid's front flap with its top folded under the lid, and the
 # three posts that screw the board to the lid (6 mm feet round the brass inserts, 4 mm above).
 LID = [
     dict(ref="OLED", body=("rect", -24.5, -13.7, 3.9, 13.7), z=(18.1 - BOARD_TOP_Z, 20.6 - BOARD_TOP_Z)),
     dict(ref="OLED (vetro e flat)", body=("rect", -23.6, -9.7, 3.0, 13.7), z=(20.6 - BOARD_TOP_Z, 22.4 - BOARD_TOP_Z)),
     dict(ref="GM10 (scheda)", body=("rect", 12.7, -3.46, 24.92, 14.0), z=(17.96 - BOARD_TOP_Z, 19.92 - BOARD_TOP_Z)),
     dict(ref="GM10 (patch)", body=("rect", 12.72, -1.7, 24.69, 14.0), z=(19.92 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto NAV (flangia)", body=("circle", 10.04, -6.35, 2.7), z=(13.0, 20.15 - BOARD_TOP_Z)),
-    dict(ref="tasto NAV (guida)", body=("circle", 10.04, -6.35, 3.0), z=(20.3 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto NAV (perno)", body=("circle", 5.6, -6.35, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto OK (flangia)", body=("circle", 17.66, -6.35, 2.7), z=(13.0, 20.15 - BOARD_TOP_Z)),
-    dict(ref="tasto OK (guida)", body=("circle", 17.66, -6.35, 3.0), z=(20.3 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="tasto OK (perno)", body=("circle", 22.66, -8.0, 1.2), z=(21.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="tasto NAV (cappuccio)", body=("circle", 10.04, -6.35, 2.45), around="SW2 stelo",
+         z=(18.05 - BOARD_TOP_Z, 20.65 - BOARD_TOP_Z)),
+    dict(ref="tasto NAV (tesa)", body=("rect", 4.5, -12.7, 13.1, -3.3), z=(20.65 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="tasto OK (cappuccio)", body=("circle", 17.66, -6.35, 2.45), around="SW1 stelo",
+         z=(18.05 - BOARD_TOP_Z, 20.65 - BOARD_TOP_Z)),
+    dict(ref="tasto OK (tesa)", body=("rect", 14.6, -12.7, 22.1, -3.3), z=(20.65 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="tasto OK (tesa esterna)", body=("rect", 22.1, -12.7, 23.2, -6.0), z=(20.65 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
     # The GM10's clamp: a bar under its shield, its front end in a slot of a post and screwed at the
     # back into a post with an insert; it presses the shield up, so it ends where the shield is.
     dict(ref="fermo GM10 (colonnina davanti)", body=("rect", 22.9, -5.6, 25.7, -3.6), z=(16.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
@@ -242,6 +243,9 @@ def check():
                 continue
             if a["z"][0] < b["z"][1] and b["z"][0] < a["z"][1] and shapes_overlap(a["body"], b["body"]):
                 if {a["ref"], b["ref"]} == {"C3", "U6"}:
+                    continue
+                # A part may fit over another one, as a key's cap over its switch's stem.
+                if a.get("around") == b["ref"] or b.get("around") == a["ref"]:
                     continue
                 raise LayoutError(f"{a['ref']} and {b['ref']} take the same space")
     # A copper-side wire may not be soldered on a pad that a copper-side part covers.
