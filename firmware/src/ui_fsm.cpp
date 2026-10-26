@@ -12,6 +12,7 @@
 #include "gnss_link.h"
 #include "gnss_task.h"
 #include "keys.h"
+#include "lap_timer.h"
 #include "logger.h"
 #include "power.h"
 #include "rc_capture.h"
@@ -28,7 +29,8 @@ constexpr uint32_t kStackBytes = 6144;
 
 // --- Placeholder facts (ROADMAP.md step 2.6) -----------------------------------
 // Every screen shows plausible values until the modules that own them arrive: the card in phase 3,
-// GNSS in phase 4 (here now), sessions in phase 5, RC and profiles in phase 6, laps in phase 8.
+// GNSS in phase 4 (here now), sessions in phase 5, RC and profiles in phase 6, laps in phase 8
+// (here now, lap_timer.h).
 
 // The profiles' names are config.json's (settings.h).
 const char* profileNamePtrs[CAR_PROFILES_MAX];
@@ -42,10 +44,6 @@ ui::Facts sampleFacts() {
   f.cardGb = 62;
   f.cardKbps = 3495;
   f.cardSessions = 3;
-  f.laps = 12;
-  f.lastLapMs = 62341;
-  f.bestLapMs = 58902;
-  f.deltaMs = 3439;
   f.geometryM = 412;
   f.geometryPoints = 4120;
   f.firmware = FW_VERSION;
@@ -82,6 +80,8 @@ void applyPost() {
 // The gnss task's live state into the facts (§3.4): the link while the module keeps sending, the
 // last epoch while it is fresh, and the acquisition the GNSS screen tells. Without a link at the
 // POST there is no task, and the facts uiStart set stay.
+int32_t headingE5 = 0;  // the last epoch's heading of motion, for Track › Start line
+
 void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now, ui::Motion& motion) {
   motion = ui::Motion();  // the throttle joins with the RC capture of step 6.2
   if (!gnssTaskRunning()) return;
@@ -119,6 +119,9 @@ void applyGnss(ui::Acquisition& acq, uint32_t& seenEpochs, uint32_t now, ui::Mot
   // The automatic start's speed (§3.6): a fresh 3D fix's, from Doppler.
   motion.speedKnown = fresh && p.fix3d();
   motion.speedMmS = p.gSpeedMmS > 0 ? p.gSpeedMmS : 0;
+  // Track › Start line takes the heading of the motion, which means something at 1 m/s (§7.5).
+  facts.menu.moving = motion.speedKnown && p.gSpeedMmS >= 1000;
+  headingE5 = p.headMotE5;
 }
 
 // The track the screens name (§3.4), and the number the next session takes: read from the card in
@@ -151,6 +154,7 @@ void lookUpTrack(const ui::Board& board, bool fix) {
   facts.trackId = trackView.id;
   facts.trackName = trackView.name;
   facts.menu.hasStartLine = trackView.hasStartLine;
+  facts.startLineSource = static_cast<uint8_t>(trackView.lineSource);
   facts.hasGeometry = trackView.hasGeometry;
   facts.trackSessions = trackView.sessions;
   for (uint8_t i = 0; i < trackView.choices; ++i) trackChoicePtrs[i] = trackView.choiceNames[i];
@@ -241,6 +245,41 @@ void runPlaceholder(const ui::BoardOutput& o) {
   }
 }
 
+// Every NAV-PVT since the last tick into the laps while a session is open, and what they make of
+// them into the facts; a lap completed, or the line found, as a toast. Outside a session the queue
+// is only emptied.
+void runLaps(uint32_t now) {
+  GnssEpoch g;
+  while (gnssNextEpoch(g)) {
+    if (!sessionOpen()) continue;
+    geo::Epoch e;
+    e.iTowMs = g.iTowMs;
+    e.tMs = logSessionMs(g.atMs);  // as its record has it
+    e.at = {g.latE7, g.lonE7};
+    e.speedMmS = g.gSpeedMmS > 0 ? g.gSpeedMmS : 0;
+    e.headingE5 = g.headMotE5;
+    e.takesPart = g.fix3d;
+    LapEvent ev;
+    if (!lapTimerEpoch(e, ev)) continue;
+    char toast[22], time[16];
+    snprintf(time, sizeof time, "%lu:%02lu.%03lu", (unsigned long)(ev.lapMs / 60000),
+             (unsigned long)(ev.lapMs / 1000 % 60), (unsigned long)(ev.lapMs % 1000));
+    if (ev.lineFound) {
+      snprintf(toast, sizeof toast, "Line found, %u laps", lapTimerView().laps);
+    } else {
+      snprintf(toast, sizeof toast, "Lap %u  %s%s", ev.lap, time,
+               ev.flag == geo::Flag::Cut ? " cut" : ev.flag == geo::Flag::Off ? " off" : "");
+    }
+    displayToast(toast, now);
+    Serial.printf("[%7lu] %s\n", (unsigned long)now, toast);
+  }
+  const LapView& v = lapTimerView();
+  facts.laps = v.laps;
+  facts.lastLapMs = v.lastMs;
+  facts.bestLapMs = v.bestMs;
+  facts.deltaMs = v.deltaMs;
+}
+
 // --- The task --------------------------------------------------------------------
 
 ui::TextSize textSize() {
@@ -290,9 +329,11 @@ void uiTask(void*) {
         }
         facts.nextSession = info.number;  // the toasts' number, start and stop
         snprintf(out.toast, sizeof out.toast, "Session %lu", (unsigned long)info.number);
+        lapTimerBegin();  // the track's start line, or the search for one (§7.5)
         return;
       }
       case ui::Command::StopSession:
+        lapTimerEnd();
         sessionEnd(automatic ? rcl::Close::AutoStop : rcl::Close::ByHand, acq.fix(),
                    {facts.latE7, facts.lonE7});
         return;
@@ -330,6 +371,21 @@ void uiTask(void*) {
         char id[geo::kTrackIdMax + 1];
         bool made = acq.fix() && sessionNewTrack({facts.latE7, facts.lonE7}, id);
         Serial.printf("[%7lu] new track: %s\n", (unsigned long)now, made ? id : "none made");
+      }
+      // Track › Start line (§3.4): where the car is, the way it goes, source `device`. Where no
+      // track is yet, the track first, as New track makes one.
+      if (out.command == ui::Command::RecordStartLine) {
+        geo::Gate g;
+        g.centre = {facts.latE7, facts.lonE7};
+        g.headingE5 = headingE5;
+        char id[geo::kTrackIdMax + 1];
+        const char* track = trackView.found ? trackView.id : nullptr;
+        if (!track && sessionNewTrack(g.centre, id)) track = id;
+        bool saved = track && sessionRecordStartLine(track, g);
+        Serial.printf("[%7lu] start line %s: %s, heading %ld.%02ld\n", (unsigned long)now,
+                      saved ? "recorded" : "not recorded", track ? track : "no track",
+                      (long)(headingE5 / 100000), (long)(headingE5 % 100000 / 1000));
+        if (!saved) snprintf(out.toast, sizeof out.toast, "Start line not saved");
       }
       if (out.command == ui::Command::ChooseTrack && out.arg < trackView.choices) {
         sessionChoose(trackView.choiceIds[out.arg]);
@@ -394,6 +450,7 @@ void uiTask(void*) {
     board.tick(now);
     // A card that failed in the middle of a session: closed, and said so (§3.5).
     if (board.mode() == ui::Mode::Session && logFailed()) {
+      lapTimerEnd();
       sessionEnd(rcl::Close::CardError, acq.fix(), {facts.latE7, facts.lonE7});
       board.abortSession(ui::Refusal::CardNotWritable, 0, now);
       lastKeyMs = now;
@@ -401,6 +458,7 @@ void uiTask(void*) {
     }
     ui::Motion motion;
     applyGnss(acq, seenEpochs, now, motion);
+    runLaps(now);
     // The receiver's widths as captured (§4.3), and what the active calibration makes of them: the
     // percentages on the screens, and the throttle the automatic start counts (§3.6), known only
     // with a calibrated throttle and a live input.

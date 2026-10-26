@@ -87,6 +87,16 @@ bool writeJson(const char* path, const JsonDocument& doc) {
   return fclose(f) == 0 && ok;
 }
 
+const char* const kLineSources[] = {"auto", "device", "desktop"};  // geo::LineSource's order
+
+// start_line.json's "source"; anything else, or none, is the desktop app's (session.h).
+geo::LineSource lineSourceOf(const char* source) {
+  for (uint8_t i = 0; i < 3; ++i) {
+    if (strcmp(source, kLineSources[i]) == 0) return static_cast<geo::LineSource>(i);
+  }
+  return geo::LineSource::Desktop;
+}
+
 geo::Point pointOf(JsonVariantConst v) {
   return {v["lat_e7"].as<int32_t>(), v["lon_e7"].as<int32_t>()};
 }
@@ -362,7 +372,9 @@ void sessionLookup(bool haveFix, geo::Point fix, TrackView& out) {
     JsonDocument doc;
     if (readJson(path, doc)) snprintf(out.name, sizeof out.name, "%s", doc["name"] | "");
     snprintf(path, sizeof path, "%s/%s/start_line.json", kTracks, track);
-    out.hasStartLine = isFile(path);
+    JsonDocument line;
+    out.hasStartLine = readJson(path, line);
+    out.lineSource = lineSourceOf(line["source"] | "desktop");
     snprintf(path, sizeof path, "%s/%s/geometry.rcg", kTracks, track);
     out.hasGeometry = isFile(path);
   } else {
@@ -497,4 +509,56 @@ void sessionRecover() {
               (unsigned long)id, (unsigned long)tail.records, (unsigned long)tail.end,
               (unsigned long)size, cut ? "" : ", not cut", closed ? "" : ", no meta.json",
               (unsigned long)(millis() - t0));
+}
+
+namespace {
+
+void startLinePath(const char* track, char (&out)[112]) {
+  snprintf(out, sizeof out, "%s/%s/start_line.json", kTracks, track);
+}
+
+bool writeStartLine(const char* path, const geo::Gate& gate) {
+  JsonDocument doc;
+  doc["version"] = 1;
+  doc["lat_e7"] = gate.centre.latE7;
+  doc["lon_e7"] = gate.centre.lonE7;
+  doc["heading_e5"] = gate.headingE5;
+  doc["width_m"] = gate.widthM;
+  doc["source"] = kLineSources[static_cast<uint8_t>(gate.source) % 3];
+  return writeJson(path, doc);
+}
+
+}  // namespace
+
+bool sessionStartLine(geo::Gate& out) {
+  if (!open_ || strcmp(current.track, kUnassigned) == 0) return false;
+  char path[112];
+  startLinePath(current.track, path);
+  JsonDocument doc;
+  if (!readJson(path, doc) || !doc["heading_e5"].is<int32_t>()) return false;
+  out = geo::Gate();
+  out.centre = pointOf(doc.as<JsonVariantConst>());
+  out.headingE5 = doc["heading_e5"];
+  out.widthM = doc["width_m"] | 15.0;
+  out.source = lineSourceOf(doc["source"] | "desktop");
+  return true;
+}
+
+bool sessionSaveAutoLine(const geo::Gate& gate) {
+  if (!open_ || strcmp(current.track, kUnassigned) == 0) return false;
+  char path[112];
+  startLinePath(current.track, path);
+  if (isFile(path)) return false;  // a line there is never replaced by an automatic one (§7.5)
+  geo::Gate g = gate;
+  g.source = geo::LineSource::Auto;
+  return writeStartLine(path, g);
+}
+
+bool sessionRecordStartLine(const char* track, const geo::Gate& gate) {
+  if (open_ || !track[0] || track[0] == '_') return false;
+  char path[112];
+  startLinePath(track, path);
+  geo::Gate g = gate;
+  g.source = geo::LineSource::Device;
+  return writeStartLine(path, g);
 }

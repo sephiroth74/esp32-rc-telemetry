@@ -82,8 +82,8 @@ gives two status lines (adding the car profile and free space) and five body row
 HOME (IDLE), page 1      MENU                     SESSION, page 1
 Ready       3D14         Menu        3D14         REC 12:34   3D14
 Track N4512E00934        > Session                Lap 12
-Start line: set            Track                  Last   1:02.341
-Last  1:02.341  L12        GNSS                   Best   0:58.902
+Start line: auto           Track                  Last   1:02.341
+Best  0:58.902  L12        GNSS                   Best   0:58.902
 OK menu  hold: start     < back   OK open         OK mark  hold: stop
 ```
 

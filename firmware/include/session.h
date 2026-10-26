@@ -13,13 +13,22 @@
 //    "fence": [[lat_e7, lon_e7], …]}
 //
 // "name" and "fence" are the apps'; the device leaves them as it found them. "last_used" is the
-// global id of the last session filed there: it only grows, and needs no clock. start_line.json,
-// when there is one, gives the gate's position as "lat_e7" and "lon_e7" (§7.5).
+// global id of the last session filed there: it only grows, and needs no clock.
+//
+// start_line.json, when there is one (§7.5, docs/algorithms.md "The gate"):
+//
+//   {"version": 1, "lat_e7": 451234560, "lon_e7": 93456780, "heading_e5": 9000000,
+//    "width_m": 15, "source": "auto"}
+//
+// "source" is "auto", "device" or "desktop"; a file without one is taken as the desktop app's, the
+// best. Without "heading_e5" there is no gate to cross, though the position still helps recognise
+// the track; without "width_m", 15 m.
 #pragma once
 
 #include <stdint.h>
 
 #include "geo.h"
+#include "laps.h"
 #include "rcl.h"
 
 struct SessionStart {
@@ -49,6 +58,7 @@ struct TrackView {
   char id[geo::kTrackIdMax + 1] = "";
   char name[33] = "";  // track.json's, given in the apps; empty until then
   bool hasStartLine = false;
+  geo::LineSource lineSource = geo::LineSource::Auto;  // with hasStartLine
   bool hasGeometry = false;
   uint16_t sessions = 0;  // the session_NNN folders already there
   uint32_t next = 1;      // the number the next one takes
@@ -74,6 +84,14 @@ bool sessionBegin(const SessionStart& start, SessionInfo& out);
 void sessionEnd(rcl::Close reason, bool haveFix, geo::Point fix);
 bool sessionOpen();
 const SessionInfo& sessionCurrent();
+// The open session's track's start line, when it has one with a heading.
+bool sessionStartLine(geo::Gate& out);
+// The automatic line (§7.5) into the open session's track: never over a line already there, and
+// never into _unassigned, which is no track. False when it was not written.
+bool sessionSaveAutoLine(const geo::Gate& gate);
+// Track › Start line (§3.4): `gate`, source `device`, into `track`, over whatever is there — the
+// menu asked first. From IDLE, with no session open.
+bool sessionRecordStartLine(const char* track, const geo::Gate& gate);
 // At boot, with the card mounted and before any session: one that the car switched off left open
 // (§4.5), named in NVS by sessionBegin() until sessionEnd(), is cut after its last whole record,
 // its meta.json given `close: unclosed`. A file that is not that session's is left alone.

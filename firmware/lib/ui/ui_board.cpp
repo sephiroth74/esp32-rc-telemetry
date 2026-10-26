@@ -72,6 +72,9 @@ void refusalText(Refusal refusal, uint8_t arg, char (&out)[22]) {
     case Refusal::ProfilesFull:
       snprintf(out, sizeof out, "Full: %u profiles", arg);
       break;
+    case Refusal::NotMoving:
+      snprintf(out, sizeof out, "Refused: not moving");
+      break;
     default:
       out[0] = '\0';
       break;

@@ -268,6 +268,11 @@ bool logAppend(rcl::Type type, uint32_t eventMs, const void* payload, size_t len
   return ok;
 }
 
+uint32_t logSessionMs(uint32_t eventMs) {
+  int32_t t = static_cast<int32_t>(eventMs - startMs);
+  return t < 0 ? 0 : t;
+}
+
 bool logLastFooter(rcl::Footer& out) {
   if (!haveFooter || state != State::Idle) return false;
   out = lastFooter;

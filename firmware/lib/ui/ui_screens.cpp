@@ -98,6 +98,12 @@ void inputText(bool pctKnown, int8_t pct, uint16_t us, char (&out)[16]) {
   }
 }
 
+// Where the start line came from (§7.5), or none.
+const char* startLineText(const Facts& f) {
+  static const char* const kSources[] = {"auto", "device", "desktop"};
+  return f.menu.hasStartLine ? kSources[f.startLineSource % 3] : "none";
+}
+
 // Free space in at most five columns: MB below a GB, one decimal below 10 GB, whole GB above.
 void freeText(const Facts& f, char (&out)[16]) {
   if (!f.menu.cardOk) {
@@ -399,6 +405,11 @@ void notice(const Board& b, Content& c) {
       c.add("%u profiles: full", b.noticeArg());
       c.add("Delete one in an app");
       break;
+    case Refusal::NotMoving:
+      c.add("Not moving");
+      c.add("Walk over the line");
+      c.add("the way the race goes");
+      break;
     default:
       break;
   }
@@ -409,9 +420,9 @@ void home(const Facts& f, TextSize size, Content& c) {
   char a[16];
   if (loggingBlocked(f.menu)) blocker(f, c);
   c.add("Track %s", trackText(f));
-  c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
-  lapText(f.lastLapMs, a);
-  c.add("Last  %-10s L%u", a, f.laps);
+  c.add("Start line: %s", startLineText(f));
+  lapText(f.bestLapMs, a);  // the last session's best and its laps, or this one's (§3.4)
+  c.add("Best  %-10s L%u", a, f.laps);
   lapText(f.bestLapMs, a);
   c.add("Best  %s", a);
   c.add("Auto start: %s", f.autoStart ? "on" : "off");
@@ -454,8 +465,8 @@ void idle(const Board& b, const Facts& f, Layout layout, TextSize size, Content&
       return;
     case ScreenId::StartLine:
       c.add("Track %s", trackText(f));
-      c.add("Start line: %s", f.menu.hasStartLine ? "set" : "none");
-      if (!f.menu.hasFix) c.add("Needs a fix");
+      c.add("Start line: %s", startLineText(f));
+      c.add(f.menu.hasFix ? "Hold while crossing" : "Needs a fix");  // the heading is the motion's
       c.setHint("OK back  hold: record");
       return;
     case ScreenId::Geometry:

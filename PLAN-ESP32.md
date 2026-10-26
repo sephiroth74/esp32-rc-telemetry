@@ -451,8 +451,8 @@ five-way switch:
 HOME (IDLE), page 1      MENU                     SESSION, page 1
 Ready       3D14         Menu        3D14         REC 12:34   3D14
 Track N4512E00934        > Session                Lap 12
-Start line: set            Track                  Last   1:02.341
-Last  1:02.341  L12        GNSS                   Best   0:58.902
+Start line: auto           Track                  Last   1:02.341
+Best  0:58.902  L12        GNSS                   Best   0:58.902
 OK menu  hold: start     < back   OK open         OK mark  hold: stop
 
 DIALOG                   CALIBRATION, a step      TRANSFER
@@ -479,7 +479,7 @@ The menu, each list ending in Back:
 | Entry | Shows | Action |
 | --- | --- | --- |
 | **Session** | The resolved track, and the number the next session will get | Hold OK: start a session — the same as on Home |
-| **Track › Start line** | Whether the resolved track has a start line, and where it came from (§7.5) | Hold OK: record the current position and heading into `start_line.json` (§7.1), confirming first if one exists. **Optional**: without one, laps are timed from the fastest point of the lap |
+| **Track › Start line** | Whether the resolved track has a start line, and where it came from (§7.5): `auto`, `device` or `desktop` | Hold OK **while crossing the line the way the race goes**, walking or pushing the car, at 1 m/s or more: the position and the heading of the motion into `start_line.json` (§7.1), source `device`, confirming first if one exists. Still, it is refused with `Not moving`: standing, the module's heading is a guess (decided 2026-10-26). Where no track is yet, one is made first, as New track does. **Optional**: without one, the line is found from two laps that agree (§7.5) |
 | **Track › Geometry** | Whether the resolved track has a geometry, and where it came from (§7.5) | Hold OK: enter GEOMETRY (§3.7) and record `geometry.rcg`. **Optional**: the desktop app builds the geometry from the sessions anyway |
 | **Track › Info** | Cell id, the name in `track.json`, how many sessions were recorded there | — |
 | **Track › New track** | The resolved track, and what a new one is for | Hold OK: create a track at the current position although one is resolved there — for a new layout at a known venue. It starts with no start line and no geometry, its folder takes the cell id with the next suffix, and the apps name it (§7.1) |
@@ -1035,7 +1035,7 @@ user having to type a name on a device with a five-way switch and a 21-column di
 
 ```text
 /tracks/N4512E00934/track.json               # human name, created, last used, cell id, centre point, geo-fence
-/tracks/N4512E00934/start_line.json          # position + heading of the gate, and its source (§7.5)
+/tracks/N4512E00934/start_line.json          # the gate: position, heading, width, source (§7.5; firmware/include/session.h)
 /tracks/N4512E00934/geometry.rcg             # the track's shape, and its source (§7.5)
 /tracks/N4512E00934/session_001/session.rcl  # binary, high-rate records
 /tracks/N4512E00934/session_001/meta.json    # global session id, UTC start, fw version, POST result, car profile and its RC calibration, footer stats

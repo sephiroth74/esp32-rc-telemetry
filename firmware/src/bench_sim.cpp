@@ -3,8 +3,11 @@
 #include "bench_sim.h"
 
 #include <Arduino.h>
+#include <esp_timer.h>
+#include <math.h>
 #include <string.h>
 
+#include "gnss_task.h"
 #include "rc_capture.h"
 
 namespace {
@@ -20,6 +23,75 @@ ui::Event events[kQueue];
 uint8_t head = 0, count = 0;
 bool screenWanted = false;
 bool hostHidden = false;
+
+// The car of `drive`: laps of a 250 m stadium by the fixtures' sample point, east along the bottom
+// straight from it, 75 m, round a 50 m bend, back along the top straight 31.8 m north, round the
+// other; 15 m/s over 25 m of the bottom straight, 10 m/s elsewhere, each lap a few % faster or
+// slower. A NAV-PVT every 100 ms, a 3D fix every time.
+esp_timer_handle_t driveTimer = nullptr;
+double driven = 0;
+uint32_t driveItow = 0, driveLap = 0;
+double lapPace = 1;
+
+void stadium(double d, double& x, double& y, double& h) {
+  const double r = 50 / M_PI;
+  d = fmod(d, 250.0);
+  if (d < 75) {
+    x = d, y = 0, h = 90;
+  } else if (d < 125) {
+    double a = (d - 75) / r;
+    x = 75 + r * sin(a), y = r - r * cos(a), h = 90 - a * 180 / M_PI;
+  } else if (d < 200) {
+    x = 75 - (d - 125), y = 2 * r, h = 270;
+  } else {
+    double a = (d - 200) / r;
+    x = -r * sin(a), y = r + r * cos(a), h = 270 - a * 180 / M_PI;
+  }
+}
+
+void driveEpoch(void*) {
+  constexpr int32_t kLat0 = 451234560, kLon0 = 93456780;
+  constexpr double kR = 6371008.8;
+  double x, y, h;
+  stadium(driven, x, y, h);
+  double lap = fmod(driven, 250.0);
+  double v = (lap >= 25 && lap < 50 ? 15.0 : 10.0) * lapPace;
+  GnssEpoch e;
+  e.atMs = millis();
+  e.iTowMs = driveItow;
+  e.latE7 = kLat0 + static_cast<int32_t>(lround(y / kR * 180 / M_PI * 1e7));
+  e.lonE7 = kLon0 + static_cast<int32_t>(
+                        lround(x / (kR * cos(kLat0 * 1e-7 * M_PI / 180)) * 180 / M_PI * 1e7));
+  e.gSpeedMmS = static_cast<int32_t>(lround(v * 1000));
+  e.headMotE5 = static_cast<int32_t>(lround(fmod(h + 360, 360) * 1e5));
+  e.fix3d = true;
+  gnssInjectEpoch(e);
+  driveItow += 100;
+  driven += v * 0.1;
+  uint32_t lapNow = static_cast<uint32_t>(driven / 250.0);
+  if (lapNow != driveLap) {  // a new lap, a new pace: within ±4 %
+    driveLap = lapNow;
+    lapPace = 0.96 + 0.08 * ((driveLap * 7919u) % 101) / 100.0;
+  }
+}
+
+void drive(bool on) {
+  if (!driveTimer) {
+    esp_timer_create_args_t args = {};
+    args.callback = driveEpoch;
+    args.dispatch_method = ESP_TIMER_TASK;
+    args.name = "sim-drive";
+    if (esp_timer_create(&args, &driveTimer) != ESP_OK) return;
+  }
+  esp_timer_stop(driveTimer);
+  if (on) {
+    driven = 0;
+    driveItow = 302400000;
+    driveLap = 0;
+    lapPace = 1;
+    esp_timer_start_periodic(driveTimer, 100000);
+  }
+}
 
 // A key as the keys give it: a Press, then the gesture's own event.
 void queue(ui::Event e) {
@@ -70,6 +142,11 @@ void run(const char* cmd) {
     return;
   } else if (strcmp(cmd, "screen") == 0) {
     screenWanted = true;
+    return;
+  } else if (sscanf(cmd, "drive %15s", word) == 1 &&
+             (!strcmp(word, "on") || !strcmp(word, "off"))) {
+    drive(strcmp(word, "on") == 0);
+    Serial.printf("sim: car %s\n", strcmp(word, "on") == 0 ? "driving laps" : "stopped");
     return;
   } else if (strcmp(cmd, "reset") == 0) {
     Serial.println("sim: reset, as the car switched off");

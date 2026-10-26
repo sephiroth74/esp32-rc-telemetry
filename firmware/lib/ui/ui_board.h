@@ -54,6 +54,7 @@ struct Facts {
   const char* trackName = "";  // its name in track.json, given in the apps; empty until then
   // Track › Choose: menu.trackChoices of them, each as the screens name a track, up to 14 columns.
   const char* const* trackChoiceNames = nullptr;
+  uint8_t startLineSource = 0;  // with menu.hasStartLine: 0 auto, 1 device, 2 desktop (§7.5)
   bool hasGeometry = false;
   uint16_t trackSessions = 0;  // recorded at this track
   uint16_t cardSessions = 0;   // on the card, for Delete sessions

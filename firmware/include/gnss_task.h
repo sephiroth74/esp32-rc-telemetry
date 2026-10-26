@@ -5,7 +5,8 @@
 //
 // - While a session is open, into the logger's ring as an .rcl record, verbatim, at the time it was
 //   received (§4.2, logger.h). A full ring is counted there.
-// - NAV-PVT and NAV-SAT also update the live state the ui reads, decoded (lib/ubx/nav.h).
+// - NAV-PVT and NAV-SAT also update the live state the ui reads, decoded (lib/ubx/nav.h). Every
+//   NAV-PVT also goes into a queue of its own, for the laps, which need them all (lap_timer.h).
 //
 // Losses are counted, never ignored (§5.3): UART overruns, frames failing their checksum, lengths
 // out of range. The task also takes over the background retry of check 9 from loop(), since it
@@ -40,8 +41,25 @@ struct GnssLive {
   GnssLoss loss;
 };
 
+// A NAV-PVT as the laps read it.
+struct GnssEpoch {
+  uint32_t atMs = 0;  // millis() when it came: the time its record is logged at
+  uint32_t iTowMs = 0;
+  int32_t latE7 = 0, lonE7 = 0;
+  int32_t gSpeedMmS = 0;
+  int32_t headMotE5 = 0;
+  bool fix3d = false;  // ubx::NavPvt::fix3d(): the status bar's 3D
+};
+
 // After the POST, when check 8 found the link.
 void gnssTaskStart();
 bool gnssTaskRunning();
 // A consistent copy, for any task.
 void gnssLiveRead(GnssLive& out);
+// The oldest NAV-PVT not taken yet, false with none: 3.2 s of them wait, and the ones that find the
+// queue full are counted and dropped (gnssEpochsDropped()).
+bool gnssNextEpoch(GnssEpoch& out);
+uint32_t gnssEpochsDropped();
+#ifdef BENCH_SIM
+void gnssInjectEpoch(const GnssEpoch& e);  // the bench simulation's car (bench_sim.h)
+#endif

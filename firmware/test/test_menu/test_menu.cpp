@@ -321,6 +321,7 @@ static void a_session_needs_the_card_and_logging() {
 static void start_line_is_recorded_directly_when_there_is_none() {
   Walk w;
   w.context.hasFix = true;
+  w.context.moving = true;
   w.keys({Event::Open, Event::Down, Event::Open, Event::Open});  // Track › Start line
   ASSERT_SCREEN(StartLine, w.menu);
   ASSERT_COMMAND(RecordStartLine, w.key(Event::Hold));
@@ -329,6 +330,7 @@ static void start_line_is_recorded_directly_when_there_is_none() {
 static void overwriting_a_start_line_asks_first() {
   Walk w;
   w.context.hasFix = true;
+  w.context.moving = true;
   w.context.hasStartLine = true;
   w.keys({Event::Open, Event::Down, Event::Open, Event::Open});
   MenuResult r = w.key(Event::Hold);
@@ -341,10 +343,27 @@ static void overwriting_a_start_line_asks_first() {
   ASSERT_SCREEN(StartLine, w.menu);
 }
 
+// The start line takes its heading from the motion (§7.5): still, the hold is refused, and so is
+// the overwrite's yes from someone who stopped to give it.
+static void a_start_line_is_recorded_on_the_move() {
+  Walk w;
+  w.context.hasFix = true;
+  w.keys({Event::Open, Event::Down, Event::Open, Event::Open});
+  ASSERT_REFUSAL(NotMoving, w.key(Event::Hold));
+  w.context.moving = true;
+  w.context.hasStartLine = true;
+  ASSERT_COMMAND(None, w.key(Event::Hold));
+  ASSERT_SCREEN(Dialog, w.menu);
+  w.context.moving = false;
+  ASSERT_REFUSAL(NotMoving, w.key(Event::Hold));
+  ASSERT_SCREEN(StartLine, w.menu);
+}
+
 static void any_other_key_answers_no() {
   for (Event no : {Event::Open, Event::Down, Event::Up, Event::Back}) {
     Walk w;
     w.context.hasFix = true;
+    w.context.moving = true;
     w.context.hasStartLine = true;
     w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
     ASSERT_SCREEN(Dialog, w.menu);
@@ -537,6 +556,7 @@ static void gnss_hold_restarts_acquisition() {
 static void a_dialog_left_alone_answers_no() {
   Walk w;
   w.context.hasFix = true;
+  w.context.moving = true;
   w.context.hasStartLine = true;
   w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
   uint32_t opened = w.nowMs;
@@ -629,6 +649,7 @@ int main(int, char**) {
   RUN_TEST(a_session_needs_the_card_and_logging);
   RUN_TEST(start_line_is_recorded_directly_when_there_is_none);
   RUN_TEST(overwriting_a_start_line_asks_first);
+  RUN_TEST(a_start_line_is_recorded_on_the_move);
   RUN_TEST(any_other_key_answers_no);
   RUN_TEST(start_line_and_geometry_need_card_and_fix);
   RUN_TEST(screens_that_read_the_card_need_it_to_open);

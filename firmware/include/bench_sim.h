@@ -11,6 +11,8 @@
 //   screen                            the screen's lines as last drawn
 //   usb off|on                        sleep as if no USB host were attached, or not (§4.5)
 //   reset                             restarts at once, closing nothing: the car switched off
+//   drive on|off                      a car lapping a 250 m stadium, its NAV-PVTs into the laps in
+//                                     place of the module's (gnss_task.h); none into the log
 // The simulated pulses go through the inputs' accepted windows like real ones. A sleep wakes on OK
 // or after SLEEP_SIM_WAKE_S, standing in for a press (power.h). Never in the car.
 #pragma once

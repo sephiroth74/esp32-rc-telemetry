@@ -110,49 +110,54 @@ LineFinder::LineFinder(Epoch* trace, size_t capacity) : trace_(trace), capacity_
 void LineFinder::xy(Point p, double& x, double& y) const { plane(origin_, cosPhi0_, p, x, y); }
 
 // 1. The first loop: an earlier moving epoch 20 s back or more, within 10 m, heading within 45°.
+// The tests in integers first: on the device the doubles are software's, and a trace that never
+// closes holds 6000 epochs.
 bool LineFinder::closesLoop(const Epoch& e) const {
   double jx, jy;
   xy(e.at, jx, jy);
   for (size_t k = 0; k + 1 < count_; ++k) {
     const Epoch& c = (*this)[k];
     if (c.speedMmS < kMovingMmS || since(c.iTowMs, e.iTowMs) < kLoopMinMs) continue;
-    double cx, cy;
-    xy(c.at, cx, cy);
     int32_t dh = std::abs(e.headingE5 - c.headingE5) % 36000000;
     dh = std::min(dh, 36000000 - dh);
-    if (std::hypot(jx - cx, jy - cy) <= kLoopRadiusM && dh <= kLoopHeadingE5) return true;
+    if (dh > kLoopHeadingE5) continue;
+    double cx, cy;
+    xy(c.at, cx, cy);
+    if (std::hypot(jx - cx, jy - cy) <= kLoopRadiusM) return true;
   }
   return false;
 }
 
 // At least 95 % of the epochs [p0, p1) within 10 m of the path of [q0, q1): the segments between
-// its consecutive epochs.
+// its consecutive epochs. Any segment that close will do, so each epoch looks from the segment at
+// the same share of the other lap outwards, and stops at the first; and the count stops once the
+// epochs too far are over the 5 %. The answer is the document's, at a fraction of the cost.
 bool LineFinder::covered(uint32_t p0, uint32_t p1, uint32_t q0, uint32_t q1) const {
   if (q1 - q0 < 2 || p1 == p0) return false;
-  uint32_t near = 0;
+  const uint32_t n = p1 - p0, segments = q1 - q0 - 1;
+  uint32_t far = 0;
   for (uint32_t p = p0; p < p1; ++p) {
     double px, py;
     xy(bySeq(p).at, px, py);
-    double best = -1;
-    double ax, ay;
-    xy(bySeq(q0).at, ax, ay);
-    for (uint32_t q = q0 + 1; q < q1; ++q) {
-      double bx, by;
-      xy(bySeq(q).at, bx, by);
-      double dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, d;
-      if (l2 == 0) {
-        d = std::hypot(px - ax, py - ay);
-      } else {
-        double t = ((px - ax) * dx + (py - ay) * dy) / l2;
-        t = std::max(0.0, std::min(1.0, t));
-        d = std::hypot(px - (ax + t * dx), py - (ay + t * dy));
+    uint32_t guess = static_cast<uint32_t>(static_cast<uint64_t>(p - p0) * segments / n);
+    bool near = false;
+    for (uint32_t step = 0; !near && step <= segments; ++step) {
+      for (int side = 0; side < 2 && !near; ++side) {
+        if (step == 0 && side) break;
+        int64_t s = side ? static_cast<int64_t>(guess) - step : static_cast<int64_t>(guess) + step;
+        if (s < 0 || s >= segments) continue;
+        double ax, ay, bx, by;
+        xy(bySeq(q0 + static_cast<uint32_t>(s)).at, ax, ay);
+        xy(bySeq(q0 + static_cast<uint32_t>(s) + 1).at, bx, by);
+        double dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = 0;
+        if (l2 > 0) t = std::max(0.0, std::min(1.0, ((px - ax) * dx + (py - ay) * dy) / l2));
+        double ex = px - (ax + t * dx), ey = py - (ay + t * dy);
+        near = ex * ex + ey * ey <= kAgreeRadiusM * kAgreeRadiusM;
       }
-      if (best < 0 || d < best) best = d;
-      ax = bx, ay = by;
     }
-    if (best <= kAgreeRadiusM) ++near;
+    if (!near && ++far * 100 > (100 - kAgreeSharePct) * n) return false;
   }
-  return near * 100 >= kAgreeSharePct * (p1 - p0);
+  return true;
 }
 
 // 3. Two laps agree: the shorter at least 90 % of the longer, and each covered by the other.

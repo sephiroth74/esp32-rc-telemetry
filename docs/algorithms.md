@@ -117,8 +117,9 @@ PLAN-ESP32.md §7.5, to the detail two implementations need to agree on. Impleme
 
 ### The epochs that count
 
-The session's NAV-PVT epochs, in order. One **takes part** when it has `gnssFixOK` and a 3D fix
-(`fixType` 3); every other is passed over, as if it had not come. From each: `iTOW` (ms), latitude
+The session's NAV-PVT epochs, in order. One **takes part** when the module calls it a 3D fix — the
+status bar's `3D`: `gnssFixOK`, `fixType` 3 (or 4, with dead reckoning) and `invalidLlh` clear;
+every other is passed over, as if it had not come. From each: `iTOW` (ms), latitude
 and longitude (degrees × 10⁷), `gSpeed` (mm/s), `headMot` (degrees × 10⁵, clockwise from north),
 and the session time `t` (ms) of its record.
 

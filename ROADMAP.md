@@ -474,17 +474,38 @@ try when one is at hand; their logic is host-tested.
   speed averaged over ±500 ms, the gate 15 m wide — and `geo::LineFinder`, which keeps the trace
   in a buffer of the caller's for the laps to be found again. On the fixture the first laps
   disagree, off then cut, and the gate comes with provisional laps 3 and 4, 2 min in; each rule
-  has a test that fails without it (15 tests in `test_laps`, 225 in all). Still to do, on the
-  device: the 10-minute trace in PSRAM, `start_line.json` with source `auto`, and the laps found
-  again.
+  has a test that fails without it (15 tests in `test_laps`, 225 in all). On the device with
+  step 8.5: the trace in PSRAM, the line saved with source `auto`, the laps found again. Still to
+  do: a real track.
 - [ ] **8.3 Lap flags.** `cut` and `off` against the median lap distance; flagged laps never become
   the best lap.
   *So far:* `geo::medianM()` and `geo::flagOf()`, on the fixture's laps: a run off the track and two
-  laps doubled by a missed line come out `off`, a cut `cut`. Still to do: the best lap that skips
-  them, on the device.
+  laps doubled by a missed line come out `off`, a cut `cut`. On the device (step 8.5) the Lap
+  record keeps the flags its lap has when it ends, and the best is worked out again over the laps
+  not flagged as the median moves. Still to do: a real track.
 - [ ] **8.4 Track entries.** Track › Start line, with its overwrite confirmation; Track › Geometry;
   both showing their source, and the source rules of §7.5 when files arrive from the desktop app.
+  Decided on the way (2026-10-26): the line is recorded **on the move**, holding OK while crossing
+  it the way the race goes at 1 m/s or more; still, `Not moving`, as the module's heading at a
+  standstill is a guess.
+  *So far:* `start_line.json` holds the gate — position, heading, width, source
+  (`firmware/include/session.h`) — and a line from elsewhere without a source counts as the
+  desktop app's. Track › Start line and Home show the source; the hold and the overwrite's yes
+  are refused still (226 host tests); the device writes the line with source `device`, a track
+  made first where there is none. An automatic line never replaces one already there. Still to do:
+  the recording on a real track, Track › Geometry.
 - [ ] **8.5 Live laps and sectors.** The session's laps page, and the last and best laps on Home.
+  *So far:* every NAV-PVT reaches the ui task through a queue of its own (`gnss_task.h`), and
+  `src/lap_timer.cpp` times the session's laps with `lib/geo`: the track's line, or the search for
+  one over a 10-minute trace in PSRAM, the line then saved for the track and the laps so far found
+  again. Each crossing is a Lap record in the log with the flags its lap has then; the session's
+  page and Home show the count, the last, the best of the laps not flagged and the delta, and a
+  lap completed is a toast. On the bench, on the `sim` build with `drive on` — a car lapping a
+  250 m stadium: no line, the search found it after two laps that agreed, `Line found, 2 laps`,
+  then a lap every ~24 s; the log held the 7 Lap records, the first three written when the line
+  came with their crossings in the past. Comparing two laps first took ~2 s of the ui task, the
+  doubles being software's on the S3; with the comparison searching outwards and stopping early,
+  30 ms, the answers the same. Still to do: a real track, and sectors.
 
 ## Phase 9 — Transfer
 

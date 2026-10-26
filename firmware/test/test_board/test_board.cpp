@@ -43,6 +43,8 @@ static Facts worstCase() {
   f.menu.hasFix = true;
   f.menu.rcSignal = true;
   f.menu.hasStartLine = true;
+  f.menu.moving = true;
+  f.startLineSource = 2;  // desktop: the longest word
   f.menu.profileCount = 3;
   f.menu.activeProfile = 0;
   f.profileNames = kLongNames;
@@ -528,6 +530,11 @@ static void notices_and_the_blocked_home_fit_in_21_columns() {
          w.facts.menu.hasFix = false;
          w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
        }},
+      {"not moving",
+       [](Walk& w) {
+         w.facts.menu.moving = false;
+         w.keys({Event::Open, Event::Down, Event::Open, Event::Open, Event::Hold});
+       }},
       {"no rc",
        [](Walk& w) {
          w.facts.menu.rcSignal = false;
@@ -764,14 +771,14 @@ static void the_home_screen_reads_as_designed() {
   TEST_ASSERT_EQUAL_STRING("Typhon 6 3D 32  58GB", t.lines[0]);
   TEST_ASSERT_EQUAL_STRING("Ready             ! U", t.lines[1]);  // marks right-aligned
   TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[2]);
-  TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[4]);
+  TEST_ASSERT_EQUAL_STRING("Best  9:59.999   L999", t.lines[4]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[7]);
   TEST_ASSERT_EQUAL_UINT8(0, t.scrollTotal);  // five lines in five rows: nothing to scroll
 
   ui::render(w.board, w.facts, Layout::TwoButtons, TextSize::Large, w.nowMs, t);
   TEST_ASSERT_EQUAL_STRING("Ready       3D32   !U", t.lines[0]);
   TEST_ASSERT_EQUAL_STRING("Track N4512E00934-99", t.lines[1]);
-  TEST_ASSERT_EQUAL_STRING("Last  9:59.999   L999", t.lines[3]);
+  TEST_ASSERT_EQUAL_STRING("Best  9:59.999   L999", t.lines[3]);
   TEST_ASSERT_EQUAL_STRING("OK menu  hold: start", t.lines[4]);
   TEST_ASSERT_EQUAL_UINT8(7, t.scrollTotal);  // the profile and free space join the content
 }

@@ -46,6 +46,8 @@ bool logFailed();
 // A record at `eventMs` (millis()): whole into the ring, or dropped and counted. False when no
 // session is open, or there was no room.
 bool logAppend(rcl::Type type, uint32_t eventMs, const void* payload, size_t length);
+// The session time of `eventMs`, as its record would carry it: 0 before the session's start.
+uint32_t logSessionMs(uint32_t eventMs);
 
 void logStats(LogStats& out);
 // The footer the last graceful close wrote, for meta.json; false before the first.

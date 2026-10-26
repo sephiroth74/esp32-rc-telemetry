@@ -85,6 +85,7 @@ enum class Refusal : uint8_t {
   LoggingRefused,  // the POST refused logging: arg is the check
   NoRcSignal,
   ProfilesFull,
+  NotMoving,  // Track › Start line takes its heading from the motion (§7.5)
 };
 
 // The four confirmations of §3.1, plus leaving Transfer while a host has the card (§7.3).
@@ -138,6 +139,7 @@ struct MenuContext {
   bool requireFix = true;  // session.require_fix: a session needs the fix (§3.6); off for the bench
   bool rcSignal = false;  // edges on the RC inputs: calibration needs them
   bool hasStartLine = false;
+  bool moving = false;  // a fresh 3D fix at 1 m/s or more: what Track › Start line needs (§7.5)
   uint8_t trackChoices = 0;   // tracks within reach of the fix, for Track › Choose (§7.1)
   uint8_t trackResolved = 0;  // which of them a session would be filed in
   uint8_t profileCount = 1;  // 1..profileMax

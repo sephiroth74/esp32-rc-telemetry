@@ -25,6 +25,17 @@ std::atomic<uint32_t> uartOverruns{0}, uartErrors{0};
 portMUX_TYPE liveLock = portMUX_INITIALIZER_UNLOCKED;
 GnssLive live;  // under liveLock
 
+constexpr UBaseType_t kEpochQueue = 32;  // 3.2 s at 10 Hz
+QueueHandle_t epochs = nullptr;
+std::atomic<uint32_t> epochsDropped{0};
+
+void queueEpoch(const GnssEpoch& e) {
+  if (!epochs) epochs = xQueueCreate(kEpochQueue, sizeof(GnssEpoch));
+  if (epochs && xQueueSend(epochs, &e, 0) != pdTRUE) {
+    epochsDropped.fetch_add(1, std::memory_order_relaxed);
+  }
+}
+
 ubx::Scanner scanner;
 
 void onUartError(hardwareSerial_error_t error) {
@@ -72,6 +83,17 @@ void handle(const ubx::Frame& f, uint32_t nowMs) {
     ++live.epochs;
     if (!live.firstFixMs && pvt.fix3d()) live.firstFixMs = nowMs;
     taskEXIT_CRITICAL(&liveLock);
+#ifndef BENCH_SIM  // the bench's car is the simulation's, whatever the module says
+    GnssEpoch e;
+    e.atMs = nowMs;
+    e.iTowMs = pvt.iTowMs;
+    e.latE7 = pvt.latE7;
+    e.lonE7 = pvt.lonE7;
+    e.gSpeedMmS = pvt.gSpeedMmS;
+    e.headMotE5 = pvt.headMotE5;
+    e.fix3d = pvt.fix3d();
+    queueEpoch(e);
+#endif
   } else if (ubx::decodeNavSat(f, sat)) {
     uint8_t tracked = 0, used = 0;
     for (uint8_t i = 0; i < sat.numSvs; ++i) {
@@ -161,3 +183,11 @@ void gnssLiveRead(GnssLive& out) {
   out = live;
   taskEXIT_CRITICAL(&liveLock);
 }
+
+bool gnssNextEpoch(GnssEpoch& out) { return epochs && xQueueReceive(epochs, &out, 0) == pdTRUE; }
+
+uint32_t gnssEpochsDropped() { return epochsDropped.load(std::memory_order_relaxed); }
+
+#ifdef BENCH_SIM
+void gnssInjectEpoch(const GnssEpoch& e) { queueEpoch(e); }
+#endif

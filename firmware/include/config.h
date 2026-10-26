@@ -40,6 +40,10 @@ constexpr uint32_t LOG_CLOSE_WAIT_MS = 3000;  // a stop waits this long for the 
 constexpr size_t LOG_RECOVER_PIECE_BYTES = 128 * 1024;
 constexpr size_t LOG_RECOVER_GAP_BYTES = 64 * 1024;
 
+// --- Laps (§7.5) ----------------------------------------------------------------
+// Without a start line, the trace the line is looked for in, in PSRAM: 10 min at 10 Hz.
+constexpr size_t LAP_TRACE_EPOCHS = 6000;
+
 // --- Power-on self-test (§3.3) ----------------------------------------------
 constexpr size_t POST_PROBE_BYTES = 256 * 1024;   // one probe answers "writable?" and "how fast?"
 constexpr uint32_t POST_MIN_FREE_MB = 64;         // sd.min_free_mb — below this, logging refused

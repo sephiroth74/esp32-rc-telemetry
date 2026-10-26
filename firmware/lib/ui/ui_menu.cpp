@@ -259,8 +259,12 @@ MenuResult Menu::handle(Event event, const MenuContext& c, uint32_t nowMs) {
     if (answer == Confirm::Answer::Pending) return {};
     screen_ = dialogReturn_;
     if (answer == Confirm::Answer::No) return {};
-    return issue(kind == DialogKind::OverwriteStartLine ? Command::RecordStartLine
-                                                        : Command::DeleteSessions);
+    if (kind == DialogKind::OverwriteStartLine) {
+      // Stopped to answer: the heading would be the module's guess, so not recorded either.
+      if (!c.moving) return refused(Refusal::NotMoving);
+      return issue(Command::RecordStartLine);
+    }
+    return issue(Command::DeleteSessions);
   }
 
   if (event == Event::Press) return {};  // activity only: the gesture's own event follows
@@ -373,6 +377,7 @@ MenuResult Menu::hold(const MenuContext& c, uint32_t nowMs) {
       return startSession(c);
     case ScreenId::StartLine:
       if (Refusal r = positionRefusal(c); r != Refusal::None) return refused(r);
+      if (!c.moving) return refused(Refusal::NotMoving);  // crossing it, the way the race goes
       if (c.hasStartLine) {
         openDialog(DialogKind::OverwriteStartLine, nowMs);
         return {};
