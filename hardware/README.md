@@ -35,6 +35,37 @@ cd hardware && python3 gen_wiring.py .
 rsvg-convert -w 2550 wiring-car.svg > wiring-car.png      # and wiring-bench
 ```
 
+## Perfboard layout
+
+[`perfboard-car.png`](perfboard-car.png) places the car build on an EPLZON 50.8 × 38.1 mm
+solderable breadboard, hole by hole, in Italian: the parts from above, the wires on the copper side,
+the wires up to the parts held by the enclosure's lid, and the assembly notes. The receiver plugs into
+two 2-pole JST-PH side-entry headers, J1 for BEC+ and GND and J2 for CH1 and CH2.
+
+`gen_perfboard.py` writes `perfboard-car.svg`, and checks the layout first, stopping at the first
+problem: every lead in a free hole, no two bodies in the same space (the lid's parts included), one
+net per strip, and the strips joined into exactly the nets of `car.kicad_sch`. Edit the script and
+run it again rather than the SVG:
+
+```sh
+cd hardware && python3 gen_perfboard.py .
+rsvg-convert -w 2400 perfboard-car.svg > perfboard-car.png
+```
+
+## Enclosure
+
+[`enclosure-car.solidcraft`](enclosure-car.solidcraft) is the SolidCraft design of the car's
+enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled in place. It is in
+progress. The enclosure has two parts:
+
+- **Tub:** floor, walls, four zip-tie tabs, and a slot at the back for the receiver's wires.
+- **Lid:** carries the display, the GM10 (Flywoo's own 3D model, embedded in the design), the FPC
+  antenna and the two key caps.
+
+Three M2 screws go up through the floor and the board into brass inserts in the lid's posts, and
+hold the three together. `gen_perfboard.py`'s `LID` list repeats the footprints of what the lid
+holds, so that a change of layout is checked against them: keep the two in step.
+
 ## Reading and editing
 
 Open a `.kicad_sch` in KiCad's Schematic Editor; the sheets are checked with KiCad 10.0.1. The

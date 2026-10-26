@@ -4,3 +4,7 @@
 _autosave-*
 fp-info-cache
 ~*.lck
+
+# SolidCraft's own working files
+*.solidcraft.bak
+.~*.solidcraft.lock
