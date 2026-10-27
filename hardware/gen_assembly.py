@@ -348,9 +348,10 @@ def build_html():
         '<tr><td>—</td><td>Millefori EPLZON 50,8 × 38,1</td><td>tipo breadboard saldabile, 17 colonne</td></tr>'
         '<tr><td>U1</td><td>Seeed XIAO ESP32-S3 Sense</td><td>con le due strisce di pin da 7 e la microSD</td></tr>'
         '<tr><td>U6</td><td>LM2940CT-5.0</td><td>TO-220</td></tr>'
-        '<tr><td>C1</td><td>470 µF elettrolitico, Ø8 × 13</td><td>low-ESR</td></tr>'
+        '<tr><td>C1</td><td>470 µF 16 V elettrolitico EEU-FR1C471, Ø8 × 11,5</td><td>low-ESR</td></tr>'
         '<tr><td>C2</td><td>100 nF ceramico a disco</td><td></td></tr>'
-        '<tr><td>C3</td><td>100 µF elettrolitico EEU-FR1C101, 5 × 11</td><td>low-ESR</td></tr>'
+        '<tr><td>C3</td><td>100 µF 16 V elettrolitico EEU-FR1C101, Ø5 × 11</td><td>low-ESR: mai un '
+        'ceramico al suo posto</td></tr>'
         '<tr><td>R1–R4</td><td>4 × 10 kΩ</td><td></td></tr>'
         '<tr><td>R5, R6</td><td>2 × 100 kΩ</td><td></td></tr>'
         '<tr><td>D1, D2</td><td>2 × BAT43</td><td>la fascia è il catodo</td></tr>'
@@ -384,7 +385,10 @@ def build_html():
     add('<ul><li>Pulisci i fori dei tasti e le guide dello sportellino da fili e sbavature: i tasti devono '
         'scorrere da soli nei loro fori, lo sportellino nelle guide.</li>'
         '<li>Prova lo sportellino nelle guide e i tasti nei fori prima di montare l\'elettronica: se qualcosa '
-        'stringe, una passata di carta abrasiva fine sul pezzo piccolo.</li></ul>')
+        'stringe, una passata di carta abrasiva fine sul pezzo piccolo.</li>'
+        '<li><b>Prima di stampare la piastra misura C1</b> col calibro: il suo collare ha il foro del parametro '
+        '<code>c1_d</code>, da mettere al diametro misurato più 0,3 mm. Il modello è fatto per il più grosso '
+        'ammesso dal datasheet, Ø8,5.</li></ul>')
 
     # 3. Inserts.
     add('<h2>3. Inserti a caldo</h2>')
@@ -470,7 +474,7 @@ def build_html():
                     "C2 scavalca J2 su piedini lunghi; C1 sta in piedi tra J1 e la XIAO."),
              '<ul><li><b>C2</b> 100 nF su piedini lunghi in A8 (GND) e A11 (BEC+), il disco a <b>5,5 mm</b> dalla '
              'scheda, sopra J2, con la faccia lungo la riga.</li>'
-             '<li><b>C1</b> 470 µF in piedi: <b>+ in D12</b>, − in D13. Piega i piedini di circa 0,5 mm verso il '
+             '<li><b>C1</b> 470 µF in piedi: <b>+ in D12</b>, − in D13. Piega i piedini di circa 0,6 mm verso il '
              'davanti e verso la XIAO: così non tocca J1 ed entra nel suo collare.</li></ul>'))
     add(step("4.8", "I fili sul lato rame",
              figure(copper_drawing(POWER_WIRES, [], "fili di alimentazione"),
@@ -632,6 +636,8 @@ def build_html():
         '<tr><td>Il GPS non comunica</td><td>R e T scambiati: R va in A14 (D6), T in B7 (D7).</td></tr>'
         '<tr><td>Sterzo e gas non si leggono</td><td>Massa in comune (J1) e segnali sui fili S dei cavi a Y.</td></tr>'
         '<tr><td>Lo sportellino non scatta</td><td>Sbavature nell\'incavo sopra l\'apertura o nelle guide.</td></tr>'
+        '<tr><td>C1 non entra nel collare, o ci balla</td><td>Cambia <code>c1_d</code> (diametro di C1 + 0,3 mm) e '
+        'ristampa la piastra; se balla poco, basta un giro di kapton attorno al condensatore.</td></tr>'
         '</table>')
 
     # Appendix.

@@ -464,7 +464,7 @@
   <circle cx="677.8" cy="266.2" r="8.2" fill="#d62828" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <circle cx="715.9" cy="266.2" r="8.2" fill="#222222" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <circle cx="754.0" cy="266.2" r="8.2" fill="#d62828" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
-  <rect x="695.9" y="318.2" width="78.0" height="180.0" rx="3.0" fill="#546e7a" fill-opacity="0.55" stroke="#222" stroke-width="2"/>
+  <rect x="693.7" y="318.2" width="82.5" height="187.5" rx="3.0" fill="#546e7a" fill-opacity="0.55" stroke="#222" stroke-width="2"/>
   <circle cx="754.0" cy="266.2" r="8.2" fill="#d62828" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <circle cx="715.9" cy="266.2" r="8.2" fill="#222222" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <rect x="538.3" y="210.6" width="88.5" height="114.0" rx="3.0" fill="#c62828" fill-opacity="0.85" stroke="#222" stroke-width="2"/>
@@ -473,7 +473,7 @@
   <rect x="424.0" y="210.6" width="88.5" height="114.0" rx="3.0" fill="#1e88e5" fill-opacity="0.85" stroke="#222" stroke-width="2"/>
   <circle cx="449.2" cy="304.3" r="8.2" fill="#fdd835" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <circle cx="487.3" cy="304.3" r="8.2" fill="#fb8c00" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
-  <circle cx="574.8" cy="388.0" r="61.1" fill="#455a64" fill-opacity="0.85" stroke="#222" stroke-width="2"/>
+  <circle cx="574.8" cy="389.5" r="63.8" fill="#455a64" fill-opacity="0.85" stroke="#222" stroke-width="2"/>
   <circle cx="563.5" cy="380.5" r="8.2" fill="#d62828" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <circle cx="601.6" cy="380.5" r="8.2" fill="#222222" fill-opacity="1.0" stroke="#000" stroke-width="1.5"/>
   <rect x="430.7" y="247.4" width="75.0" height="37.5" rx="3.0" fill="#f5d76e" fill-opacity="0.85" stroke="#222" stroke-width="2"/>
@@ -519,12 +519,12 @@
   <text x="257.8" y="430.7" font-size="11" fill="#fff" text-anchor="middle">← USB-C e microSD</text>
   <text x="715.9" y="340.7" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">U6 LM2940</text>
   <text x="715.9" y="356.7" font-size="11" fill="#fff" text-anchor="middle">aletta in alto</text>
-  <text x="734.9" y="448.2" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">C3 100 µF</text>
-  <text x="734.9" y="464.2" font-size="11" fill="#111" text-anchor="middle">coricato sull'LM2940</text>
+  <text x="734.9" y="452.0" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">C3 100 µF</text>
+  <text x="734.9" y="468.0" font-size="11" fill="#111" text-anchor="middle">coricato sull'LM2940</text>
   <text x="582.6" y="185.6" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">J1</text>
   <text x="468.2" y="185.6" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">J2</text>
-  <text x="574.8" y="388.0" font-size="12" fill="#fff" text-anchor="middle" font-weight="bold">C1</text>
-  <text x="574.8" y="404.0" font-size="11" fill="#fff" text-anchor="middle">470 µF</text>
+  <text x="574.8" y="389.5" font-size="12" fill="#fff" text-anchor="middle" font-weight="bold">C1</text>
+  <text x="574.8" y="405.5" font-size="11" fill="#fff" text-anchor="middle">470 µF</text>
   <text x="715.9" y="575.0" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">SW1 OK</text>
   <text x="601.6" y="575.0" font-size="13" fill="#111" text-anchor="middle" font-weight="bold">SW2 NAV</text>
   <rect x="444.2" y="230.2" width="48.0" height="15.0" rx="3.0" fill="#fff" fill-opacity="0.85" stroke="none" stroke-width="0"/>
@@ -1038,7 +1038,7 @@
   <text x="830.0" y="1190.5" font-size="12" fill="#222" text-anchor="start">C3 coricato sopra l'LM2940, saldato ai suoi piedini: + su OUT, − su GND.</text>
   <text x="830.0" y="1211.5" font-size="12" fill="#222" text-anchor="start">J1 e J2 (PH, passo 2 mm) nei fori da 2,54: apri appena i due piedini, la bocca verso il retro.</text>
   <text x="830.0" y="1232.5" font-size="12" fill="#222" text-anchor="start">C2 (disco da 100 nF) su piedini lunghi in A8 e A11, a cavallo di J2: il disco a 5,5 mm dalla scheda.</text>
-  <text x="830.0" y="1253.5" font-size="12" fill="#222" text-anchor="start">C1 in piedi in D12 (+) e D13: piega i piedini di circa 0,5 mm verso il davanti e verso la XIAO.</text>
+  <text x="830.0" y="1253.5" font-size="12" fill="#222" text-anchor="start">C1 in piedi in D12 (+) e D13: piega i piedini di circa 0,6 mm verso il davanti e verso la XIAO.</text>
   <text x="830.0" y="1274.5" font-size="12" fill="#222" text-anchor="start">R1, R2, R5, R6 in piedi: il corpo sul primo foro, il piedino piegato nel secondo.</text>
   <text x="830.0" y="1295.5" font-size="12" fill="#222" text-anchor="start">D1 e D2 (BAT43) coricati, la fascia (catodo) verso il 3V3: D1 da J9 a J13,</text>
   <text x="830.0" y="1316.5" font-size="12" fill="#222" text-anchor="start">  D2 sotto la XIAO da F3 a E3: saldalo prima della XIAO.</text>

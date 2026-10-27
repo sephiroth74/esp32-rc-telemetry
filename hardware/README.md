@@ -97,6 +97,11 @@ cannot slip off it, with 0.3 mm free above. Two parameters of the design fit the
 switches: `key_stem_d`, the stem's diameter near its tip (the cap's hole is 0.4 mm wider), and
 `key_play`, to raise if a key stays pressed because its switch is taller than modelled.
 
+C1 and C3 are Panasonic's own 3D models (EEU-FR1C471 and EEU-FR1C101), which are drawn at the
+largest size the datasheet allows: Ø8.5 × 13 mm and Ø5.5 × 12.5 mm against 8 × 11.5 and 5 × 11
+nominal. A collar under the lid holds C1 from about 4.5 mm below its top. Its hole is the
+parameter `c1_d`: set it to the real can's diameter plus 0.3 mm before printing the lid.
+
 ## Assembly guide
 
 [`assembly-car.pdf`](assembly-car.pdf) is the step-by-step guide to building the car device, in

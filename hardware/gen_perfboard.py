@@ -92,15 +92,17 @@ PARTS = [
     dict(ref="J2", name="PH 2 poli (segnali)", side="top",
          leads={"B9": "CH1_STEER", "B10": "CH2_THROTTLE"},
          body=("rect", -1.80, 10.08, 4.10, 17.68), z=(0, 4.8)),
-    # 8.15 x 13.2 mm, its leads bent so the can clears the display, the LM2940 and J1.
+    # Panasonic EEU-FR1C471, 8 x 11.5 mm, drawn at its largest (8.5 x 13), its leads bent so the can
+    # clears the display, the LM2940 and J1.
     dict(ref="C1", name="470 µF", side="top", leads={"D12": "RX_RAIL", "D13": "GND"},
-         body=("circle", 8.25, 5.85, 4.075), z=(1.0, 14.2)),
+         body=("circle", 8.25, 5.75, 4.25), z=(1.0, 14.0)),
     # The ceramic disc stands on long legs over J2, from the GND strip 8 to the BEC+ strip 11, its
     # face along the row.
     dict(ref="C2", name="100 nF", side="top", leads={"A8": "GND", "A11": "RX_RAIL"},
          body=("rect", -1.35, 12.72, 3.65, 15.22), z=(5.45, 10.45)),
+    # Panasonic EEU-FR1C101, 5 x 11 mm, drawn at its largest (5.5 x 12.5), lying on the LM2940.
     dict(ref="C3", name="100 µF", side="top", leads={"A17": "+5V", "A16": "GND"}, shared=True,
-         body=("rect", 16.33, -1.5, 21.53, 10.5), z=(5.07, 10.27)),
+         body=("rect", 16.18, -2.0, 21.68, 10.5), z=(5.07, 10.57)),
     dict(ref="R3", name="10k", side="top", leads={"E9": "CH1_STEER", "F9": "RC_STEER"},
          body=("rect", -1.27, -3.15, 1.03, 3.15), z=(0, 2.5)),
     dict(ref="R4", name="10k", side="top", leads={"E10": "CH2_THROTTLE", "F10": "RC_THROTTLE"},
@@ -565,7 +567,7 @@ def legend(svg, y0):
         "C3 coricato sopra l'LM2940, saldato ai suoi piedini: + su OUT, − su GND.",
         "J1 e J2 (PH, passo 2 mm) nei fori da 2,54: apri appena i due piedini, la bocca verso il retro.",
         "C2 (disco da 100 nF) su piedini lunghi in A8 e A11, a cavallo di J2: il disco a 5,5 mm dalla scheda.",
-        "C1 in piedi in D12 (+) e D13: piega i piedini di circa 0,5 mm verso il davanti e verso la XIAO.",
+        "C1 in piedi in D12 (+) e D13: piega i piedini di circa 0,6 mm verso il davanti e verso la XIAO.",
         "R1, R2, R5, R6 in piedi: il corpo sul primo foro, il piedino piegato nel secondo.",
         "D1 e D2 (BAT43) coricati, la fascia (catodo) verso il 3V3: D1 da J9 a J13,",
         "  D2 sotto la XIAO da F3 a E3: saldalo prima della XIAO.",
