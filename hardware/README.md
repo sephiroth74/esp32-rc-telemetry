@@ -56,15 +56,20 @@ rsvg-convert -w 2400 perfboard-car.svg > perfboard-car.png
 
 [`enclosure-car.solidcraft`](enclosure-car.solidcraft) is the SolidCraft design of the car's
 enclosure, printed in PETG, with the perfboard's parts, leads and wires modelled in place. It is
-56.7 × 43.1 × 26.5 mm, 70.7 mm wide across the zip-tie tabs. The enclosure has these parts:
+56.7 × 43.1 × 26.5 mm, 70.7 mm wide across the zip-tie tabs; the display's flap adds 1.6 mm on top,
+its hinge 4.4 mm at the back and its tab 1 mm at the front. The enclosure has these parts:
 
 - **Tub:** floor, walls, four zip-tie tabs, and a slot at the back for the receiver's wires.
 - **Lid:** a flat top 4.4 mm thick with the display's window and the two keys in holes through it.
   Underneath, it carries the display, the GM10 (Flywoo's own 3D model, embedded in the design) in a
-  frame on foam tape with a clamp bar below it, and the FPC antenna on a front flap.
+  frame on foam tape with a clamp bar 1.2 mm thick below it, and the FPC antenna on a front flap.
+  Two lugs at its back carry the display flap's hinge.
 - **Hatch:** slides down from above, beside the lid, into two vertical dovetail guides on the left
   wall, and snaps shut over the USB-C port and the microSD card. Push it up by its grooves to open
   it.
+- **Display flap:** covers the display, so that a crash or a roll-over does not reach the glass. It
+  turns on a pin of 1.75 mm filament, 26 mm long, through the lid's two lugs, and a barb on its front
+  tab snaps into a groove in the lid's front edge. A plug on its inside fills the display's window.
 
 Three M2 screws go up through the floor and the board into brass inserts in the lid's posts, and
 hold the three together. A tongue of the lid closes the back slot and clamps the receiver's wires.
@@ -79,6 +84,7 @@ All print in PETG with no supports, at 0.2 mm layers and at least 4 perimeters:
 | Tub | `vasca.stl` | Upright, floor on the bed |
 | Lid | `piastra.stl` | Upside down, top on the bed |
 | Hatch | `sportellino.stl` | Outer face on the bed |
+| Display flap | `ribaltina.stl` | Upside down, outer face on the bed |
 | Keys | `tasto-nav.stl`, `tasto-ok.stl` | Upside down, lettering on the bed |
 | GM10 clamp | `fermo-gm10.stl` | Flat |
 
@@ -88,8 +94,8 @@ Screws and heat-set inserts, all M2. The holes are the design's parameters `ins_
 | Where | Screws | Inserts |
 | --- | --- | --- |
 | Tub, board and lid | 3 × M2×8, from below | 3 × 4 mm long, 3.45 mm across, in the lid's posts |
-| Display | 4 × M2×6, from below through its slots | 4 × 4 mm long, 3.2 mm across, from the lid's top |
-| GM10 clamp | 1 × M2×4 | 1 × 4 mm long, 3.2 mm across, in the clamp's post |
+| Display | 4 × M2×6, from below through its slots | 4 × 4 mm long, 3.2 mm across, from the lid's top, down to the floor of their holes |
+| GM10 clamp | 1 × M2×5 | 1 × 4 mm long, 3.2 mm across, in the clamp's post |
 
 The keys go up through their holes in the lid from below before the board is screwed on, and a
 flange under the lid keeps them in. Each sits on its switch by a cap over the switch's stem, so it
@@ -111,7 +117,7 @@ Italian. It covers:
 - the perfboard, soldered in a buildable order with a drawing per step, and a 5 V test before the
   XIAO;
 - the lid's parts and the wires between lid and board;
-- closing the box, the receiver's wiring and the first start.
+- closing the box, the display flap, the receiver's wiring and the first start.
 
 `gen_assembly.py` writes it from `gen_perfboard.py`'s data and the pictures in
 [`assembly/img/`](assembly/img). Edit the script and run it again rather than the HTML; `--pdf`
@@ -121,9 +127,11 @@ prints the PDF through headless Google Chrome:
 cd hardware && python3 gen_assembly.py --pdf
 ```
 
-The pictures are renders of `enclosure-car.solidcraft`. For each picture, the printed parts were
-given opaque colours and the other bodies shown or hidden; the design was then reopened from disk,
-so none of that is saved. Two pictures, `02-piastra-sotto-raw.jpg` and `04-piastra-mappa-raw.jpg`,
+The pictures are renders of `enclosure-car.solidcraft`, with the printed parts in the design's own
+opaque colours and, for each picture, the other bodies shown or hidden. The exploded and opened views
+move bodies with Move features. Before saving, delete those features and put the visibility back:
+opening the design's own file again in SolidCraft does not reload it, and that is how a lifted hatch
+once got saved into the design. Two pictures, `02-piastra-sotto-raw.jpg` and `04-piastra-mappa-raw.jpg`,
 are straight views of the lid from below. The script places their numbered markers from the model's
 coordinates through the camera written in `project()`. After a change to the lid, render both again
 from that camera.

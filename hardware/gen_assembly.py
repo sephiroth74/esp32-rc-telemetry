@@ -246,13 +246,13 @@ LID_BARE = [  # markers on the lid seen from below, nothing mounted
     ("2", (-21.8, -11.75, 20.6)), ("2", (1.2, -11.75, 20.6)), ("2", (-21.8, 11.75, 20.6)), ("2", (1.2, 11.75, 20.6)),
     ("3", (23.3, 16.6, 18.1)),
     ("4", (9.35, -7.45, 22.1)), ("4", (18.35, -7.45, 22.1)),
-    ("5", (18.8, 5.3, 21.1)), ("6", (24.3, -4.6, 16.9)), ("7", (8.25, 5.85, 18.0)),
-    ("8", (0.0, -19.0, 14.0)), ("9", (4.9, 20.6, 15.0)),
+    ("5", (18.8, 5.3, 21.1)), ("6", (24.3, -4.6, 16.3)), ("7", (8.25, 5.75, 18.0)),
+    ("8", (0.0, -19.0, 14.0)), ("9", (4.9, 20.6, 15.0)), ("10", (-19.5, 23.4, 24.5)), ("10", (1.5, 23.4, 24.5)),
 ]
 LID_MOUNTED = [  # the same view with the parts on
     ("1", (-10.3, 1.5, 18.1)), ("2", (-10.3, -12.6, 17.0)), ("3", (14.0, -7.45, 22.1)),
     ("4", (17.0, 2.0, 18.0)), ("5", (18.7, 15.5, 18.0)), ("6", (24.4, 6.0, 17.5)),
-    ("7", (23.3, 16.6, 17.5)), ("8", (6.0, -19.0, 14.0)), ("9", (8.25, 5.85, 18.0)),
+    ("7", (23.3, 16.6, 16.9)), ("8", (6.0, -19.0, 14.0)), ("9", (8.25, 5.75, 18.0)),
 ]
 
 
@@ -314,11 +314,12 @@ def build_html():
     add('<section class="cover">')
     add('<h1>Contenitore RC Telemetry<br><span>guida di montaggio</span></h1>')
     add('<p class="sub">Kyosho MP9e con ricevente KR-331 · prototipo · ottobre 2026</p>')
-    add(img("07-chiuso.jpg", "Il contenitore chiuso: display e tasti sulla piastra, lo sportellino arancione "
-                             "sul fianco sinistro sopra USB-C e microSD, le quattro alette per le fascette.", "big"))
+    add(img("07-chiuso.jpg", "Il contenitore chiuso: la ribaltina verde sopra il display, i tasti sulla piastra, "
+                             "lo sportellino arancione sul fianco sinistro sopra USB-C e microSD, le quattro alette "
+                             "per le fascette.", "big"))
     add('<p>La guida porta dai pezzi stampati e dai componenti sciolti al contenitore montato sulla macchina: '
         'gli inserti, la millefori saldata foro per foro, la piastra con display, GM10 e tasti, i fili tra le due, '
-        'la chiusura e il collegamento alla ricevente. Disegni e misure vengono dal modello '
+        'la chiusura con la ribaltina del display e il collegamento alla ricevente. Disegni e misure vengono dal modello '
         '<code>hardware/enclosure-car.solidcraft</code> e da <code>gen_perfboard.py</code>, che controlla la '
         'millefori.</p>')
     add('<ol class="toc"><li>Prima di cominciare</li><li>Pezzi stampati</li><li>Inserti a caldo</li>'
@@ -330,8 +331,9 @@ def build_html():
     # 1. Before starting.
     add('<h2>1. Prima di cominciare</h2>')
     add(img("01-esploso.jpg", "I pezzi stampati, visti dal retro: in basso la vasca, sopra la piastra con le "
-                              "colonnine, i due tasti e la barretta gialla del fermo GM10; a destra lo "
-                              "sportellino, che scende nelle guide verticali.", "big"))
+                              "colonnine e le due orecchie della cerniera, sotto di lei i tasti e la barretta "
+                              "gialla del fermo GM10; in alto la ribaltina del display; a destra lo sportellino, "
+                              "che scende nelle guide verticali.", "big"))
     add('<h3>Come leggere la guida</h3><ul>'
         '<li><b>Davanti</b> è il lato dell\'antenna, <b>dietro</b> quello dove entrano i cavi della ricevente, '
         '<b>sinistra</b> il lato di USB-C, microSD e sportellino, <b>destra</b> il lato del GM10.</li>'
@@ -362,9 +364,10 @@ def build_html():
         '<tr><td>—</td><td>Antenna FPC 2,4 GHz della XIAO, con cavetto U.FL</td><td></td></tr>'
         '</table>')
     add('<h3>Minuteria e materiali</h3><ul>'
-        '<li>Viti M2: 3 × M2×8, 4 × M2×6, 1 × M2×4 (va bene anche M2×5).</li>'
+        '<li>Viti M2: 3 × M2×8, 4 × M2×6, 1 × M2×5.</li>'
         '<li>Inserti M2 lunghi 4 mm: 3 da Ø3,45 e 5 da Ø3,2.</li>'
         '<li>Filo in silicone da 26–28 AWG nei colori della tabella, guaina termorestringente sottile.</li>'
+        '<li>Uno spezzone di filamento da 1,75 mm lungo 26 mm: è il perno della ribaltina.</li>'
         '<li>Biadesivo in schiuma sottile (1 mm) per il GM10; schiuma EVA o neoprene da 2–3 mm sotto il '
         'contenitore; 4 fascette larghe fino a 4 mm; nastro kapton.</li>'
         '<li>Attrezzi: saldatore con punta fine e punta per inserti, tester, calibro, tronchesino, pinzette, '
@@ -379,13 +382,17 @@ def build_html():
         '<tr><td>Vasca</td><td><code>vasca.stl</code></td><td>dritta, fondo sul piatto</td></tr>'
         '<tr><td>Piastra</td><td><code>piastra.stl</code></td><td>capovolta, superficie sul piatto</td></tr>'
         '<tr><td>Sportellino</td><td><code>sportellino.stl</code></td><td>faccia esterna sul piatto</td></tr>'
+        '<tr><td>Ribaltina del display</td><td><code>ribaltina.stl</code></td><td>capovolta, faccia esterna sul '
+        'piatto</td></tr>'
         '<tr><td>Tasti NAV e OK</td><td><code>tasto-nav.stl</code>, <code>tasto-ok.stl</code></td>'
         '<td>a testa in giù, scritta sul piatto</td></tr>'
         '<tr><td>Fermo GM10</td><td><code>fermo-gm10.stl</code></td><td>in piano</td></tr></table>')
     add('<ul><li>Pulisci i fori dei tasti e le guide dello sportellino da fili e sbavature: i tasti devono '
         'scorrere da soli nei loro fori, lo sportellino nelle guide.</li>'
-        '<li>Prova lo sportellino nelle guide e i tasti nei fori prima di montare l\'elettronica: se qualcosa '
-        'stringe, una passata di carta abrasiva fine sul pezzo piccolo.</li>'
+        '<li>Pulisci anche i fori della cerniera e la scanalatura sul bordo davanti della piastra, dove '
+        'scatta il dentino della ribaltina.</li>'
+        '<li>Prova lo sportellino nelle guide, i tasti nei fori e la ribaltina sul suo perno prima di montare '
+        'l\'elettronica: se qualcosa stringe, una passata di carta abrasiva fine sul pezzo piccolo.</li>'
         '<li><b>Prima di stampare la piastra misura C1</b> col calibro: il suo collare ha il foro del parametro '
         '<code>c1_d</code>, da mettere al diametro misurato più 0,3 mm. Il modello è fatto per il più grosso '
         'ammesso dal datasheet, Ø8,5.</li></ul>')
@@ -399,12 +406,15 @@ def build_html():
     add('<ol class="legend">'
         '<li><b>Tre colonnine agli angoli:</b> inserti da <b>Ø3,45</b>, dalla punta della colonnina.</li>'
         '<li><b>Quattro fori del display:</b> inserti da <b>Ø3,2</b>, ma <b>dalla superficie superiore</b> '
-        'della piastra (i fori attorno alla finestra). Le viti arrivano da sotto, attraverso il display.</li>'
+        'della piastra (i fori attorno alla finestra). Spingili finché si fermano sul fondo del foro: restano '
+        '0,1 mm sotto la superficie, così la ribaltina chiude piatta. Le viti arrivano da sotto, attraverso il '
+        'display.</li>'
         '<li><b>Colonnina tonda del fermo GM10:</b> inserto da <b>Ø3,2</b>, dalla punta.</li>'
         '<li>Fori dei tasti.</li><li>Cornice del GM10.</li>'
         '<li>Colonnina anteriore del fermo GM10, con la sede della barretta.</li>'
         '<li>Collare di C1.</li><li>Aletta dell\'antenna (davanti).</li>'
-        '<li>Linguetta che chiude l\'uscita dei cavi (dietro).</li></ol>')
+        '<li>Linguetta che chiude l\'uscita dei cavi (dietro).</li>'
+        '<li>Orecchie della cerniera della ribaltina (dietro).</li></ol>')
     add('<ul><li>Saldatore con la punta per inserti a 200–220 °C per il PLA, 240 °C per il PETG.</li>'
         '<li>Appoggia l\'inserto dritto sul foro e lascialo scendere col suo peso e una spinta leggera, '
         'senza inclinarlo, finché è a filo. Togli la punta in verticale e lascia raffreddare 10 secondi senza '
@@ -417,7 +427,8 @@ def build_html():
     # 4. The perfboard.
     add('<h2>4. La millefori</h2>')
     add(img("05-millefori-3d.jpg", "La millefori finita: XIAO a sinistra con la Sense sopra, i due pulsanti "
-                                   "davanti a destra, C1 (blu) e C3 (viola, coricato sull'LM2940) dietro, i due "
+                                   "davanti a destra, dietro C1 in piedi e C3 coricato sull'LM2940 (i due cilindri "
+                                   "neri), i due "
                                    "connettori PH bianchi sul bordo posteriore.", "big"))
     add('<ul><li>Monta i pezzi dal più basso al più alto: ognuno resta appoggiato sul banco mentre saldi.</li>'
         '<li>Dopo ogni saldatura taglia i piedini sotto la scheda a <b>2 mm al massimo</b>: sotto ci sono solo '
@@ -526,7 +537,7 @@ def build_html():
         '<li>Pin del display, verso il davanti.</li><li>Tasti NAV e OK nei loro fori.</li>'
         '<li>GM10 nella cornice, patch ceramica verso la piastra.</li>'
         '<li>Connettore del GM10, verso il retro.</li><li>Barretta del fermo, sotto lo schermo del GM10.</li>'
-        '<li>Vite M2×4 del fermo.</li><li>Antenna FPC sull\'aletta anteriore.</li><li>Collare di C1.</li></ol>')
+        '<li>Vite M2×5 del fermo.</li><li>Antenna FPC sull\'aletta anteriore.</li><li>Collare di C1.</li></ol>')
     add(img("03-piastra-montata.jpg", "La stessa piastra vista di sbieco: si vedono i pin del display, i "
                                       "cappucci dei tasti e la barretta del fermo che entra nella sua sede.", "big"))
     add(step("7.1", "Tasti",
@@ -545,9 +556,9 @@ def build_html():
              '<li>Metti un rettangolo di biadesivo in schiuma sulla patch ceramica e appoggia il GM10 nella '
              'cornice, <b>patch verso la piastra e connettore verso il retro</b>, con il cavetto nell\'incavo.</li>'
              '<li>Infila la punta della barretta gialla nella sede della colonnina anteriore (vicino al tasto OK), '
-             'appoggiala sullo schermo del GM10 e avvita il dischetto con la <b>M2×4</b> nell\'inserto della '
-             'colonnina tonda. Stringi finché la barretta tocca la colonnina: si flette di un decimo e tiene '
-             'fermo il modulo.</li></ul>'))
+             'appoggiala sullo schermo del GM10 e avvita il dischetto con la <b>M2×5</b> nell\'inserto della '
+             'colonnina tonda. Stringi finché il dischetto tocca la colonnina: la barretta, spessa 1,2 mm, '
+             'schiaccia di un decimo il biadesivo e tiene fermo il modulo.</li></ul>'))
     add(step("7.4", "Display",
              '<ul><li>Accorcia i 4 pin dell\'header a 2 mm e salda un filo su ciascuno: GND nero, VCC rosso, '
              'SCL viola, SDA verde. Lunghezze nella tabella del passo 8.1.</li>'
@@ -587,7 +598,8 @@ def build_html():
              'I16.</li>'
              '<li>Salda i fili del display dal lato rame, che ora guarda in su, e accorciali.</li>'
              '<li>Premi i tasti: devono scattare e tornare su da soli.</li></ol>',
-             img("06-modulo.jpg", "Il modulo chiuso visto dal retro a sinistra: la piastra sulle colonnine, sotto "
+             img("06-modulo.jpg", "Il modulo chiuso visto dal retro a sinistra: la piastra sulle colonnine, con la "
+                                  "ribaltina già montata, sotto "
                                   "la millefori, a sinistra USB-C e microSD; dietro escono i quattro cavetti della "
                                   "ricevente sotto la linguetta.", "big")))
     add(step("8.3", "La vasca",
@@ -597,7 +609,8 @@ def build_html():
              'linguetta della piastra la chiude e li stringe.</li>'
              '<li>Avvita le 3 <b>M2×8</b> dal fondo, attraverso i distanziali e la scheda, negli inserti delle '
              'colonnine. Stringi con due dita: la plastica non chiede di più.</li></ul>',
-             img("08-retro.jpg", "Il retro: i quattro cavetti escono dalla fessura sotto la linguetta della piastra.",
+             img("08-retro.jpg", "Il retro: i quattro cavetti escono dalla fessura sotto la linguetta della piastra; "
+                                 "sopra, la cerniera della ribaltina.",
                  "big")))
     add(step("8.4", "Sportellino",
              '<ul><li>Gira il contenitore. Infila lo sportellino dall\'alto nelle due guide del fianco sinistro, '
@@ -607,6 +620,20 @@ def build_html():
              img("09-sportellino.jpg", "Lo sportellino sollevato: le guide a coda di rondine ai lati dell'apertura, "
                                        "dietro la presa USB-C e sopra la microSD; l'incavo dello scatto è il forellino "
                                        "sopra l'apertura.", "big")))
+    add(step("8.5", "Ribaltina del display",
+             '<ul><li>Taglia 26 mm di filamento da 1,75 mm con il tronchesino, con le punte dritte: è il perno.</li>'
+             '<li>Appoggia la ribaltina chiusa sulla piastra, con la nocca tra le due orecchie della cerniera, '
+             'dietro.</li>'
+             '<li>Infila il perno da un lato attraverso orecchia, nocca e orecchia, finché è a filo da tutti e due '
+             'i lati. Nelle orecchie entra giusto, nella nocca gira libero.</li>'
+             '<li>Per fermarlo, tocca per un attimo ogni punta con il saldatore a 200 °C e schiacciala con qualcosa '
+             'di piatto: si allarga e fa da testa. Per smontarlo, taglia una delle due teste.</li>'
+             '<li>Chiudi la ribaltina: il tappo entra nella finestra, la linguetta scende lungo il bordo davanti '
+             'della piastra e il dentino scatta nella scanalatura di quel bordo. Per aprirla, tira la linguetta in '
+             'avanti con l\'unghia e solleva.</li></ul>',
+             img("10-ribaltina.jpg", "La ribaltina aperta: sulla sua faccia interna il tappo che entra nella "
+                                     "finestra del display, in alto la linguetta con il dentino; dietro la cerniera, "
+                                     "con la nocca tra le due orecchie della piastra.", "big")))
 
     # 9. On the car.
     add('<h2>9. Sulla macchina</h2><ul>'
@@ -616,13 +643,15 @@ def build_html():
         'ricevente; quello su B13 è il <b>−</b>. Controlla l\'ordine S / + / − sulla serigrafia della ricevente.</li>'
         '<li><b>J2, segnali:</b> il filo su B9 (CH1) va al segnale S del cavo a Y dello sterzo, quello su B10 (CH2) '
         'al segnale S del cavo a Y del gas. Il cavo a Y lascia servo ed ESC collegati come sempre.</li>'
-        '<li>Basta un solo −: dentro la ricevente tutti i − sono già collegati.</li></ul>')
+        '<li>Basta un solo −: dentro la ricevente tutti i − sono già collegati.</li>'
+        '<li>Prima di girare chiudi la ribaltina: protegge il display se la macchina esce di pista o si ribalta.</li></ul>')
     add(note("warn", "Mai il + della ricevente dritto sul 5 V della XIAO: passa sempre da J1 e dall'LM2940. Mai il "
                      "3V3 della XIAO verso la ricevente."))
 
     # 10. First start.
     add('<h2>10. Primo avvio</h2><ol>'
-        '<li><b>Solo USB, macchina spenta e J1 staccato:</b> il display mostra i controlli di avvio; i tasti '
+        '<li><b>Solo USB, macchina spenta e J1 staccato:</b> apri la ribaltina: il display mostra i controlli '
+        'di avvio; i tasti '
         'rispondono; il GM10 si accende.</li>'
         '<li>Inserisci la microSD dallo sportellino.</li>'
         '<li><b>USB staccata, macchina accesa:</b> il contenitore si accende dalla ricevente. Nella pagina degli '
@@ -636,6 +665,10 @@ def build_html():
         '<tr><td>Il GPS non comunica</td><td>R e T scambiati: R va in A14 (D6), T in B7 (D7).</td></tr>'
         '<tr><td>Sterzo e gas non si leggono</td><td>Massa in comune (J1) e segnali sui fili S dei cavi a Y.</td></tr>'
         '<tr><td>Lo sportellino non scatta</td><td>Sbavature nell\'incavo sopra l\'apertura o nelle guide.</td></tr>'
+        '<tr><td>La ribaltina non resta chiusa</td><td>Sbavature nella scanalatura sul bordo davanti della '
+        'piastra, o un inserto del display che sporge: spingilo a fondo col saldatore.</td></tr>'
+        '<tr><td>La ribaltina gira dura</td><td>Il perno stringe nella nocca: ripassane il foro con una punta '
+        'da 2,1 mm.</td></tr>'
         '<tr><td>C1 non entra nel collare, o ci balla</td><td>Cambia <code>c1_d</code> (diametro di C1 + 0,3 mm) e '
         'ristampa la piastra; se balla poco, basta un giro di kapton attorno al condensatore.</td></tr>'
         '</table>')

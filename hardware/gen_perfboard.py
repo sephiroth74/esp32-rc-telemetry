@@ -150,9 +150,9 @@ LID = [
     dict(ref="tasto OK (tesa esterna)", body=("rect", 22.1, -12.7, 23.2, -6.0), z=(20.65 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
     # The GM10's clamp: a bar under its shield, its front end in a slot of a post and screwed at the
     # back into a post with an insert; it presses the shield up, so it ends where the shield is.
-    dict(ref="fermo GM10 (colonnina davanti)", body=("rect", 22.9, -5.6, 25.7, -3.6), z=(16.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="fermo GM10 (colonnina dietro)", body=("circle", 23.3, 16.6, 2.1), z=(17.5 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
-    dict(ref="fermo GM10 (barra)", body=("rect", 23.6, -3.5, 25.2, 14.5), z=(17.5 - BOARD_TOP_Z, 17.96 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (colonnina davanti)", body=("rect", 22.9, -5.6, 25.7, -3.6), z=(16.3 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (colonnina dietro)", body=("circle", 23.3, 16.6, 2.1), z=(16.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
+    dict(ref="fermo GM10 (barra)", body=("rect", 23.6, -3.5, 25.2, 14.5), z=(16.9 - BOARD_TOP_Z, 17.96 - BOARD_TOP_Z)),
     dict(ref="aletta e antenna FPC", body=("rect", -19.0, -19.05, 19.0, -18.25), z=(7.0 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
     dict(ref="antenna FPC (piega)", body=("rect", -18.7, -18.25, 18.7, -15.95), z=(21.9 - BOARD_TOP_Z, 22.1 - BOARD_TOP_Z)),
 ] + [dict(ref=f"colonnina {k}", body=("circle", x, y, r), z=z)
